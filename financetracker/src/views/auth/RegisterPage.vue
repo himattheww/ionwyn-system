@@ -49,7 +49,7 @@ import { computed } from 'vue'
     <!-- Success state: cek email -->
     <div v-if="registered" class="verify-state">
       <div class="verify-icon">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-accent)" stroke-width="1.5">
+        <svg class="text-accent" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
         </svg>
       </div>
@@ -58,7 +58,7 @@ import { computed } from 'vue'
         Kami kirim link verifikasi ke <strong>{{ email }}</strong>.<br>
         Klik link tersebut untuk mengaktifkan akun.
       </p>
-      <RouterLink to="/auth/login" class="btn-main" style="display:block;text-align:center;text-decoration:none;margin-top:24px;">
+      <RouterLink to="/auth/login" class="btn-main link-block mt-6">
         Kembali ke login
       </RouterLink>
     </div>

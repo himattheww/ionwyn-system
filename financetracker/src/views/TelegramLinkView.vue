@@ -81,7 +81,7 @@ async function confirmLink() {
         <div class="success-icon">✅</div>
         <h2 class="title">Berhasil terhubung!</h2>
         <p class="desc">Sekarang kamu bisa kembali ke Telegram dan mulai pakai bot FinTrack.</p>
-        <RouterLink to="/dashboard" class="btn-confirm" style="text-decoration:none; display:block; text-align:center;">
+        <RouterLink to="/dashboard" class="btn-confirm link-block">
           Kembali ke Dashboard
         </RouterLink>
       </template>

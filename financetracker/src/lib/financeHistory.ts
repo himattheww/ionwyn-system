@@ -1,3 +1,4 @@
+import { formatRpRounded } from './format'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 
@@ -18,7 +19,6 @@ const CAT_LABELS: Record<string, string> = {
 
 type MonthStat = { income: number; expense: number; cats: Record<string, number> }
 
-const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID')
 const monthLabel = (month: string) => dayjs(`${month}-01`).locale('id').format('MMMM YYYY')
 const catLabel = (c: string) => CAT_LABELS[c] ?? c
 
@@ -73,13 +73,13 @@ export function buildHistoryText(rows: HistoryRow[], monthlyIncome: number, now 
   const catText = (cats: Record<string, number>) =>
     Object.entries(cats)
       .sort((a, b) => b[1] - a[1])
-      .map(([k, v]) => `${catLabel(k)} ${rp(v)}`)
+      .map(([k, v]) => `${catLabel(k)} ${formatRpRounded(v)}`)
       .join(', ') || 'tidak ada pengeluaran'
 
   const lines = months.map((m, i) => {
     const s = stats[i]
     const rate = savingRate(s)
-    return `- ${monthLabel(m)}: pemasukan ${rp(s.income)}, pengeluaran ${rp(s.expense)}, sisa ${rp(s.income - s.expense)}${rate === null ? '' : ` (saving rate ${rate}%)`} | ${catText(s.cats)}`
+    return `- ${monthLabel(m)}: pemasukan ${formatRpRounded(s.income)}, pengeluaran ${formatRpRounded(s.expense)}, sisa ${formatRpRounded(s.income - s.expense)}${rate === null ? '' : ` (saving rate ${rate}%)`} | ${catText(s.cats)}`
   })
 
   const n = months.length
@@ -96,8 +96,8 @@ export function buildHistoryText(rows: HistoryRow[], monthlyIncome: number, now 
   return [
     `(${n} bulan berdata sebelum bulan ini; bulan tanpa transaksi tidak dicantumkan)`,
     ...lines,
-    `Rata-rata per bulan: pemasukan ${rp(avgIncome)}, pengeluaran ${rp(avgExpense)}, sisa ${rp(avgIncome - avgExpense)}`,
+    `Rata-rata per bulan: pemasukan ${formatRpRounded(avgIncome)}, pengeluaran ${formatRpRounded(avgExpense)}, sisa ${formatRpRounded(avgIncome - avgExpense)}`,
     `Rata-rata pengeluaran per kategori: ${catText(avgCats)}`,
-    `Pengeluaran tertinggi: ${monthLabel(months[highest])} (${rp(stats[highest].expense)}); terendah: ${monthLabel(months[lowest])} (${rp(stats[lowest].expense)})`,
+    `Pengeluaran tertinggi: ${monthLabel(months[highest])} (${formatRpRounded(stats[highest].expense)}); terendah: ${monthLabel(months[lowest])} (${formatRpRounded(stats[lowest].expense)})`,
   ].join('\n')
 }

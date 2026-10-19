@@ -55,7 +55,7 @@ async function handleReset() {
       </button>
     </template>
 
-    <RouterLink v-else to="/auth/forgot" class="btn-main" style="display:block;text-align:center;text-decoration:none;margin-top:8px;">
+    <RouterLink v-else to="/auth/forgot" class="btn-main link-block mt-2">
       Minta link baru
     </RouterLink>
   </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cappedPercent, formatRp } from '@/lib/format'
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -83,8 +84,7 @@ async function saveBudget() {
 }
 
 function resetDefault() { utamaPct.value = 50; jajanPct.value = 30; tabunganPct.value = 20; danaDaruratPct.value = 10 }
-function formatRp(v: number) { return 'Rp ' + v.toLocaleString('id-ID') }
-function pct(spent: number, bud: number) { return bud > 0 ? Math.min(100, Math.round((spent / bud) * 100)) : 0 }
+const pct = cappedPercent
 </script>
 
 <template>
@@ -116,10 +116,10 @@ function pct(spent: number, bud: number) { return bud > 0 ? Math.min(100, Math.r
         </div>
 
         <div class="alloc-rows">
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot" style="background:#378ADD"></span><span>Utama</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="utamaPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(utamaPct)) }}</span></div></div>
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot" style="background:#EF9F27"></span><span>Jajan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="jajanPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(jajanPct)) }}</span></div></div>
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot" style="background:#1D9E75"></span><span>Tabungan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="tabunganPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(tabunganPct)) }}</span></div></div>
-          <div class="alloc-row sub"><div class="alloc-info"><span class="alloc-dot" style="background:#D85A30"></span><span>↳ Dana Darurat</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="danaDaruratPct" min="0" :max="tabunganPct" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(danaDaruratPct)) }}</span></div></div>
+          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-utama"></span><span>Utama</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="utamaPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(utamaPct)) }}</span></div></div>
+          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-jajan"></span><span>Jajan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="jajanPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(jajanPct)) }}</span></div></div>
+          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-tabungan"></span><span>Tabungan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="tabunganPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(tabunganPct)) }}</span></div></div>
+          <div class="alloc-row sub"><div class="alloc-info"><span class="alloc-dot swatch-darurat"></span><span>↳ Dana Darurat</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="danaDaruratPct" min="0" :max="tabunganPct" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(danaDaruratPct)) }}</span></div></div>
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>

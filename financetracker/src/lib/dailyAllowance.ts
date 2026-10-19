@@ -30,7 +30,7 @@ export type Allowance = {
 
 const DAILY_CATEGORIES = ['utama', 'jajan']
 
-export const formatRupiah = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID')
+export { formatRpRounded as formatRupiah } from './format'
 
 export function computeAllowance(budget: BudgetLike | null, txs: TxLike[], now = dayjs()): Allowance | null {
   if (!budget) return null

@@ -1,5 +1,7 @@
 import { ref } from 'vue'
 import jsPDF from 'jspdf'
+import { categoryLabel } from '@/lib/categories'
+import { formatRpAbs } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
@@ -7,19 +9,6 @@ dayjs.locale('id')
 
 export function useExportPDF() {
   const exporting = ref(false)
-
-  function formatRp(val: number) {
-    return 'Rp ' + Math.abs(val).toLocaleString('id-ID')
-  }
-
-  function catLabel(cat: string) {
-    const m: Record<string, string> = {
-      utama: 'Utama', jajan: 'Jajan', tabungan: 'Tabungan',
-      dana_darurat: 'Dana Darurat', gaji: 'Gaji',
-      freelance: 'Freelance', bisnis: 'Bisnis', lainnya: 'Lainnya',
-    }
-    return m[cat] ?? cat
-  }
 
   async function exportMonthlyReport(userId: string, month: string, userName: string) {
     exporting.value = true
@@ -106,9 +95,9 @@ export function useExportPDF() {
       // ── SUMMARY CARDS ─────────────────────────────────────────────
       const cardW = (W - margin * 2 - 12) / 4
       const cards = [
-        { label: 'Pemasukan',  value: formatRp(totalIncome),  color: GREEN },
-        { label: 'Pengeluaran',value: formatRp(totalExpense), color: RED },
-        { label: 'Sisa Saldo', value: formatRp(balance),      color: balance >= 0 ? GREEN : RED },
+        { label: 'Pemasukan',  value: formatRpAbs(totalIncome),  color: GREEN },
+        { label: 'Pengeluaran',value: formatRpAbs(totalExpense), color: RED },
+        { label: 'Sisa Saldo', value: formatRpAbs(balance),      color: balance >= 0 ? GREEN : RED },
         { label: 'Transaksi',  value: `${transactions.length}x`, color: [55, 138, 221] as [number,number,number] },
       ]
       cards.forEach((card, i) => {
@@ -161,7 +150,7 @@ export function useExportPDF() {
           // Amounts
           setColor(GRAY)
           doc.setFontSize(7); doc.setFont('helvetica', 'normal')
-          doc.text(`${formatRp(spent)} / ${formatRp(budgeted)}`, margin + 92, y + 4)
+          doc.text(`${formatRpAbs(spent)} / ${formatRpAbs(budgeted)}`, margin + 92, y + 4)
 
           // Pct
           setColor(spent > budgeted ? RED : DARK)
@@ -197,7 +186,7 @@ export function useExportPDF() {
 
           setColor(GRAY)
           doc.setFontSize(7); doc.setFont('helvetica', 'normal')
-          doc.text(`${formatRp(g.current_amount)} / ${formatRp(g.target_amount)}`, margin + 100, y + 4)
+          doc.text(`${formatRpAbs(g.current_amount)} / ${formatRpAbs(g.target_amount)}`, margin + 100, y + 4)
 
           setColor(GREEN)
           doc.setFontSize(7); doc.setFont('helvetica', 'bold')
@@ -242,7 +231,7 @@ export function useExportPDF() {
         setColor(GRAY)
         doc.setFontSize(7); doc.setFont('helvetica', 'normal')
         doc.text(dayjs(tx.date).format('DD/MM/YY'), margin + 2, y + 4.2)
-        doc.text(catLabel(tx.category), margin + 24, y + 4.2)
+        doc.text(categoryLabel(tx.category), margin + 24, y + 4.2)
 
         const note = tx.note ? (tx.note.length > 30 ? tx.note.slice(0, 28) + '..' : tx.note) : '-'
         doc.text(note, margin + 60, y + 4.2)
@@ -253,7 +242,7 @@ export function useExportPDF() {
 
         setColor(tx.type === 'income' ? GREEN : RED)
         doc.text(
-          (tx.type === 'income' ? '+' : '−') + ' ' + formatRp(tx.amount),
+          (tx.type === 'income' ? '+' : '−') + ' ' + formatRpAbs(tx.amount),
           W - margin - 2, y + 4.2, { align: 'right' }
         )
 

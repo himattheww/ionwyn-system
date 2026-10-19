@@ -24,13 +24,13 @@ async function handleReset() {
     <!-- Success state -->
     <div v-if="sent" class="success-state">
       <div class="success-icon">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-accent)" stroke-width="1.5">
+        <svg class="text-accent" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
         </svg>
       </div>
       <h2 class="form-title">Cek emailmu</h2>
       <p class="form-sub">Link reset password sudah dikirim ke <strong>{{ email }}</strong>. Klik link tersebut untuk membuat password baru.</p>
-      <RouterLink to="/auth/login" class="btn-main" style="display:block;text-align:center;text-decoration:none;margin-top:24px;">
+      <RouterLink to="/auth/login" class="btn-main link-block mt-6">
         Kembali ke login
       </RouterLink>
     </div>

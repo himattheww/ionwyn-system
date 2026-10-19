@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatRp } from '@/lib/format'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -104,7 +105,6 @@ const lineOptions = computed<{ series: any; options: ApexOptions }>(() => {
   }
 })
 
-function formatRp(v: number) { return 'Rp ' + v.toLocaleString('id-ID') }
 </script>
 
 <template>

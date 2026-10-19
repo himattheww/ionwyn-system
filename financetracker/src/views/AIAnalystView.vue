@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { categoryLabel } from '@/lib/categories'
 import { ref, onMounted, nextTick, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -88,9 +89,8 @@ function buildContext() {
   const prevIncome = sumIncome(prevTx.value)
   const prevExpense= sumExpense(prevTx.value)
 
-  const catLabels: Record<string, string> = { utama: 'Utama', jajan: 'Jajan', tabungan: 'Tabungan', dana_darurat: 'Dana Darurat', gaji: 'Gaji', freelance: 'Freelance', bisnis: 'Bisnis', lainnya: 'Lainnya' }
   const fmtCat = (obj: Record<string, number>) =>
-    Object.entries(obj).map(([k, v]) => `${catLabels[k] ?? k}: Rp ${v.toLocaleString('id-ID')}`).join(', ')
+    Object.entries(obj).map(([k, v]) => `${categoryLabel(k)}: Rp ${v.toLocaleString('id-ID')}`).join(', ')
 
   return `
 DATA KEUANGAN USER: ${displayName.value}

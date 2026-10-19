@@ -110,3 +110,17 @@ a:hover { color: var(--color-accent-600); }
   color: var(--color-neutral-700); font-variant-numeric: tabular-nums;
 }
 .c-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.is-hidden { display: none; }
+.text-accent { color: var(--accent); }
+.bg-accent { background: var(--accent); }
+.bg-accent-wash { background: var(--accent-wash); }
+.w-full { width: 100%; }
+.mt-2 { margin-top: var(--space-2); }
+.mt-6 { margin-top: var(--space-5); }
+.mt-7 { margin-top: var(--space-6); }
+.link-block { display: block; text-align: center; text-decoration: none; }
+.swatch-utama { background: var(--mark-uang); }
+.swatch-jajan { background: var(--warn); }
+.swatch-tabungan { background: var(--ok); }
+.swatch-darurat { background: var(--accent); }

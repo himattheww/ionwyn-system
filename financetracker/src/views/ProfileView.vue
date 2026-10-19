@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatRp } from '@/lib/format'
 import { ref, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import type { Currency } from '@/lib/database.types'
@@ -44,7 +45,6 @@ function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function formatRp(v: number) { return 'Rp ' + v.toLocaleString('id-ID') }
 </script>
 
 <template>
@@ -65,7 +65,7 @@ function formatRp(v: number) { return 'Rp ' + v.toLocaleString('id-ID') }
             <label class="avatar-upload" :class="{ loading: avatarLoading }">
               <svg v-if="!avatarLoading" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
               <span v-else class="spinner-sm"></span>
-              <input type="file" accept="image/*" @change="onAvatarChange" style="display:none" />
+              <input class="is-hidden" type="file" accept="image/*" @change="onAvatarChange" />
             </label>
           </div>
           <div>

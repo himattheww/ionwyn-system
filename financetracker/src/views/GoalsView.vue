@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cappedPercent, formatRp } from '@/lib/format'
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -72,8 +73,7 @@ async function deleteGoal(id: string) {
 const activeGoals    = computed(() => goals.value.filter(g => !g.is_completed))
 const completedGoals = computed(() => goals.value.filter(g => g.is_completed))
 
-function progress(g: any) { return g.target_amount > 0 ? Math.min(100, Math.round((g.current_amount / g.target_amount) * 100)) : 0 }
-function formatRp(v: number) { return 'Rp ' + v.toLocaleString('id-ID') }
+const progress = (g: any) => cappedPercent(g.current_amount, g.target_amount)
 function monthsLeft(deadline: string) {
   if (!deadline) return null
   return Math.max(0, dayjs(deadline).diff(dayjs(), 'month'))
@@ -113,7 +113,7 @@ function progressColor(pct: number) {
       <!-- Empty -->
       <div v-if="goals.length === 0" class="empty-big">
         <div class="empty-icon">
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-accent)" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <svg class="text-accent" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         </div>
         <h3>Belum ada saving goals</h3>
         <p>Buat goal pertama untuk mulai melacak progres tabunganmu</p>
@@ -167,20 +167,20 @@ function progressColor(pct: number) {
         </div>
 
         <!-- Completed -->
-        <div v-if="completedGoals.length > 0" style="margin-top: 28px">
+        <div v-if="completedGoals.length > 0" class="mt-7">
           <p class="list-label">Selesai 🎉</p>
           <div class="goals-grid">
             <div v-for="g in completedGoals" :key="g.id" class="goal-card completed">
               <div class="goal-card-top">
-                <div class="goal-icon" style="background:var(--color-accent-100)">
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--color-accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div class="goal-icon bg-accent-wash">
+                  <svg class="text-accent" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </div>
                 <button class="btn-del" @click="deleteGoal(g.id)">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>
               <h3 class="goal-name">{{ g.name }}</h3>
-              <div class="progress-track"><div class="progress-bar" style="width:100%;background:var(--color-accent)"></div></div>
+              <div class="progress-track"><div class="progress-bar w-full bg-accent"></div></div>
               <p class="goal-target">{{ formatRp(g.target_amount) }} tercapai!</p>
             </div>
           </div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { cappedPercent, formatRpAbs, percentOf } from '@/lib/format'
+import { categoryLabel } from '@/lib/categories'
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -94,13 +96,8 @@ const categorySpend = computed(() => {
 
 const recentTx = computed(() => transactions.value.slice(0, 5))
 
-function formatRp(val: number) { return 'Rp ' + Math.abs(val).toLocaleString('id-ID') }
-function catLabel(cat: string) {
-  const m: Record<string,string> = { utama:'Utama', jajan:'Jajan', tabungan:'Tabungan', dana_darurat:'Dana darurat', gaji:'Gaji', freelance:'Freelance', bisnis:'Bisnis', lainnya:'Lainnya' }
-  return m[cat] ?? cat
-}
-function goalProgress(g: any) { return g.target_amount > 0 ? Math.min(100, Math.round((g.current_amount / g.target_amount) * 100)) : 0 }
-function pctSpent(cat: any) { return cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0 }
+const goalProgress = (g: any) => cappedPercent(g.current_amount, g.target_amount)
+const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
 </script>
 
 <template>
@@ -178,17 +175,17 @@ function pctSpent(cat: any) { return cat.budget > 0 ? Math.round((cat.spent / ca
       <section class="summary">
         <div class="summary-item">
           <span class="c-kicker">Pemasukan</span>
-          <span class="summary-value c-num income">{{ formatRp(totalIncome) }}</span>
+          <span class="summary-value c-num income">{{ formatRpAbs(totalIncome) }}</span>
           <span class="summary-sub">bulan ini</span>
         </div>
         <div class="summary-item">
           <span class="c-kicker">Pengeluaran</span>
-          <span class="summary-value c-num">{{ formatRp(totalExpense) }}</span>
+          <span class="summary-value c-num">{{ formatRpAbs(totalExpense) }}</span>
           <span class="summary-sub">bulan ini</span>
         </div>
         <div class="summary-item">
           <span class="c-kicker">Sisa saldo</span>
-          <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRp(balance) }}</span>
+          <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRpAbs(balance) }}</span>
           <span class="summary-sub">{{ balance >= 0 ? 'surplus' : 'defisit' }}</span>
         </div>
         <div class="summary-item">
@@ -214,7 +211,7 @@ function pctSpent(cat: any) { return cat.budget > 0 ? Math.round((cat.spent / ca
               <div class="rule-track">
                 <div class="rule-fill" :class="{ over: cat.spent > cat.budget }" :style="{ width: Math.min(pctSpent(cat), 100) + '%' }"></div>
               </div>
-              <span class="row-amounts c-num">{{ formatRp(cat.spent) }} <span class="muted">/ {{ formatRp(cat.budget) }}</span></span>
+              <span class="row-amounts c-num">{{ formatRpAbs(cat.spent) }} <span class="muted">/ {{ formatRpAbs(cat.budget) }}</span></span>
             </div>
           </div>
         </div>
@@ -233,7 +230,7 @@ function pctSpent(cat: any) { return cat.budget > 0 ? Math.round((cat.spent / ca
                 <div class="rule-track">
                   <div class="rule-fill accent" :style="{ width: goalProgress(g) + '%' }"></div>
                 </div>
-                <span class="row-amounts c-num">{{ formatRp(g.current_amount) }} <span class="muted">/ {{ formatRp(g.target_amount) }}</span></span>
+                <span class="row-amounts c-num">{{ formatRpAbs(g.current_amount) }} <span class="muted">/ {{ formatRpAbs(g.target_amount) }}</span></span>
               </div>
             </div>
           </div>
@@ -252,10 +249,10 @@ function pctSpent(cat: any) { return cat.budget > 0 ? Math.round((cat.spent / ca
           </div>
           <div v-for="tx in recentTx" :key="tx.id" class="tx-row">
             <span class="tx-date c-num">{{ dayjs(tx.date).format('DD MMM') }}</span>
-            <span>{{ catLabel(tx.category) }}</span>
+            <span>{{ categoryLabel(tx.category) }}</span>
             <span class="tx-note">{{ tx.note }}</span>
             <span class="tx-amount c-num right" :class="{ income: tx.type === 'income' }">
-              {{ tx.type === 'income' ? '+' : '−' }} {{ formatRp(tx.amount) }}
+              {{ tx.type === 'income' ? '+' : '−' }} {{ formatRpAbs(tx.amount) }}
             </span>
           </div>
         </div>

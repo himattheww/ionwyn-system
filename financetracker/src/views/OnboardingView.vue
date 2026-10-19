@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatAmount } from '@/lib/format'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -34,9 +35,6 @@ function onIncomeInput(e: Event) {
   incomeInput.value = raw ? Number(raw).toLocaleString('id-ID') : ''
 }
 
-function formatRp(val: number) {
-  return val.toLocaleString('id-ID')
-}
 
 function goToStep2() {
   if (!income.value || income.value <= 0) {
@@ -132,7 +130,7 @@ async function finish() {
         <div class="step2-header">
           <div>
             <h1 class="ob-title">Atur alokasi budget</h1>
-            <p class="ob-sub">Income kamu: <strong>Rp {{ formatRp(income ?? 0) }}</strong> / bulan</p>
+            <p class="ob-sub">Income kamu: <strong>Rp {{ formatAmount(income ?? 0) }}</strong> / bulan</p>
           </div>
           <button class="btn-reset" @click="resetToDefault">Reset 50/30/20</button>
         </div>
@@ -145,37 +143,37 @@ async function finish() {
         <div class="alloc-list">
           <div class="alloc-row">
             <div class="alloc-left">
-              <div class="alloc-dot" style="background:#378ADD"></div>
+              <div class="alloc-dot swatch-utama"></div>
               <div><p class="alloc-name">Utama</p><p class="alloc-desc">Kebutuhan pokok (makan, transport, tagihan)</p></div>
             </div>
             <div class="alloc-inputs">
               <div class="pct-input-wrap"><input type="number" v-model.number="utamaPct" min="0" max="100" /><span>%</span></div>
-              <div class="rp-display">Rp {{ formatRp(utamaAmount) }}</div>
+              <div class="rp-display">Rp {{ formatAmount(utamaAmount) }}</div>
             </div>
           </div>
           <div class="alloc-row">
             <div class="alloc-left">
-              <div class="alloc-dot" style="background:#EF9F27"></div>
+              <div class="alloc-dot swatch-jajan"></div>
               <div><p class="alloc-name">Jajan</p><p class="alloc-desc">Keinginan (hiburan, makan enak, shopping)</p></div>
             </div>
             <div class="alloc-inputs">
               <div class="pct-input-wrap"><input type="number" v-model.number="jajanPct" min="0" max="100" /><span>%</span></div>
-              <div class="rp-display">Rp {{ formatRp(jajanAmount) }}</div>
+              <div class="rp-display">Rp {{ formatAmount(jajanAmount) }}</div>
             </div>
           </div>
           <div class="alloc-row">
             <div class="alloc-left">
-              <div class="alloc-dot" style="background:#1D9E75"></div>
+              <div class="alloc-dot swatch-tabungan"></div>
               <div><p class="alloc-name">Tabungan</p><p class="alloc-desc">Saving goals + dana darurat</p></div>
             </div>
             <div class="alloc-inputs">
               <div class="pct-input-wrap"><input type="number" v-model.number="tabunganPct" min="0" max="100" /><span>%</span></div>
-              <div class="rp-display">Rp {{ formatRp(tabunganAmount) }}</div>
+              <div class="rp-display">Rp {{ formatAmount(tabunganAmount) }}</div>
             </div>
           </div>
           <div class="alloc-row sub-row">
             <div class="alloc-left">
-              <div class="alloc-dot" style="background:#D85A30"></div>
+              <div class="alloc-dot swatch-darurat"></div>
               <div>
                 <p class="alloc-name">↳ Dana Darurat <span class="sub-badge">bagian dari tabungan</span></p>
                 <p class="alloc-desc">Khusus untuk keadaan darurat</p>
@@ -183,7 +181,7 @@ async function finish() {
             </div>
             <div class="alloc-inputs">
               <div class="pct-input-wrap"><input type="number" v-model.number="danaDaruratPct" min="0" :max="tabunganPct" /><span>%</span></div>
-              <div class="rp-display">Rp {{ formatRp(danaDaruratAmount) }}</div>
+              <div class="rp-display">Rp {{ formatAmount(danaDaruratAmount) }}</div>
             </div>
           </div>
         </div>
@@ -194,9 +192,9 @@ async function finish() {
           <div class="bar-segment" :style="{ width: tabunganPct + '%', background: '#1D9E75' }"></div>
         </div>
         <div class="bar-legend">
-          <span><span class="legend-dot" style="background:#378ADD"></span>Utama {{ utamaPct }}%</span>
-          <span><span class="legend-dot" style="background:#EF9F27"></span>Jajan {{ jajanPct }}%</span>
-          <span><span class="legend-dot" style="background:#1D9E75"></span>Tabungan {{ tabunganPct }}%</span>
+          <span><span class="legend-dot swatch-utama"></span>Utama {{ utamaPct }}%</span>
+          <span><span class="legend-dot swatch-jajan"></span>Jajan {{ jajanPct }}%</span>
+          <span><span class="legend-dot swatch-tabungan"></span>Tabungan {{ tabunganPct }}%</span>
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatRp } from '@/lib/format'
+import { categoryLabel } from '@/lib/categories'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -177,7 +179,7 @@ async function saveTransaction() {
 
 async function deleteTransaction(id: string) {
   const tx = allTransactions.value.find(t => t.id === id)
-  const detail = tx ? `${catLabel(tx.category)} · ${formatRp(tx.amount)}${tx.note ? ` · ${tx.note}` : ''}` : undefined
+  const detail = tx ? `${categoryLabel(tx.category)} · ${formatRp(tx.amount)}${tx.note ? ` · ${tx.note}` : ''}` : undefined
   if (!(await confirmDelete('Hapus transaksi ini?', detail))) return
   if (tx?.pending) {
     removePending(id)
@@ -240,11 +242,6 @@ async function deleteRecurring(id: string) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────
-function formatRp(val: number) { return 'Rp ' + val.toLocaleString('id-ID') }
-function catLabel(cat: string) {
-  const m: Record<string,string> = { utama:'Utama', jajan:'Jajan', tabungan:'Tabungan', dana_darurat:'Dana Darurat', gaji:'Gaji', freelance:'Freelance', bisnis:'Bisnis', lainnya:'Lainnya' }
-  return m[cat] ?? cat
-}
 function daysUntil(date: string) {
   const diff = dayjs(date).diff(dayjs(), 'day')
   if (diff < 0) return 'Terlewat'
@@ -322,7 +319,7 @@ function daysUntilClass(date: string) {
               </svg>
             </div>
             <div class="tx-info">
-              <p class="tx-cat">{{ catLabel(tx.category) }}<span v-if="tx.recurring_id" class="recurring-tag">Berulang</span><span v-if="tx.pending" class="pending-tag">Pending</span></p>
+              <p class="tx-cat">{{ categoryLabel(tx.category) }}<span v-if="tx.recurring_id" class="recurring-tag">Berulang</span><span v-if="tx.pending" class="pending-tag">Pending</span></p>
               <p class="tx-meta">{{ dayjs(tx.date).format('DD MMM YYYY') }}<span v-if="tx.note"> · {{ tx.note }}</span></p>
             </div>
             <div class="tx-amount" :class="tx.type === 'income' ? 'income' : 'expense'">
@@ -354,7 +351,7 @@ function daysUntilClass(date: string) {
             </div>
             <div>
               <p class="rc-name">{{ r.name }}</p>
-              <p class="rc-meta">{{ catLabel(r.category) }} · {{ frequencyLabels[r.frequency] }}</p>
+              <p class="rc-meta">{{ categoryLabel(r.category) }} · {{ frequencyLabels[r.frequency] }}</p>
             </div>
           </div>
 
@@ -394,7 +391,7 @@ function daysUntilClass(date: string) {
           <button :class="['type-tab', { active: form.type === 'income' }]" @click="form.type = 'income'; onTypeChange()">Pemasukan</button>
         </div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="form.amount" placeholder="0" min="0" /></div></div>
-        <div class="form-field"><label>Kategori</label><select v-model="form.category"><option v-for="c in categoryOptions" :key="c" :value="c">{{ catLabel(c) }}</option></select></div>
+        <div class="form-field"><label>Kategori</label><select v-model="form.category"><option v-for="c in categoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option></select></div>
         <div class="form-field"><label>Tanggal</label><input type="date" v-model="form.date" /></div>
         <div class="form-field"><label>Catatan (opsional)</label><input type="text" v-model="form.note" placeholder="Misal: makan siang, belanja bulanan..." /></div>
         <div v-if="error" class="error-msg">{{ error }}</div>
@@ -418,7 +415,7 @@ function daysUntilClass(date: string) {
         </div>
         <div class="form-field"><label>Nama tagihan</label><input type="text" v-model="rForm.name" placeholder="Misal: Spotify, Kos, Cicilan HP..." /></div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="rForm.amount" placeholder="0" min="0" /></div></div>
-        <div class="form-field"><label>Kategori</label><select v-model="rForm.category"><option v-for="c in rCategoryOptions" :key="c" :value="c">{{ catLabel(c) }}</option></select></div>
+        <div class="form-field"><label>Kategori</label><select v-model="rForm.category"><option v-for="c in rCategoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option></select></div>
         <div class="form-field"><label>Frekuensi</label>
           <select v-model="rForm.frequency">
             <option v-for="(label, key) in frequencyLabels" :key="key" :value="key">{{ label }}</option>
