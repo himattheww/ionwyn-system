@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ionwyn</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/design/system.css" />
+    <link rel="stylesheet" href="/styles/shell.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="#/beranda/">Ionwyn</a>
+      <nav class="apps" id="apps" aria-label="Aplikasi">
+        <a href="#/beranda/" data-prefix="beranda" style="--mark: var(--accent)">Beranda</a>
+      </nav>
+      <a class="newtab" id="newtab" target="_blank" rel="noopener">
+        Tab baru<span aria-hidden="true"> ↗</span>
+      </a>
+    </header>
+    <iframe id="frame" title="Aplikasi"></iframe>
+    <script type="module" src="/lib/shell.js"></script>
+  </body>
+</html>
