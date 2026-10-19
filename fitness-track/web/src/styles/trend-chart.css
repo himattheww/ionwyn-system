@@ -1,0 +1,45 @@
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  font-family: var(--font-mono);
+}
+.grid {
+  stroke: var(--color-rule);
+}
+.axis-line {
+  stroke: var(--color-text);
+  stroke-width: 1;
+}
+.axis {
+  font-size: 15px;
+  fill: var(--color-neutral-700);
+}
+.line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+}
+.dot {
+  fill: var(--color-bg);
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+}
+.bar {
+  fill: var(--rule-soft);
+  stroke: var(--color-accent);
+  stroke-width: 1;
+}
+.bar.hit {
+  fill: var(--color-accent);
+}
+.target {
+  stroke: var(--accent);
+  stroke-dasharray: 6 4;
+  stroke-width: 1;
+}
+.target-label {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  fill: var(--color-accent-800);
+}

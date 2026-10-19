@@ -1,0 +1,37 @@
+[
+  {
+    "activityId": 1000000001,
+    "activityName": "Jakarta Running",
+    "startTimeLocal": "2026-10-12 05:30:00",
+    "startTimeGMT": "2026-10-11 22:30:00",
+    "activityType": { "typeId": 1, "typeKey": "running", "parentTypeId": 17 },
+    "distance": 6021.5,
+    "duration": 2160.4,
+    "averageSpeed": 2.787,
+    "averageHR": 142.0,
+    "calories": 410.0,
+    "ownerDisplayName": "fake-user"
+  },
+  {
+    "activityId": 1000000002,
+    "activityName": "Leg Day",
+    "startTimeLocal": "2026-10-13 19:00:00",
+    "startTimeGMT": "2026-10-13 12:00:00",
+    "activityType": { "typeId": 71, "typeKey": "strength_training", "parentTypeId": 29 },
+    "distance": 0.0,
+    "duration": 2700.0,
+    "averageSpeed": 0.0,
+    "averageHR": 110.0
+  },
+  {
+    "activityId": 1000000003,
+    "activityName": "Kolam Renang",
+    "startTimeLocal": "2026-10-14 06:00:00",
+    "startTimeGMT": "2026-10-13 23:00:00",
+    "activityType": { "typeId": 27, "typeKey": "lap_swimming", "parentTypeId": 26 },
+    "distance": 1000.0,
+    "duration": 1800.0,
+    "averageSpeed": 0.556,
+    "averageHR": null
+  }
+]

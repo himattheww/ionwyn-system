@@ -1,0 +1,12 @@
+{
+  "activityId": 1000000002,
+  "exerciseSets": [
+    { "exercises": [{ "category": "LATERAL_RAISE", "name": "CRAB_WALK", "probability": 100.0 }], "duration": 40.0, "repetitionCount": 20, "weight": null, "setType": "ACTIVE", "startTime": "2026-10-13T12:01:00.0", "wktStepIndex": 0, "messageIndex": 0 },
+    { "exercises": [], "duration": 60.0, "repetitionCount": null, "weight": null, "setType": "REST", "startTime": "2026-10-13T12:01:40.0", "wktStepIndex": 1, "messageIndex": 1 },
+    { "exercises": [{ "category": "LATERAL_RAISE", "name": "CRAB_WALK", "probability": 100.0 }], "duration": 41.0, "repetitionCount": 20, "weight": null, "setType": "ACTIVE", "startTime": "2026-10-13T12:02:40.0", "wktStepIndex": 0, "messageIndex": 2 },
+    { "exercises": [{ "category": "LATERAL_RAISE", "name": "CRAB_WALK", "probability": 100.0 }], "duration": 39.0, "repetitionCount": 20, "weight": null, "setType": "ACTIVE", "startTime": "2026-10-13T12:04:00.0", "wktStepIndex": 0, "messageIndex": 4 },
+    { "exercises": [{ "category": "SQUAT", "name": "GOBLET_SQUAT", "probability": 100.0 }], "duration": 45.0, "repetitionCount": 12, "weight": 16000.0, "setType": "ACTIVE", "startTime": "2026-10-13T12:06:00.0", "wktStepIndex": 2, "messageIndex": 5 },
+    { "exercises": [{ "category": "SQUAT", "name": "GOBLET_SQUAT", "probability": 100.0 }], "duration": 44.0, "repetitionCount": 10, "weight": 16000.0, "setType": "ACTIVE", "startTime": "2026-10-13T12:08:00.0", "wktStepIndex": 2, "messageIndex": 6 },
+    { "exercises": [{ "category": "PLANK", "name": null, "probability": 100.0 }], "duration": 45.0, "repetitionCount": null, "weight": -1.0, "setType": "ACTIVE", "startTime": "2026-10-13T12:10:00.0", "wktStepIndex": 3, "messageIndex": 7 }
+  ]
+}

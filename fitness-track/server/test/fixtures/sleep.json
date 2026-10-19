@@ -1,0 +1,13 @@
+{
+  "dailySleepDTO": {
+    "id": 1760300000000,
+    "userProfilePK": 12345678,
+    "calendarDate": "2026-10-13",
+    "sleepTimeSeconds": 25380,
+    "deepSleepSeconds": 5400,
+    "lightSleepSeconds": 14400,
+    "remSleepSeconds": 5580,
+    "sleepScores": { "overall": { "value": 78, "qualifierKey": "FAIR" } }
+  },
+  "restingHeartRate": 51
+}
