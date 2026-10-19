@@ -1005,3 +1005,7 @@ p.meta {
     gap: 12px;
   }
 }
+
+.grow-3 {
+  flex: 3;
+}

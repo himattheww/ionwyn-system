@@ -37,7 +37,7 @@ function select(value: string) {
 
     <div class="card">
       <div class="block-head">
-        <h2 style="margin: 0">Long run per minggu</h2>
+        <h2 class="m-0">Long run per minggu</h2>
         <span v-if="longRuns.data.value" class="muted">Target {{ formatNumber(longRuns.data.value.target_km) }} km · terjauh {{ formatNumber(longest) }} km</span>
       </div>
       <StateView
@@ -103,7 +103,7 @@ function select(value: string) {
         <div class="cells">
           <div v-for="s in strength.data.value?.slice(0, 4)" :key="s.garmin_id" class="card">
             <span class="kicker">{{ formatDay(s.date) }}</span>
-            <h2 style="margin: 0">{{ s.name ?? 'Latihan beban' }}</h2>
+            <h2 class="m-0">{{ s.name ?? 'Latihan beban' }}</h2>
             <p v-if="!s.exercises.length" class="muted">Detail set belum tersedia.</p>
             <ul class="list">
               <li v-for="e in s.exercises" :key="e.name" class="list-item">

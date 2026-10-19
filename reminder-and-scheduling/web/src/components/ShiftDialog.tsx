@@ -97,7 +97,7 @@ export function ShiftDialog({ item, items, settings, now, onShift, onSplit, onDr
           <>
             {parts.map((part, index) => (
               <div className="row" key={index}>
-                <label style={{ flex: 3 }}>
+                <label className="grow-3">
                   Judul
                   <input
                     value={part.title}

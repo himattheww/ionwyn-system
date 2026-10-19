@@ -6,8 +6,8 @@ defineEmits<{ retry: [] }>()
 <template>
   <div v-if="loading" class="skeleton" role="status">
     <span class="muted"><i class="ph ph-circle-notch spin" /> Memuat…</span>
-    <span class="skeleton-line" style="width: 30%" />
-    <span class="skeleton-line skeleton-line-lg" style="width: 75%" />
+    <span class="skeleton-line w-30" />
+    <span class="skeleton-line skeleton-line-lg w-75" />
     <span class="skeleton-block" />
     <span class="skeleton-block" />
   </div>

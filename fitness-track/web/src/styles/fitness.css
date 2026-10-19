@@ -269,3 +269,6 @@ a.notice { text-decoration: none; color: var(--ink); font-family: var(--font-dis
 
 .steps { padding-left: 1.2rem; margin: 0 0 0.75rem; }
 .back { display: inline-block; text-decoration: none; font-size: 14px; }
+.m-0 { margin: 0; }
+.min-w-200 { min-width: 200px; }
+.inline-group { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }

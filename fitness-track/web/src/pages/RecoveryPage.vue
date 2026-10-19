@@ -71,7 +71,7 @@ async function saveManual() {
       <div class="grid-2">
         <div class="card">
           <div class="block-head">
-            <h2 style="margin: 0">Tidur (jam)</h2>
+            <h2 class="m-0">Tidur (jam)</h2>
             <span class="muted">rata-rata <strong>{{ formatMinutes(sleepAvg == null ? null : Math.round(sleepAvg)) }}</strong></span>
           </div>
           <TrendChart v-if="hasData" :points="sleepPoints" unit="jam" />
@@ -79,7 +79,7 @@ async function saveManual() {
         </div>
         <div class="card">
           <div class="block-head">
-            <h2 style="margin: 0">RHR (bpm)</h2>
+            <h2 class="m-0">RHR (bpm)</h2>
             <span class="muted">rata-rata <strong>{{ formatNumber(rhrAvg, 0) }} bpm</strong></span>
           </div>
           <TrendChart v-if="hasData" :points="rhrPoints" unit="bpm" />
@@ -130,7 +130,7 @@ async function saveManual() {
 
           <form class="card form" @submit.prevent="saveManual">
             <div>
-              <h2 style="margin: 0">Isi manual (cadangan)</h2>
+              <h2 class="m-0">Isi manual (cadangan)</h2>
               <p class="muted">Pakai hanya kalau sinkron Garmin gagal. Data Garmin di tanggal yang sama akan menimpa isian ini.</p>
             </div>
             <div class="form-row form">

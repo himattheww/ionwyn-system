@@ -111,7 +111,7 @@ const weightNote = computed(() => {
         <div class="kicker">Berat · makan · kondisi — diisi manual</div>
         <h1>Catat harian</h1>
       </div>
-      <label class="field" style="min-width: 200px">
+      <label class="field min-w-200">
         Tanggal
         <input v-model="date" type="date" :max="today()" required @change="fill" />
       </label>
@@ -163,7 +163,7 @@ const weightNote = computed(() => {
           </div>
         </div>
 
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4)">
+        <div class="inline-group">
           <button class="btn-lg" :disabled="saving">Simpan {{ formatDay(date) }}</button>
           <p v-if="message" :class="['toast', { 'toast-error': message.error }]">{{ message.text }}</p>
         </div>
