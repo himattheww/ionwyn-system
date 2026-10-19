@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beranda</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/design/system.css" />
+    <link rel="stylesheet" href="/styles/beranda.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow" id="dateline">Memuat…</p>
+          <h1>Hari ini</h1>
+        </div>
+        <button class="btn btn-quiet btn-sm" id="refresh" type="button">Muat ulang</button>
+      </header>
+
+      <section class="strip" id="strip" aria-label="Angka utama"></section>
+
+      <div class="columns">
+        <div class="column" id="left"></div>
+        <div class="column" id="right"></div>
+      </div>
+
+      <section class="links">
+        <div class="section-title">
+          <span class="index">07</span>
+          <h3>Hubungan antar-aplikasi</h3>
+          <button class="btn btn-sm aside" id="run" type="button">Jalankan sekarang</button>
+        </div>
+        <table class="ledger">
+          <thead>
+            <tr><th>Hubungan</th><th>Terakhir jalan</th><th>Hasil</th></tr>
+          </thead>
+          <tbody id="integrations"></tbody>
+        </table>
+      </section>
+    </main>
+    <script type="module" src="/lib/beranda.js"></script>
+  </body>
+</html>

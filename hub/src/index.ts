@@ -3,10 +3,12 @@ import { resolve } from 'node:path'
 import { config, root } from './config.ts'
 import { apps, gateway } from './gateway.ts'
 import { integrationStatus, runIntegrations, scheduleIntegrations } from './integrations.ts'
+import { todaySummary } from './today.ts'
 
 const app = express()
 
 app.get('/hub/api/apps', (_req, res) => res.json(apps.map(a => ({ prefix: a.prefix, label: a.label }))))
+app.get('/hub/api/today', async (_req, res) => res.json(await todaySummary()))
 app.get('/hub/api/integrations', (_req, res) => res.json(integrationStatus()))
 app.post('/hub/api/integrations/run', async (_req, res) => {
   await runIntegrations()
