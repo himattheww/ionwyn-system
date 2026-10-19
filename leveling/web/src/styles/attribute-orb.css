@@ -1,0 +1,23 @@
+.orb {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+canvas {
+  width: 220px;
+  height: 220px;
+}
+
+figcaption {
+  max-width: 220px;
+  font: 400 var(--text-xs) / 1.4 var(--font-mono);
+  color: var(--ink-3);
+}
+
+@media (max-width: 640px) {
+  canvas {
+    width: 180px;
+    height: 180px;
+  }
+}

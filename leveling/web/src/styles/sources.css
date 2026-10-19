@@ -1,0 +1,42 @@
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.message {
+  font-style: italic;
+  color: var(--color-accent-700);
+}
+.message.failed {
+  color: var(--color-accent-2-700);
+}
+.label {
+  font-weight: 500;
+}
+.error-text {
+  font-size: 13px;
+  color: var(--color-accent-2-700);
+  max-width: 320px;
+}
+.rules-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.rules {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 360px;
+  overflow: auto;
+}

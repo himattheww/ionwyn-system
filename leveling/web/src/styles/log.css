@@ -1,0 +1,43 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+}
+.field.date {
+  width: 170px;
+}
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.sum {
+  font-size: 16px;
+}
+.sum strong {
+  font-weight: 500;
+}
+.capped {
+  color: var(--color-accent-2-700);
+}
+.none {
+  color: var(--color-neutral-500);
+}
+.note {
+  color: var(--color-neutral-700);
+  font-style: italic;
+}
+.awarded {
+  font-weight: 500;
+}
+.cap {
+  text-transform: capitalize;
+}

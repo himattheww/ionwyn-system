@@ -1,0 +1,9 @@
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.state-error .lede {
+  color: var(--color-accent-2-700);
+}

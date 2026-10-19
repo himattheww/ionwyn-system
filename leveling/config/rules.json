@@ -1,0 +1,100 @@
+{
+  "attributes": {
+    "stamina": { "dailyCap": 150, "target30d": 1800 },
+    "intelek": { "dailyCap": null, "target30d": 1500 },
+    "kebijaksanaan": { "dailyCap": null, "target30d": 900 },
+    "disiplin": { "dailyCap": null, "target30d": 1800 },
+    "kekayaan": { "dailyCap": null, "target30d": 600 }
+  },
+  "stamina": {
+    "activityTypes": {
+      "run": ["running", "treadmill_running", "trail_running", "track_running", "indoor_running"],
+      "strength": ["strength_training"],
+      "swim": ["lap_swimming", "open_water_swimming", "swimming"],
+      "ignore": []
+    },
+    "run": { "base": 20, "perKm": 2, "dailyCap": 80, "scheduledBonus": 10, "weeklyLongestBonus": 30 },
+    "strength": { "perSession": 40, "maxPerDay": 1 },
+    "otherSport": { "perSession": 25, "maxPerDay": 1 },
+    "sleep": { "minHours": 7, "exp": 10 },
+    "protein": { "exp": 10 }
+  },
+  "intelek": {
+    "minuteExp": 1,
+    "minuteDailyCap": 120,
+    "studyCaseDone": 100,
+    "topicDone": 50,
+    "trackCategories": {},
+    "doneStatuses": {
+      "topic": ["selesai", "2"],
+      "studyCase": ["selesai", "2"]
+    }
+  },
+  "kebijaksanaan": {
+    "entry": 30,
+    "backfilledEntry": 15,
+    "streakBonus": 50,
+    "streakEvery": 7,
+    "streakWindowDays": 7,
+    "streakMaxMissing": 1
+  },
+  "disiplin": {
+    "scheduleItem": 10,
+    "scheduleDailyCap": 80,
+    "workday": 15,
+    "linkedActivityTypes": ["run_done", "strength_done", "swim_done", "diary_done", "learn_done", "learn:", "work_done"]
+  },
+  "kekayaan": {
+    "financeDay": 15,
+    "budgetKept": 150,
+    "stockDay": 15
+  },
+  "level": {
+    "overallBase": 500,
+    "overallStep": 250,
+    "attributeBase": 200,
+    "attributeStep": 100,
+    "tiers": [
+      { "name": "Novice", "from": 1 },
+      { "name": "Adept", "from": 10 },
+      { "name": "Expert", "from": 20 },
+      { "name": "Master", "from": 35 }
+    ]
+  },
+  "class": {
+    "windowDays": 30,
+    "secondRatio": 0.8,
+    "balancedMinScore": 0.5,
+    "balancedMaxRatio": 1.25,
+    "subclassMinShare": 0.5
+  },
+  "quest": {
+    "lookbackWeeks": 4,
+    "multiplier": 1.1,
+    "exp": 100,
+    "runs": { "min": 3, "max": 6 },
+    "minutes": { "min": 120, "max": 600 },
+    "nights": { "min": 5, "max": 7 }
+  },
+  "achievements": [
+    { "id": "run-10k", "name": "Lari 10 km", "kind": "run_distance", "value": 10 },
+    { "id": "run-half", "name": "Half marathon", "kind": "run_distance", "value": 21.1 },
+    { "id": "run-full", "name": "Marathon", "kind": "run_distance", "value": 42.2 },
+    { "id": "run-long-target", "name": "Target long run", "kind": "run_long_target" },
+    { "id": "strength-10", "name": "10 sesi beban", "kind": "strength_sessions", "value": 10 },
+    { "id": "strength-50", "name": "50 sesi beban", "kind": "strength_sessions", "value": 50 },
+    { "id": "strength-100", "name": "100 sesi beban", "kind": "strength_sessions", "value": 100 },
+    { "id": "diary-7", "name": "Streak catatan 7 hari", "kind": "diary_streak", "value": 7 },
+    { "id": "diary-30", "name": "Streak catatan 30 hari", "kind": "diary_streak", "value": 30 },
+    { "id": "diary-100", "name": "Streak catatan 100 hari", "kind": "diary_streak", "value": 100 },
+    { "id": "case-1", "name": "Study case pertama", "kind": "case_done", "value": 1 },
+    { "id": "topic-1", "name": "Topik pertama", "kind": "topic_done", "value": 1 },
+    { "id": "topic-10", "name": "10 topik selesai", "kind": "topic_done", "value": 10 },
+    { "id": "learn-100h", "name": "100 jam belajar", "kind": "learn_hours", "value": 100 },
+    { "id": "schedule-100", "name": "100 item jadwal", "kind": "schedule_items", "value": 100 },
+    { "id": "finance-30", "name": "30 hari mencatat keuangan", "kind": "finance_streak", "value": 30 },
+    { "id": "level-10", "name": "Level 10", "kind": "level", "value": 10 },
+    { "id": "level-20", "name": "Level 20", "kind": "level", "value": 20 },
+    { "id": "level-35", "name": "Level 35", "kind": "level", "value": 35 }
+  ]
+}

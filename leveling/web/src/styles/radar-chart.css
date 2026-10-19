@@ -1,0 +1,23 @@
+.radar {
+  width: 100%;
+  max-width: 340px;
+}
+.ring {
+  fill: none;
+  stroke: var(--color-neutral-300);
+}
+.shape {
+  fill: var(--color-accent);
+  fill-opacity: 0.18;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+text {
+  fill: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 13px;
+}
+.level {
+  fill: var(--color-accent-700);
+  font-weight: 500;
+}

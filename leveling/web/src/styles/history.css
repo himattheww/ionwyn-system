@@ -1,0 +1,50 @@
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.day {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+.date {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-top: 4px;
+}
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.item {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+}
+.kicker {
+  color: var(--color-neutral-700);
+}
+.kicker.level,
+.kicker.tier,
+.kicker.achievement {
+  color: var(--color-accent-700);
+}
+.kicker.quest {
+  color: var(--color-accent-2-700);
+}
+.text {
+  font-size: 18px;
+  line-height: 1.25;
+}
+.text.major {
+  font-size: 24px;
+}
+@media (max-width: 640px) {
+  .day {
+    grid-template-columns: 1fr;
+  }
+}
