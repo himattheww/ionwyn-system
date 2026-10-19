@@ -1,0 +1,24 @@
+.page { padding: 32px; max-width: 1100px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+.page-title { font-family: var(--font-heading); font-size: 26px; font-weight: 400; color: var(--color-text-primary); }
+.page-sub { font-size: 13px; color: var(--color-text-tertiary); margin-top: 2px; }
+.controls { display: flex; gap: 8px; }
+.month-pick { padding: 7px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: 8px; font-size: 13px; background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.month-pick.small { font-size: 12px; padding: 4px 8px; }
+.empty-state { font-size: 13px; color: var(--color-text-tertiary); padding: 24px 0; }
+
+.chart-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+.chart-card.full { }
+.chart-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 16px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.compare-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.compare-label { font-size: 12px; color: var(--color-text-secondary); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 16px; max-width: 100%; }
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-title { font-size: 22px; }
+  .chart-card { padding: 14px; }
+  .two-col { grid-template-columns: 1fr; }
+}

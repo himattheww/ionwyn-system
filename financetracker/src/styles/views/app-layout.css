@@ -1,0 +1,110 @@
+.app-shell { display: flex; min-height: 100vh; width: 100%; background: var(--color-bg); color: var(--color-text); overflow-x: hidden; }
+
+.mobile-only { display: none; }
+.desktop-only { display: flex; }
+
+.sidebar {
+  width: 232px; flex-shrink: 0; position: sticky; top: 0; height: 100vh; z-index: 50;
+  display: flex; flex-direction: column; box-sizing: border-box;
+  background: var(--color-bg); border-right: 1px solid var(--color-divider);
+  transition: width 0.2s ease, transform 0.25s ease;
+}
+.sidebar.collapsed { width: 64px; }
+
+.sidebar-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2);
+  padding: var(--space-4) var(--space-3) var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-divider); min-height: 72px; box-sizing: border-box;
+}
+.sidebar.collapsed .sidebar-top { flex-direction: column; align-items: center; padding-inline: var(--space-2); }
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand-name { font-family: var(--font-heading); font-size: 26px; font-weight: 400; letter-spacing: -0.01em; line-height: 1; color: var(--color-text); }
+.brand-sub { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent-700); white-space: nowrap; }
+.brand-mark { font-family: var(--font-heading); font-size: 26px; line-height: 1; color: var(--color-accent-700); }
+
+.icon-btn {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; height: 32px; padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--color-neutral-700); border-radius: var(--radius-md);
+}
+.icon-btn:hover { color: var(--color-accent-700); background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+
+.sidebar-nav { flex: 1; padding: var(--space-3) var(--space-2); display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: var(--space-2); padding: 8px 10px;
+  border-radius: var(--radius-md); text-decoration: none; font-size: 14px;
+  color: var(--color-text); white-space: nowrap; overflow: hidden;
+}
+.nav-item:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.nav-item.active { color: var(--color-accent-700); background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.sidebar.collapsed .nav-item { justify-content: center; }
+.nav-icon { width: 17px; height: 17px; flex-shrink: 0; }
+.nav-label { flex: 1; overflow: hidden; }
+.nav-num { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--color-neutral-600); }
+
+.sidebar-footer { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: var(--space-2); }
+.sidebar.collapsed .sidebar-footer { padding-inline: var(--space-2); align-items: center; }
+.user-pill { display: flex; align-items: center; gap: var(--space-2); text-decoration: none; color: var(--color-text); border-radius: var(--radius-md); min-width: 0; }
+.user-pill:hover, .user-pill.active { color: var(--color-accent-700); }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+  border: 1px solid var(--color-accent); color: var(--color-accent-700);
+  font-family: var(--font-heading); font-size: 13px; font-weight: 600;
+}
+.avatar.active { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.user-info { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.user-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-meta { font-size: 11px; color: var(--color-neutral-600); }
+.footer-actions { display: flex; gap: var(--space-1); }
+.footer-actions.stacked { flex-direction: column; }
+
+.drawer-overlay { display: none; position: fixed; inset: 0; z-index: 40; background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent); }
+
+.mobile-topbar {
+  display: none; position: sticky; top: 0; z-index: 30; width: 100%; box-sizing: border-box;
+  align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+  background: var(--color-bg); border-bottom: 1px solid var(--color-divider);
+}
+.mobile-topbar .brand-name { font-size: 22px; }
+.mobile-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+  background: var(--color-bg); border-top: 1px solid var(--color-divider);
+  padding: 6px 4px; padding-bottom: max(6px, env(safe-area-inset-bottom));
+  justify-content: space-around;
+}
+.bottom-nav-item {
+  flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 4px; text-decoration: none; color: var(--color-neutral-600); border-top: 1px solid transparent; margin-top: -7px; padding-top: 10px;
+}
+.bottom-nav-item.active { color: var(--color-accent-700); border-top-color: var(--color-accent); }
+.bn-icon { width: 20px; height: 20px; }
+.bn-label { font-size: 10.5px; white-space: nowrap; }
+
+.offline-bar {
+  position: sticky; top: 0; z-index: 5; padding: 6px 16px; text-align: center;
+  font-size: 12px; font-style: italic; color: var(--color-accent-800);
+  background: var(--color-bg); border-bottom: 1px solid var(--color-accent);
+}
+
+.main-content { flex: 1; min-width: 0; max-width: 100%; overflow-x: hidden; overflow-y: auto; }
+
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column; }
+  .desktop-only { display: none; }
+  .mobile-only { display: flex; }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; height: 100vh; width: 78vw; max-width: 280px;
+    transform: translateX(-100%); box-shadow: var(--shadow-lg);
+  }
+  .sidebar.collapsed { width: 78vw; max-width: 280px; }
+  .sidebar.drawer-open { transform: translateX(0); }
+  .drawer-overlay { display: block; }
+  .mobile-topbar { display: flex; }
+  .bottom-nav { display: flex; }
+  .main-content { padding-bottom: calc(64px + env(safe-area-inset-bottom)); width: 100%; }
+}
