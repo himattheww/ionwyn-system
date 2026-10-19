@@ -1,0 +1,29 @@
+{
+  "name": "ionwyn-system",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "build": "node --env-file-if-exists=.env scripts/build.mjs",
+    "start": "node --env-file-if-exists=.env scripts/run.mjs",
+    "backup": "node --env-file-if-exists=.env scripts/backup.mjs",
+    "test": "node scripts/test.mjs",
+    "test:hub": "vitest run --root hub",
+    "typecheck": "tsc -p hub/tsconfig.json",
+    "screenshots": "node scripts/screenshots.mjs",
+    "compare": "node scripts/compare-screenshots.mjs"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  }
+}
