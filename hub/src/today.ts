@@ -18,9 +18,12 @@ async function jadwal(today: string) {
   const store = await scheduleStore()
   const items = (await store.itemsBetween(today, today)).filter(i => i.status !== 'digeser')
   const pending = unanswered(await store.itemsBetween(weekStart(today), today), new Date())
+  const { remindBeforeMin, eveningSummary } = await store.settings()
   return {
     items: items.map(i => ({ title: i.title, startTime: i.startTime, durationMin: i.durationMin, status: i.status, activityType: i.activityType })),
-    unanswered: pending.length
+    unanswered: pending.length,
+    remindBeforeMin,
+    eveningSummary
   }
 }
 
