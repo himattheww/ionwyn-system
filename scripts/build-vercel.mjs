@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { build } from 'esbuild'
 import { builds, root } from './apps.mjs'
@@ -56,7 +56,7 @@ writeFileSync(
       handler: 'index.mjs',
       launcherType: 'Nodejs',
       maxDuration: 60,
-      environment: { RULES_JSON: readFileSync(resolve(root, 'leveling/config/rules.json'), 'utf8'), GARMIN_SYNC: 'false', AI_PROVIDER: 'off', PG_POOL_MAX: '1' }
+      environment: { GARMIN_SYNC: 'false', AI_PROVIDER: 'off', PG_POOL_MAX: '1' }
     },
     null,
     2

@@ -8,6 +8,7 @@ import { createApp as learnApp } from '../learning/server/src/app.ts'
 import { createApp as levelingApp } from '../leveling/server/src/app.ts'
 import { openDb as levelingDb } from '../leveling/server/src/db.ts'
 import { readEnv } from '../leveling/server/src/env.ts'
+import rules from '../leveling/config/rules.json' with { type: 'json' }
 import { authRoutes, requireOwner } from './auth.ts'
 
 const databaseUrl = process.env.DATABASE_URL
@@ -32,7 +33,7 @@ app.use(requireOwner)
 app.use(hubRoutes())
 app.use('/catatan', catatanApp(connect(databaseUrl)))
 app.use('/fit', fitApp(fitDb(databaseUrl)))
-app.use('/leveling', levelingApp(levelingDb(databaseUrl), readEnv()).app)
+app.use('/leveling', levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) }).app)
 app.use('/learn', learnApp())
 app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
 
