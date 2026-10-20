@@ -82,6 +82,45 @@ Di setiap aplikasi:
 
 Leveling punya orb three.js (`leveling/web/src/lib/orb.ts`). Bentuknya mengikuti skor lima atribut dan dimuat terpisah (lazy), jadi tidak memperlambat halaman lain.
 
+## Deploy ke Vercel + Supabase
+
+Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai database yang sama, jadi yang kamu kerjakan dari laptop langsung terlihat online.
+
+| Bagian | Di Vercel | Di laptop |
+| --- | --- | --- |
+| Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start`, localhost:4000 |
+| API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
+| Sinkron Garmin | Tidak bisa, tombolnya memberi tahu | `npm run garmin:sync -w fitness-track` atau tombol Sinkron di versi lokal |
+| AI Learn (buat jalur, study case) | Tidak bisa (`AI_PROVIDER=off`) | Pakai langganan Claude (`AI_PROVIDER=cli`) |
+| Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
+
+**Login.** Versi Vercel meminta login sekali di `/masuk/` dengan akun Supabase-mu. Hanya user dengan id `OWNER_USER_ID` yang diterima. Sesi disimpan di cookie HttpOnly untuk semua API, dan diteruskan ke Jadwal dan Keuangan. Versi lokal tetap tanpa login.
+
+**Langkah pertama kali:**
+1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`.
+2. Isi `DATABASE_URL` di `.env` root dengan connection string **Session pooler** (Supabase → Connect, port 5432). Transaction pooler (6543) macet saat query paralel.
+3. Pindahkan data lama dari SQLite: `node --env-file=.env scripts/migrate-sqlite.mjs`. Aman diulang, tidak membuat duplikat.
+4. Di Vercel: import repo ini. `vercel.json` sudah mengatur install dan build. Isi Environment Variables:
+
+   | Variabel | Isi |
+   | --- | --- |
+   | `DATABASE_URL` | connection string Session pooler (port 5432) |
+   | `OWNER_USER_ID` | id user Supabase-mu |
+   | `INTERNAL_SECRET` | string acak panjang, sama dengan yang dipakai `pg_cron` |
+   | `HUB_APP_BASE` | `https://<domain-vercel-mu>` |
+   | `FINANCE_SUPABASE_URL`, `FINANCE_SUPABASE_KEY`, `FINANCE_EMAIL`, `FINANCE_PASSWORD` | sama dengan `.env` root |
+   | `SCHEDULE_SUPABASE_URL`, `SCHEDULE_SUPABASE_KEY`, `SCHEDULE_EMAIL`, `SCHEDULE_PASSWORD` | sama dengan `.env` root |
+   | `TIMESHEET_API_URL`, `TIMESHEET_API_KEY` | sama dengan `.env` root |
+   | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | untuk Learn, sama dengan `learning/server/.env` |
+   | `SUPABASE_ANON_KEY` | anon key, untuk build Jadwal |
+   | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | untuk build Keuangan |
+   | `LEARN_API_URL` | `https://<domain-vercel-mu>/learn` |
+   | `FIT_ENABLED`, `DIARY_ENABLED`, `LEARN_ENABLED`, `SCHEDULE_ENABLED`, `FINANCE_ENABLED`, `TIMESHEET_ENABLED` | `true` |
+5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job.
+6. Di Supabase → Authentication → Sign In / Providers, matikan pendaftaran user baru.
+
+Cek build Vercel di laptop tanpa deploy: `node scripts/build-vercel.mjs`. Hasilnya di `.vercel/output` (tidak masuk git).
+
 ## Struktur folder
 
 ```
