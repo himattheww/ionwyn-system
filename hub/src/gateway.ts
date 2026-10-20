@@ -62,31 +62,8 @@ function spa(dir: string, label: string) {
   return router
 }
 
-async function timesheetApi(req: Request, res: Response) {
-  const { url, key } = config.timesheet
-  if (!url || !key) return res.json({ error: 'TIMESHEET_API_URL atau TIMESHEET_API_KEY belum diisi di .env root.' })
-  let body: Record<string, unknown>
-  try {
-    body = JSON.parse(req.body)
-  } catch {
-    return res.json({ error: 'Body bukan JSON.' })
-  }
-  try {
-    const reply = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ ...body, apiKey: key }),
-      signal: AbortSignal.timeout(60_000)
-    })
-    res.status(reply.status).type('application/json').send(await reply.text())
-  } catch {
-    res.json({ error: 'Apps Script tidak bisa dihubungi.' })
-  }
-}
-
 export function gateway() {
   const router = Router()
-  router.post('/timesheet/api', express.text({ type: '*/*', limit: '100kb' }), timesheetApi)
   for (const app of apps) {
     const mount = `/${app.prefix}`
     router.use((req, res, next) => (req.path === mount ? res.redirect(`${mount}/${req.url.slice(mount.length)}`) : next()))

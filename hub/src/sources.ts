@@ -4,7 +4,9 @@ import { fitKind, type Fact } from './match.ts'
 export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response
   try {
-    response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })
+    const headers = new Headers(init?.headers)
+    if (config.internalSecret && config.appBase && url.startsWith(config.appBase)) headers.set('x-ionwyn-internal', config.internalSecret)
+    response = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(20_000) })
   } catch (error) {
     throw new Error(`Tidak bisa terhubung ke ${new URL(url).host}: ${error instanceof Error ? error.message : error}`)
   }
