@@ -63,6 +63,96 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - **Satu tampilan.** Semua aplikasi memakai sistem desain yang sama di `design/`, dengan mode terang dan gelap.
 - **Satu backup.** `npm run backup` menyimpan semua tabel, data Timesheet, dan semua `.env`.
 
+## Alur sistem
+
+### Komponen dan arah data
+
+```mermaid
+flowchart TB
+  U["Browser / HP"]
+  TG["Telegram"]
+
+  subgraph Vercel
+    S["Halaman statis<br/>Beranda + 7 aplikasi"]
+    F["Vercel Function<br/>API Catatan, Fitness, Leveling, Learn, Beranda"]
+  end
+
+  W["Webhook bot FinTrack<br/>project Vercel terpisah"]
+
+  subgraph Supabase
+    A["Auth"]
+    DB[("Postgres<br/>semua tabel aplikasi")]
+    C["pg_cron"]
+  end
+
+  GS["Apps Script + Google Sheets<br/>Timesheet"]
+  LP["Laptop<br/>sinkron Garmin, AI Learn, versi lokal"]
+  GC["Garmin Connect"]
+
+  U --> S
+  U -->|login sekali| A
+  U -->|API aplikasi| F
+  U -->|Jadwal dan Keuangan| DB
+  F --> DB
+  F -->|absensi| GS
+  C -->|tiap 10 dan 30 menit| F
+  TG -->|bot keuangan| W --> DB
+  TG -->|bot absensi| GS
+  GC -->|aktivitas, tidur, RHR| LP
+  LP --> DB
+```
+
+- Browser memuat halaman statis dari Vercel, login sekali ke Supabase Auth, lalu memanggil API aplikasi lewat satu Vercel Function. Jadwal dan Keuangan membaca Supabase langsung dari browser dengan sesi login yang sama.
+- Semua data aplikasi ada di satu database Postgres. Timesheet tetap di Google Sheets lewat Apps Script.
+- `pg_cron` di Supabase memanggil Vercel Function secara terjadwal untuk menjalankan integrasi dan menghitung ulang Leveling.
+- Laptop mengambil data dari Garmin Connect dan menulisnya langsung ke database. AI Learn juga berjalan dari laptop.
+- Bot Telegram Keuangan berjalan di project Vercel FinTrack sendiri, bot Telegram Timesheet di Apps Script.
+
+### Hubungan antar-aplikasi
+
+```mermaid
+flowchart LR
+  GC["Garmin Connect"] --> FIT["Fitness"]
+  FIT -->|"H4 lari, beban, renang selesai"| J["Jadwal"]
+  FIT -->|"H7 pola lari jadi rutinitas"| J
+  CM["Catatan Malam"] -->|"H5 jurnal malam selesai"| J
+  LE["Learn"] -->|"H6 sesi belajar selesai"| J
+  TS["Timesheet"] -->|"H8 hadir kerja selesai"| J
+
+  FIT -->|H1| LV["Leveling"]
+  CM -->|H1| LV
+  LE -->|"H1, H3"| LV
+  TS -->|H1| LV
+  KU["Keuangan"] -->|H1| LV
+  J -->|"H1, H2 tanpa exp ganda"| LV
+```
+
+Panah ke Jadwal artinya item Jadwal dengan tipe aktivitas yang cocok ditandai selesai otomatis. Panah ke Leveling artinya aktivitas itu menjadi exp. Beranda membaca ringkasan dari semua aplikasi. Penjelasan tiap kode H ada di [Hubungan antar-aplikasi](#hubungan-antar-aplikasi).
+
+### Contoh: dari lari pagi sampai exp naik
+
+```mermaid
+sequenceDiagram
+  actor K as Kamu
+  participant G as Garmin
+  participant LP as Laptop
+  participant DB as Supabase
+  participant CR as pg_cron
+  participant F as Vercel Function
+
+  K->>G: Lari pagi
+  K->>LP: Jalankan sinkron Garmin
+  LP->>G: Ambil aktivitas baru
+  LP->>DB: Simpan aktivitas
+  CR->>F: Jalankan integrasi (tiap 10 menit)
+  F->>DB: Baca aktivitas dan jadwal hari ini
+  F->>DB: Tandai item lari di Jadwal selesai
+  CR->>F: Hitung ulang Leveling (tiap 30 menit)
+  F->>DB: Tambah exp dari lari dan jadwal
+  K->>F: Buka Beranda
+  F-->>K: Jadwal tercentang, exp naik
+```
+
 ## Cara pakai
 
 ### Sehari-hari (online)
