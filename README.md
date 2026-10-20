@@ -1,29 +1,107 @@
 # Ionwyn System
 
-Tujuh aplikasi pribadi yang dijalankan dengan satu perintah dan dibuka dari satu alamat: **http://localhost:4000**.
+Tujuh aplikasi pribadi yang digabung menjadi satu sistem: satu alamat, satu navigasi, satu login, satu database. Aktivitas di satu aplikasi ikut mengisi aplikasi lain, misalnya lari yang tercatat di Garmin otomatis mencentang jadwal lari dan menambah exp di Leveling.
 
-| Aplikasi | Alamat | Isi |
-| --- | --- | --- |
-| Beranda | `/#/beranda/` | Rangkuman hari ini dari semua aplikasi + status hubungan antar-aplikasi |
-| Jadwal | `/jadwal/` | Reminder & Scheduling (React, Supabase) |
-| Catatan Malam | `/catatan/` | Jurnal malam (Express, SQLite) |
-| Fitness | `/fit/` | Garmin, recovery, berat, makan (Express, SQLite) |
-| Learn | `/learn/` | Jalur belajar dengan AI (Express, Supabase) |
-| Leveling | `/leveling/` | Exp dan level dari semua aplikasi (Express, SQLite) |
-| Keuangan | `/uang/` | FinTrack (Vue, Supabase) |
-| Timesheet | `/timesheet/` | Web absensi (Vue, Google Apps Script) |
+- **Online:** https://ionwyn-system.vercel.app (Vercel + Supabase, perlu login)
+- **Lokal:** http://localhost:4000 setelah `npm start` (tanpa login)
 
-Bar navigasi di atas hanya membungkus aplikasi dengan iframe. Isi setiap aplikasi tidak berubah. Alamat di address bar ikut halaman yang sedang dibuka (misalnya `/#/catatan/kalender`), jadi bisa disimpan sebagai bookmark. Tombol **Tab baru** membuka halaman itu tanpa bar navigasi.
+Dua-duanya memakai database Supabase yang sama, jadi isinya selalu sama.
 
-Bagian yang tetap di cloud dan tidak dipindah: Supabase (Jadwal, Learn, Keuangan), Google Apps Script + bot Telegram Timesheet, dan Vercel + bot Telegram FinTrack.
+## Fitur
+
+### Beranda
+Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, status Catatan Malam, ringkasan latihan minggu ini, sesi belajar terakhir, level karakter, absensi, serta pengeluaran hari ini dan bulan ini dibanding budget. Di bawahnya ada status setiap hubungan antar-aplikasi (H4–H8) beserta tombol **Jalankan sekarang**.
+
+### Jadwal (`/jadwal/`)
+- Jadwal harian manual dan rutinitas mingguan yang diterapkan per minggu.
+- Pengingat, geser jadwal, tandai selesai atau dilewati.
+- Catatan realisasi (berapa km, berapa menit) yang dibaca aplikasi lain.
+- Kolom **Tipe aktivitas** membuat item selesai sendiri dari aplikasi lain (lihat [Hubungan antar-aplikasi](#hubungan-antar-aplikasi)).
+- Bisa dipasang sebagai PWA di HP.
+
+### Catatan Malam (`/catatan/`)
+- Satu jurnal per malam, dibuka pukul 18.00–02.00 WIB: apa yang terjadi, hal baik, pelajaran, catatan bebas.
+- Kalender untuk melihat dan mengisi tanggal yang terlewat (ditandai sebagai susulan).
+- Kumpulan **Pelajaran** dan **Hal baik** dari semua malam, bisa difilter per rentang tanggal.
+- Pencarian kata di semua catatan.
+- "Hari ini tahun lalu": catatan di tanggal yang sama pada tahun-tahun sebelumnya.
+
+### Fitness (`/fit/`)
+- Sinkron otomatis dari Garmin Connect: aktivitas, set latihan beban, tidur, RHR.
+- Input manual: berat badan, makan (protein tercukupi, porsi nasi), kondisi (alkohol, sakit, catatan).
+- Ringkasan minggu: hari lari sesuai pola, total km, sesi beban, rata-rata tidur, RHR, dan berat 7 hari.
+- Grafik long run per minggu dengan garis target, riwayat beban per gerakan, halaman recovery.
+- Laporan bulanan dibanding bulan sebelumnya.
+- Pengaturan pola lari mingguan (misalnya Senin easy, Rabu tempo, Minggu long run). Pola ini otomatis menjadi rutinitas di Jadwal.
+
+### Learn (`/learn/`)
+- Tulis apa yang mau dipelajari dan tujuannya. AI menyusun jalur belajar berupa topik berurutan, dan kamu review dulu sebelum disimpan.
+- Tiap topik punya tautan sumber resmi (dicek masih hidup) dan study case buatan AI untuk dikerjakan.
+- Catat sesi belajar: durasi dan ringkasan. Sesi ini mencentang item belajar di Jadwal dan memberi exp di Leveling.
+
+### Leveling (`/leveling/`)
+- Karakter ala RPG: level, tier, gelar, dan lima atribut yang dihitung dari aktivitas nyata di semua aplikasi.
+- Orb three.js yang bentuknya mengikuti skor lima atribut.
+- Log exp per kejadian, riwayat harian, pencapaian, dan halaman sumber yang menunjukkan aplikasi mana yang terbaca.
+- Aturan exp ada di `leveling/config/rules.json`. Item jadwal yang sudah dihitung di aplikasi asalnya tidak memberi exp ganda.
+
+### Keuangan (`/uang/`)
+- Transaksi pemasukan dan pengeluaran, transaksi berulang, budget per kategori, dan target tabungan.
+- Dashboard, grafik, dan laporan bulanan yang bisa diekspor ke PDF.
+- AI Analyst untuk membaca pola pengeluaran.
+- Bot Telegram: catat transaksi dan cek saldo dari chat (`/add`, `/list`, `/saldo`, `/goals`, `/help`). Hubungkan akun dari menu **Telegram** di aplikasi.
+
+### Timesheet (`/timesheet/`)
+- Absensi harian: jam masuk, jam keluar, kegiatan, serta sakit, izin, atau cuti.
+- Rekap bulanan dengan lembur, akhir pekan, dan hari libur. Datanya tersimpan di Google Sheets lewat Apps Script.
+- Bot Telegram: `masuk 08.00`, `keluar 17.30`, `kegiatan ...`, `izin`, `rekap`. Bisa diberi tanggal di depan, misalnya `kemarin masuk 08.00`.
+
+### Yang menyatukan semuanya
+- **Satu login.** Versi online meminta login sekali di `/masuk/` dengan akun Supabase. Jadwal dan Keuangan ikut masuk dengan sesi yang sama.
+- **Satu database.** Semua data aplikasi ada di satu project Supabase dengan RLS di setiap tabel.
+- **Hubungan otomatis.** Supabase `pg_cron` menjalankan integrasi tiap 10 menit dan hitung ulang Leveling tiap 30 menit, walaupun laptop mati.
+- **Satu tampilan.** Semua aplikasi memakai sistem desain yang sama di `design/`, dengan mode terang dan gelap.
+- **Satu backup.** `npm run backup` menyimpan semua tabel, data Timesheet, dan semua `.env`.
+
+## Cara pakai
+
+### Sehari-hari (online)
+1. Buka https://ionwyn-system.vercel.app/masuk/ dan login dengan akun Keuangan. Sesi tersimpan, jadi cukup sekali per browser.
+2. **Pagi:** buka Beranda untuk melihat jadwal hari ini. Absen masuk lewat Timesheet atau bot Telegram.
+3. **Siang:** catat pengeluaran di Keuangan atau lewat bot Telegram FinTrack.
+4. **Sesudah latihan:** jalankan sinkron Garmin dari laptop (lihat di bawah). Item `run_done`, `strength_done`, atau `swim_done` di Jadwal tercentang sendiri dalam 10 menit.
+5. **Sesudah belajar:** catat sesi di Learn. Item belajar di Jadwal ikut tercentang.
+6. **Malam (18.00–02.00):** tulis Catatan Malam. Item `diary_done` tercentang.
+7. Lihat Leveling untuk exp dan level yang bertambah dari semua kegiatan hari itu.
+
+Supaya sebuah item Jadwal selesai otomatis, isi kolom **Tipe aktivitas** dengan salah satu tipe di tabel [Cara memakai H4–H8](#cara-memakai-h4h8).
+
+### Yang hanya bisa dari laptop
+Dua fitur ini butuh laptop. Hasilnya langsung terlihat di versi online karena databasenya sama.
+
+| Fitur | Cara |
+| --- | --- |
+| Sinkron Garmin | `npm run garmin:sync -w fitness-track` dari folder `ionwyn-system`, atau tombol **Sinkron** di `localhost:4000/fit/` |
+| Login ulang Garmin | `cd fitness-track` lalu `npm run garmin:login`, kalau sinkron menampilkan "Perlu login ulang" |
+| AI Learn (buat jalur, study case) | Buka Learn lewat `localhost:4000/learn/`. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
+
+### Menjalankan di laptop
+Dari folder `ionwyn-system`:
+
+```bash
+npm start
+```
+
+Buka http://localhost:4000. Log semua bagian tampil di satu terminal dengan label per aplikasi. Hub menjalankan integrasi sendiri tiap 10 menit selama `npm start` hidup. Tekan `Ctrl+C` untuk berhenti.
 
 ## Prasyarat
 
 - Node.js 24 LTS, minimal 24.15 (`node -v`)
+- Project Supabase (tier gratis cukup)
 - Opera GX atau Chrome untuk sinkron Garmin (lihat `fitness-track/README.md`)
 - Claude Code CLI yang sudah login, untuk fitur AI Learn (lihat `learning/README.md`)
 
-## Pertama kali
+## Pertama kali (lokal)
 
 Semua perintah dijalankan dari folder `ionwyn-system` (cek dengan `pwd` di macOS atau `cd` di Windows; isinya harus ada `package.json`, `hub`, `scripts`).
 
@@ -39,30 +117,15 @@ Lalu siapkan konfigurasi:
 cp .env.example .env
 ```
 
-Di Windows PowerShell pakai `copy .env.example .env`. Isi `.env` (lihat bagian Konfigurasi), lalu build:
+Di Windows PowerShell pakai `copy .env.example .env`. Isi `.env` (lihat bagian [Konfigurasi](#konfigurasi)), jalankan migrasi Supabase (lihat [Deploy](#deploy-ke-vercel--supabase), langkah 1–3), lalu build:
 
 ```bash
 npm run build
 ```
 
-## Menjalankan
-
-```bash
-npm start
-```
-
-Buka http://localhost:4000. Log semua bagian tampil di satu terminal dengan label per aplikasi. Kalau satu bagian mati, bagian lain tetap jalan, dan halaman aplikasi itu menampilkan "tidak bisa dibuka". Tekan `Ctrl+C` untuk menghentikan semuanya.
-
 Setelah mengubah kode frontend, jalankan `npm run build` lagi. Untuk satu aplikasi saja: `npm run build -- catatan` (nama: `catatan`, `fit`, `leveling`, `learn`, `jadwal`, `uang`, `timesheet`).
 
-Login Garmin tetap perintah terpisah karena interaktif:
-
-```bash
-cd fitness-track
-npm run garmin:login
-```
-
-Pertama kali membuka `localhost:4000`, kamu perlu login sekali di Jadwal dan Keuangan, lalu mengisi Koneksi di Timesheet. Browser menyimpan sesi per alamat, dan alamatnya sekarang berbeda dari alamat lama.
+Pertama kali membuka `localhost:4000`, login sekali di Jadwal atau Keuangan. Browser menyimpan sesi per alamat, jadi sesi lokal dan sesi online terpisah.
 
 ## Desain
 
@@ -177,6 +240,8 @@ Ada dua tingkat:
 | Variabel | Fungsi |
 | --- | --- |
 | `HUB_PORT`, `CATATAN_PORT`, `LEARN_API_PORT`, `FIT_PORT`, `LEVELING_PORT` | Port |
+| `DATABASE_URL` | Connection string Supabase **Session pooler** (port 5432). Dipakai Catatan Malam, Fitness, Leveling, dan backup |
+| `OWNER_USER_ID`, `INTERNAL_SECRET`, `HUB_APP_BASE` | Hanya untuk versi Vercel. Lokal boleh kosong |
 | `BACKUP_FOLDER` | Folder backup, default `backups` di root |
 | `BACKUP_KEEP` | Jumlah backup harian yang disimpan, default 30 |
 | `INTEGRATION_INTERVAL_MIN` | Jarak antar-siklus hubungan antar-aplikasi, default 10 menit. `0` mematikan siklus otomatis |
@@ -191,14 +256,13 @@ Ada dua tingkat:
 
 | File | Isi |
 | --- | --- |
-| `catatan-malam/.env` | `DB_PATH` |
-| `fitness-track/.env` | `DB_PATH`, pengaturan Garmin, `TARGET_LONG_RUN_KM` |
+| `fitness-track/.env` | Pengaturan Garmin (`GARMIN_BROWSER_PATH`, `GARMIN_HEADLESS`, `GARMIN_PROFILE_DIR`), `TARGET_LONG_RUN_KM` |
 | `learning/server/.env` | Supabase Learn (service role), pengaturan AI |
 | `leveling/.env` | Sumber mana yang aktif (`*_ENABLED`), `DESKTOP_NOTIFICATION` |
 | `reminder-and-scheduling/.env` | Supabase Jadwal untuk build web |
 | `financetracker/.env` | Supabase Keuangan untuk build web |
 
-`PORT`, `ALLOW_LAN`, dan `BACKUP_FOLDER` di `.env` aplikasi diabaikan saat jalan lewat `npm start`. Semua `.env` ada di `.gitignore`. Hanya file `.env.example` yang masuk git.
+`PORT`, `ALLOW_LAN`, `DB_PATH`, dan `BACKUP_FOLDER` di `.env` aplikasi diabaikan saat jalan lewat `npm start`. Semua `.env` ada di `.gitignore`. Hanya file `.env.example` yang masuk git.
 
 ## Backup
 
@@ -207,24 +271,23 @@ npm run backup
 ```
 
 Hasilnya di `backups/harian/<tanggal_jam>/`:
-- `catatan-malam.db`, `fitness-track.db`, `leveling.db`, dibuat dengan fungsi backup SQLite bawaan Node dan dicek dengan `integrity_check`. Aman walaupun aplikasi sedang jalan.
-- `jadwal/`, `learn/`, `keuangan/`: semua tabel Supabase sebagai JSON.
+- `database/`: setiap tabel di schema `public` Supabase sebagai satu file JSON. Ini mencakup semua aplikasi: Jadwal, Learn, Keuangan, Catatan Malam (`catatan_entries`), Fitness (`fit_*`), dan Leveling (`leveling_*`).
 - `timesheet.json`: semua bulan dari Apps Script.
 - `env/`: salinan semua `.env`.
 
-Hanya `BACKUP_KEEP` backup terbaru yang disimpan. Selain itu, Catatan Malam dan Fitness tetap membuat backup otomatis harian ke `backups/catatan-malam/` dan `backups/fitness-track/` selama `npm start` jalan.
+Hanya `BACKUP_KEEP` backup terbaru yang disimpan. Backup ini melengkapi backup harian bawaan Supabase, bukan menggantikannya.
 
-Restore SQLite: hentikan `npm start`, salin file `.db` ke lokasi `DB_PATH` aplikasinya, hapus file `-wal` dan `-shm` di sebelahnya kalau ada, lalu jalankan lagi.
+Restore satu tabel: buka file JSON-nya, lalu masukkan lagi lewat SQL Editor Supabase atau script kecil dengan `postgres`. File SQLite lama dari sebelum migrasi ada di `backups/catatan-malam/` dan `backups/fitness-track/`. Untuk memindahkannya ulang, salin file itu ke `catatan-malam/data/catatan.db` atau `fitness-track/data/fitness.db`, lalu jalankan `node --env-file=.env scripts/migrate-sqlite.mjs`.
 
 Folder `backups/` ada di laptop yang sama. Supaya aman dari laptop rusak, arahkan `BACKUP_FOLDER` ke folder yang tersinkron ke cloud.
 
 ## Hubungan antar-aplikasi
 
-Semuanya berjalan di hub setiap `INTEGRATION_INTERVAL_MIN` menit, dan bisa dipicu dari tombol **Jalankan sekarang** di Beranda. Hasil dan error terakhir tiap hubungan tampil di Beranda.
+Di laptop, hub menjalankannya setiap `INTEGRATION_INTERVAL_MIN` menit. Di versi online, `pg_cron` memanggilnya tiap 10 menit. Keduanya juga bisa dipicu dari tombol **Jalankan sekarang** di Beranda. Hasil dan error terakhir tiap hubungan tampil di Beranda.
 
 | | Hubungan | Cara kerja |
 | --- | --- | --- |
-| H1 | Leveling membaca semua sumber | Fitness dan Catatan Malam lewat SQLite read-only, Jadwal dan Keuangan lewat Supabase, Learn lewat `GET /api/export`, Timesheet lewat Apps Script |
+| H1 | Leveling membaca semua sumber | Fitness dan Catatan Malam lewat tabel Postgres, Jadwal dan Keuangan lewat Supabase, Learn lewat `GET /api/export`, Timesheet lewat Apps Script |
 | H2 | Tanpa exp ganda | Item jadwal yang tipenya termasuk `disiplin.linkedActivityTypes` di `leveling/config/rules.json` tidak memberi exp disiplin. Exp-nya datang dari aplikasi asal faktanya |
 | H3 | Leveling membaca Learn | Endpoint baru `GET /api/export` di Learn |
 | H4 | Garmin menyelesaikan item latihan | Item `run_done`, `strength_done`, `swim_done` |
