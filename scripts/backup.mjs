@@ -1,23 +1,12 @@
-import { backup, DatabaseSync } from 'node:sqlite'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import postgres from 'postgres'
 import { backupFolder, root } from './apps.mjs'
 
 const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Jakarta' }).replace(' ', '_').replaceAll(':', '')
 const target = join(backupFolder, 'harian', stamp)
 const keep = Number(process.env.BACKUP_KEEP ?? 30)
 const results = []
-
-function readEnv(file) {
-  const path = resolve(root, file)
-  if (!existsSync(path)) return {}
-  return Object.fromEntries(
-    readFileSync(path, 'utf8')
-      .split(/\r?\n/)
-      .filter(line => /^[A-Z_]+=/.test(line))
-      .map(line => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1).trim()])
-  )
-}
 
 async function step(name, task) {
   try {
@@ -27,52 +16,23 @@ async function step(name, task) {
   }
 }
 
-async function sqlite(name, file) {
-  const source = resolve(root, file)
-  if (!existsSync(source)) throw new Error(`file tidak ada: ${file}`)
-  const db = new DatabaseSync(source, { readOnly: true })
+async function database() {
+  const url = process.env.DATABASE_URL
+  if (!url) throw new Error('DATABASE_URL belum diisi')
+  const sql = postgres(url, { prepare: false, max: 1 })
   try {
-    await backup(db, join(target, `${name}.db`))
-  } finally {
-    db.close()
-  }
-  const copy = new DatabaseSync(join(target, `${name}.db`), { readOnly: true })
-  const check = copy.prepare('pragma integrity_check').get().integrity_check
-  copy.close()
-  if (check !== 'ok') throw new Error(`integrity_check: ${check}`)
-  return `${name}.db`
-}
-
-async function supabaseToken(url, key, email, password) {
-  if (!email) return key
-  const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { apikey: key, 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  })
-  if (!res.ok) throw new Error(`login gagal (${res.status})`)
-  return (await res.json()).access_token
-}
-
-async function supabase(name, { url, key, email, password }, tables) {
-  if (!url || !key) throw new Error('URL atau key belum diisi')
-  if (email && !password) throw new Error('password belum diisi')
-  const token = await supabaseToken(url, key, email, password)
-  const counts = []
-  mkdirSync(join(target, name), { recursive: true })
-  for (const table of tables) {
-    const rows = []
-    for (let offset = 0; ; offset += 1000) {
-      const res = await fetch(`${url}/rest/v1/${table}?select=*&limit=1000&offset=${offset}`, { headers: { apikey: key, authorization: `Bearer ${token}` } })
-      if (!res.ok) throw new Error(`${table}: ${res.status}`)
-      const page = await res.json()
-      rows.push(...page)
-      if (page.length < 1000) break
+    const tables = await sql`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name`
+    mkdirSync(join(target, 'database'), { recursive: true })
+    const counts = []
+    for (const { table_name: table } of tables) {
+      const rows = await sql`select * from ${sql('public.' + table)}`
+      writeFileSync(join(target, 'database', `${table}.json`), JSON.stringify(rows, null, 2))
+      counts.push(`${table} ${rows.length}`)
     }
-    writeFileSync(join(target, name, `${table}.json`), JSON.stringify(rows, null, 2))
-    counts.push(`${table} ${rows.length}`)
+    return `${tables.length} tabel (${counts.join(', ')})`
+  } finally {
+    await sql.end()
   }
-  return counts.join(', ')
 }
 
 async function timesheet() {
@@ -110,36 +70,7 @@ function envFiles() {
 }
 
 mkdirSync(target, { recursive: true })
-const scheduleEnv = readEnv('reminder-and-scheduling/.env')
-const learnEnv = readEnv('learning/server/.env')
-const env = process.env
-
-await step('catatan-malam', () => sqlite('catatan-malam', 'catatan-malam/data/catatan.db'))
-await step('fitness-track', () => sqlite('fitness-track', 'fitness-track/data/fitness.db'))
-await step('leveling', () => sqlite('leveling', 'leveling/data/leveling.db'))
-await step('jadwal (Supabase)', () =>
-  supabase(
-    'jadwal',
-    {
-      url: env.SCHEDULE_SUPABASE_URL || scheduleEnv.SUPABASE_URL,
-      key: env.SCHEDULE_SUPABASE_KEY || scheduleEnv.SUPABASE_ANON_KEY,
-      email: env.SCHEDULE_EMAIL,
-      password: env.SCHEDULE_PASSWORD
-    },
-    ['routine_templates', 'schedule_items', 'activity_logs', 'planner_settings']
-  )
-)
-await step('learn (Supabase)', () =>
-  supabase('learn', { url: learnEnv.SUPABASE_URL, key: learnEnv.SUPABASE_SERVICE_ROLE_KEY }, ['tracks', 'topics', 'study_cases', 'learning_sessions'])
-)
-await step('keuangan (Supabase)', () => {
-  if (!env.FINANCE_EMAIL) throw new Error('FINANCE_EMAIL dan FINANCE_PASSWORD belum diisi')
-  return supabase(
-    'keuangan',
-    { url: env.FINANCE_SUPABASE_URL, key: env.FINANCE_SUPABASE_KEY, email: env.FINANCE_EMAIL, password: env.FINANCE_PASSWORD },
-    ['profiles', 'transactions', 'recurring_transactions', 'budget_allocations', 'saving_goals', 'monthly_reports']
-  )
-})
+await step('database Supabase', database)
 await step('timesheet (Apps Script)', timesheet)
 await step('.env', envFiles)
 

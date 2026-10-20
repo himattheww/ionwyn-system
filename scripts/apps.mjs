@@ -40,13 +40,13 @@ export const processes = [
     name: 'catatan',
     dir: 'catatan-malam',
     args: ['start'],
-    env: { PORT: ports.catatan, ALLOW_LAN: 'false', BACKUP_FOLDER: resolve(backupFolder, 'catatan-malam') }
+    env: { PORT: ports.catatan, ALLOW_LAN: 'false' }
   },
   {
     name: 'fit',
     dir: 'fitness-track',
     args: ['start'],
-    env: { PORT: ports.fit, ALLOW_LAN: 'false', BACKUP_FOLDER: resolve(backupFolder, 'fitness-track') }
+    env: { PORT: ports.fit, ALLOW_LAN: 'false' }
   },
   {
     name: 'learn',
@@ -61,8 +61,6 @@ export const processes = [
     delayMs: 8000,
     env: {
       PORT: ports.leveling,
-      FIT_DB_PATH: resolve(root, 'fitness-track/data/fitness.db'),
-      DIARY_DB_PATH: resolve(root, 'catatan-malam/data/catatan.db'),
       LEARN_API_URL: `http://127.0.0.1:${ports.learnApi}`
     }
   },
