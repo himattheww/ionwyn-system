@@ -1,0 +1,39 @@
+import express, { type NextFunction, type Request, type Response } from 'express'
+import { createApp as catatanApp } from '../catatan-malam/server/src/app.ts'
+import { connect } from '../catatan-malam/server/src/db.ts'
+import { createApp as fitApp } from '../fitness-track/server/src/app.ts'
+import { openDb as fitDb } from '../fitness-track/server/src/db.ts'
+import { hubRoutes } from '../hub/src/routes.ts'
+import { createApp as learnApp } from '../learning/server/src/app.ts'
+import { createApp as levelingApp } from '../leveling/server/src/app.ts'
+import { openDb as levelingDb } from '../leveling/server/src/db.ts'
+import { readEnv } from '../leveling/server/src/env.ts'
+import { authRoutes, requireOwner } from './auth.ts'
+
+const databaseUrl = process.env.DATABASE_URL
+if (!databaseUrl) throw new Error('DATABASE_URL belum diisi di environment Vercel')
+
+function restorePath(req: Request, _res: Response, next: NextFunction) {
+  const url = new URL(req.url, 'http://ionwyn')
+  const original = url.searchParams.get('__path')
+  if (original) {
+    url.searchParams.delete('__path')
+    const query = url.searchParams.toString()
+    req.url = original + (query ? `?${query}` : '')
+  }
+  next()
+}
+
+const app = express()
+app.disable('x-powered-by')
+app.use(restorePath)
+app.use(authRoutes())
+app.use(requireOwner)
+app.use(hubRoutes())
+app.use('/catatan', catatanApp(connect(databaseUrl)))
+app.use('/fit', fitApp(fitDb(databaseUrl)))
+app.use('/leveling', levelingApp(levelingDb(databaseUrl), readEnv()).app)
+app.use('/learn', learnApp())
+app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
+
+export default app

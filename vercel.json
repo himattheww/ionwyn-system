@@ -1,0 +1,8 @@
+{
+  "installCommand": "npm run setup",
+  "buildCommand": "node scripts/build-vercel.mjs",
+  "framework": null,
+  "regions": [
+    "hnd1"
+  ]
+}
