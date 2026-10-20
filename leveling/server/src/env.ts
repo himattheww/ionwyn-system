@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { z } from 'zod'
 
 const flag = z
@@ -8,15 +9,14 @@ const text = z.string().trim().optional().transform(value => value || undefined)
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().default(3100),
-  LEVELING_DB_PATH: z.string().default('data/leveling.db'),
-  RULES_PATH: z.string().default('config/rules.json'),
+  DATABASE_URL: text,
+  RULES_JSON: text,
+  RULES_PATH: z.string().default(resolve(import.meta.dirname, '../../config/rules.json')),
   TARGET_LONG_RUN_KM: z.coerce.number().positive().optional(),
   DESKTOP_NOTIFICATION: z.enum(['true', 'false']).default('true').transform(value => value === 'true'),
 
   FIT_ENABLED: flag,
-  FIT_DB_PATH: text,
   DIARY_ENABLED: flag,
-  DIARY_DB_PATH: text,
   LEARN_ENABLED: flag,
   LEARN_API_URL: text,
 

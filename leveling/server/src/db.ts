@@ -1,61 +1,50 @@
-import Database from 'better-sqlite3'
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
+import postgres from 'postgres'
 
-export type Db = Database.Database
+export interface Db {
+  all<T = any>(text: string, params?: unknown[]): Promise<T[]>
+  one<T = any>(text: string, params?: unknown[]): Promise<T | undefined>
+  run(text: string, params?: unknown[]): Promise<number>
+  transaction<T>(work: (tx: Db) => Promise<T>): Promise<T>
+}
 
-export function openDb(path: string) {
-  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true })
-  const db = new Database(path)
-  db.pragma('journal_mode = WAL')
-  db.exec(`
-    create table if not exists events (
-      id text primary key,
-      source text not null,
-      type text not null,
-      date text not null,
-      value real not null,
-      meta text not null
-    );
-    create table if not exists exp_entries (
-      id integer primary key,
-      date text not null,
-      attribute text not null,
-      source text not null,
-      rule text not null,
-      grp text not null,
-      event_id text,
-      note text not null,
-      raw real not null,
-      awarded real not null,
-      capped real not null
-    );
-    create index if not exists exp_entries_date on exp_entries(date);
-    create table if not exists history (
-      id integer primary key,
-      date text not null,
-      kind text not null,
-      text text not null
-    );
-    create table if not exists snapshot (
-      id integer primary key check (id = 1),
-      rules_hash text not null,
-      state text not null,
-      created_at text not null
-    );
-    create table if not exists notifications (
-      id integer primary key,
-      created_at text not null,
-      lines text not null
-    );
-    create table if not exists sources (
-      name text primary key,
-      label text not null,
-      enabled integer not null,
-      last_read_at text,
-      last_error text,
-      event_count integer
-    );
-  `)
+export function numbered(text: string) {
+  let index = 0
+  return text.replace(/\?/g, () => `$${++index}`)
+}
+
+export const parsers = {
+  int8: (value: string) => Number(value),
+  date: (value: string) => value,
+  timestamptz: (value: string) => new Date(value).toISOString(),
+}
+
+type Unsafe = (text: string, params: never[]) => Promise<any[] & { count: number }>
+
+function wrap(unsafe: Unsafe, begin?: <T>(work: (unsafe: Unsafe) => Promise<T>) => Promise<T>): Db {
+  const db: Db = {
+    all: async (text, params = []) => Array.from(await unsafe(numbered(text), params as never[])),
+    one: async (text, params = []) => (await unsafe(numbered(text), params as never[]))[0],
+    run: async (text, params = []) => (await unsafe(numbered(text), params as never[])).count,
+    transaction: (work) => (begin ? begin((tx) => work(wrap(tx))) : work(db)),
+  }
   return db
+}
+
+export function openDb(url: string): Db {
+  const sql = postgres(url, {
+    prepare: false,
+    max: Number(process.env.PG_POOL_MAX ?? 3),
+    idle_timeout: 20,
+    types: {
+      int8: { to: 20, from: [20], serialize: String, parse: parsers.int8 },
+      date: { to: 1082, from: [1082], serialize: String, parse: parsers.date },
+      timestamptz: { to: 1184, from: [1184], serialize: (v: unknown) => String(v), parse: parsers.timestamptz },
+    } as never,
+  })
+  const unsafe: Unsafe = (text, params) => sql.unsafe(text, params) as never
+  return wrap(unsafe, (work) => sql.begin((tx) => work((text, params) => tx.unsafe(text, params) as never)) as never)
+}
+
+export function dbFromUnsafe(unsafe: Unsafe, begin?: <T>(work: (unsafe: Unsafe) => Promise<T>) => Promise<T>) {
+  return wrap(unsafe, begin)
 }

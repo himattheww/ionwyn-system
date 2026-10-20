@@ -5,22 +5,20 @@ import { readFit } from '../src/sources/fit.ts'
 import { learnEvents, readLearn } from '../src/sources/learn.ts'
 import { scheduleEvents } from '../src/sources/schedule.ts'
 import { timesheetEvents } from '../src/sources/timesheet.ts'
-import { diaryFixture, fitFixture, testRules } from './fixtures.ts'
+import { testDb, testRules } from './fixtures.ts'
 
 describe('adapter Fit Tracker', () => {
-  it('membaca lari terjadwal, beban, renang, tidur, dan protein', () => {
-    const { db, path } = fitFixture()
-    db.exec(`
-      insert into activities (garmin_id, type, start_time, date, distance_m) values
+  it('membaca lari terjadwal, beban, renang, tidur, dan protein', async () => {
+    const db = await testDb()
+    await db.run(`
+      insert into fit_activities (garmin_id, type, start_time, date, distance_m) values
         (1, 'running', '2026-10-19T00:00:00Z', '2026-10-19', 12000),
         (2, 'running', '2026-10-20T00:00:00Z', '2026-10-20', 5000),
         (3, 'strength_training', '2026-10-20T10:00:00Z', '2026-10-20', null),
-        (4, 'lap_swimming', '2026-10-21T10:00:00Z', '2026-10-21', 1000);
-      insert into recovery_daily values ('2026-10-19', 420, 80, 50, 'garmin'), ('2026-10-20', 300, 60, 55, 'garmin');
-      insert into meals values ('2026-10-19', 1, 2), ('2026-10-20', 0, 3);
-    `)
-    db.close()
-    const events = readFit(path, testRules())
+        (4, 'lap_swimming', '2026-10-21T10:00:00Z', '2026-10-21', 1000)`)
+    await db.run(`insert into fit_recovery_daily (date, sleep_min, sleep_score, rhr, source) values ('2026-10-19', 420, 80, 50, 'garmin'), ('2026-10-20', 300, 60, 55, 'garmin')`)
+    await db.run(`insert into fit_meals (date, protein_met, rice_portions) values ('2026-10-19', 1, 2), ('2026-10-20', 0, 3)`)
+    const events = await readFit(db, testRules())
     expect(events.filter(e => e.type === 'run').map(e => [e.date, e.value, e.meta.scheduled])).toEqual([
       ['2026-10-19', 12, true],
       ['2026-10-20', 5, false]
@@ -30,19 +28,14 @@ describe('adapter Fit Tracker', () => {
     expect(events.filter(e => e.type === 'sleep').map(e => e.value)).toEqual([7, 5])
     expect(events.filter(e => e.type === 'protein')).toHaveLength(1)
   })
-
-  it('path salah melempar error yang jelas', () => {
-    expect(() => readFit('C:/tidak/ada.db', testRules())).toThrow('File database tidak ditemukan')
-  })
 })
 
 describe('adapter Catatan Malam', () => {
-  it('menandai entri yang diisi belakangan', () => {
-    const { db, path } = diaryFixture()
-    db.exec(`insert into entries (entry_date, happened, good_things, lessons, is_backfilled, created_at, updated_at) values
-      ('2026-10-18', 'a', 'b', 'c', 0, 'x', 'x'), ('2026-10-17', 'a', 'b', 'c', 1, 'x', 'x')`)
-    db.close()
-    expect(readDiary(path).map(e => [e.date, e.meta.backfilled])).toEqual([
+  it('menandai entri yang diisi belakangan', async () => {
+    const db = await testDb()
+    await db.run(`insert into catatan_entries (entry_date, happened, good_things, lessons, is_backfilled) values
+      ('2026-10-18', 'a', 'b', 'c', false), ('2026-10-17', 'a', 'b', 'c', true)`)
+    expect((await readDiary(db)).map(e => [e.date, e.meta.backfilled])).toEqual([
       ['2026-10-17', true],
       ['2026-10-18', false]
     ])

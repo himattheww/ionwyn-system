@@ -52,7 +52,8 @@ export async function readLearn(apiUrl: string | undefined, rules: Rules) {
   if (!apiUrl) throw new Error('LEARN_API_URL belum diisi')
   let response: Response
   try {
-    response = await fetch(`${apiUrl}/api/export`, { signal: AbortSignal.timeout(20_000) })
+    const headers = process.env.INTERNAL_SECRET ? { 'x-ionwyn-internal': process.env.INTERNAL_SECRET } : undefined
+    response = await fetch(`${apiUrl}/api/export`, { headers, signal: AbortSignal.timeout(20_000) })
   } catch {
     throw new Error(`Learn tidak bisa dihubungi di ${apiUrl}`)
   }

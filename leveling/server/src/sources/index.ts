@@ -1,3 +1,4 @@
+import type { Db } from '../db.ts'
 import type { Env } from '../env.ts'
 import type { Rules } from '../rules.ts'
 import type { Adapter } from '../types.ts'
@@ -9,10 +10,10 @@ import { readSchedule } from './schedule.ts'
 import { readStock } from './stock.ts'
 import { readTimesheet } from './timesheet.ts'
 
-export function createAdapters(env: Env, rules: Rules, today: string): Adapter[] {
+export function createAdapters(env: Env, rules: Rules, today: string, db: Db): Adapter[] {
   return [
-    { name: 'fit', label: 'Fit Tracker', enabled: env.FIT_ENABLED, read: async () => readFit(env.FIT_DB_PATH, rules) },
-    { name: 'diary', label: 'Catatan Malam', enabled: env.DIARY_ENABLED, read: async () => readDiary(env.DIARY_DB_PATH) },
+    { name: 'fit', label: 'Fit Tracker', enabled: env.FIT_ENABLED, read: () => readFit(db, rules) },
+    { name: 'diary', label: 'Catatan Malam', enabled: env.DIARY_ENABLED, read: () => readDiary(db) },
     { name: 'learn', label: 'Learn', enabled: env.LEARN_ENABLED, read: () => readLearn(env.LEARN_API_URL, rules) },
     {
       name: 'timesheet',
