@@ -12,6 +12,8 @@ import { readEnv } from '../leveling/server/src/env.ts'
 import rules from '../leveling/config/rules.json' with { type: 'json' }
 import { authRoutes, requireOwner } from './auth.ts'
 
+process.env.TZ = 'Asia/Jakarta'
+
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL belum diisi di environment Vercel')
 
