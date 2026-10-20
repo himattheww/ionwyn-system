@@ -98,25 +98,24 @@ export function buildMonthlyReport(month: string, current: MonthData, previous: 
   };
 }
 
-export function loadMonth(db: Db, month: string): MonthData {
+export async function loadMonth(db: Db, month: string): Promise<MonthData> {
   const { start, end } = monthRange(month);
-  const between = (sql: string) => db.prepare(`${sql} WHERE date BETWEEN ? AND ?`).all(start, end) as any[];
-  return {
-    activities: between('SELECT type, date, duration_sec, distance_m, calories, avg_pace_sec_per_km FROM activities'),
-    recovery: between('SELECT date, sleep_min, sleep_score, rhr FROM recovery_daily'),
-    weights: between('SELECT date, kg FROM weights'),
-    meals: between('SELECT date, protein_met, rice_portions FROM meals'),
-    conditions: between('SELECT date, alcohol, sick FROM condition_daily'),
-  };
+  const between = (sql: string) => db.all(`${sql} WHERE date BETWEEN ? AND ?`, [start, end]);
+  const [activities, recovery, weights, meals, conditions] = await Promise.all([
+    between('SELECT type, date, duration_sec, distance_m, calories, avg_pace_sec_per_km FROM fit_activities'),
+    between('SELECT date, sleep_min, sleep_score, rhr FROM fit_recovery_daily'),
+    between('SELECT date, kg FROM fit_weights'),
+    between('SELECT date, protein_met, rice_portions FROM fit_meals'),
+    between('SELECT date, alcohol, sick FROM fit_condition_daily'),
+  ]);
+  return { activities, recovery, weights, meals, conditions };
 }
 
-export function availableMonths(db: Db) {
-  return db
-    .prepare(`
-      SELECT DISTINCT substr(date, 1, 7) FROM (
-        SELECT date FROM activities UNION SELECT date FROM recovery_daily UNION SELECT date FROM weights UNION SELECT date FROM meals
-      ) ORDER BY 1 DESC
-    `)
-    .pluck()
-    .all() as string[];
+export async function availableMonths(db: Db) {
+  const rows = await db.all<{ month: string }>(`
+    SELECT DISTINCT to_char(date, 'YYYY-MM') AS month FROM (
+      SELECT date FROM fit_activities UNION SELECT date FROM fit_recovery_daily UNION SELECT date FROM fit_weights UNION SELECT date FROM fit_meals
+    ) AS days ORDER BY 1 DESC
+  `);
+  return rows.map((r) => r.month);
 }

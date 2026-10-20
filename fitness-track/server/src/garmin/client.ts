@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { chromium, type BrowserContext, type Page } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 import { config } from '../config.ts';
 
 export const GARMIN_HOME = 'https://connect.garmin.com/app/home';
@@ -16,7 +16,8 @@ const SKIPPED_HEADERS = new Set([
   'user-agent', 'referer', 'origin', 'priority',
 ]);
 
-function openGarminContext() {
+async function openGarminContext() {
+  const { chromium } = await import('playwright');
   return chromium.launchPersistentContext(config.garminProfileDir, {
     executablePath: config.garminBrowserPath,
     headless: config.garminHeadless,

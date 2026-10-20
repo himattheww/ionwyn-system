@@ -23,7 +23,7 @@ const pause = () => new Promise((resolve) => setTimeout(resolve, 1000 + Math.ran
 export async function runSync(db: Db) {
   if (running) return;
   running = true;
-  const status = db.prepare('SELECT last_success_at FROM sync_status WHERE id = 1').get() as { last_success_at: string | null };
+  const status = (await db.one<{ last_success_at: string | null }>('SELECT last_success_at FROM fit_sync_status WHERE id = 1'))!;
   const today = jakartaDate();
   const start = syncStartDate(status.last_success_at, today);
   let session: GarminSession | null = null;
@@ -34,10 +34,10 @@ export async function runSync(db: Db) {
       await pause();
       const payload = await session!.get(path);
       if (payload == null) return payload;
-      db.transaction(() => {
-        saveRaw(db, kind, ref, payload);
-        applyRaw(db, kind, payload);
-      })();
+      await db.transaction(async (tx) => {
+        await saveRaw(tx, kind, ref, payload);
+        await applyRaw(tx, kind, payload);
+      });
       return payload;
     };
 
@@ -72,22 +72,20 @@ export async function runSync(db: Db) {
       `/userstats-service/wellness/daily/${encodeURIComponent(profile.displayName)}?fromDate=${start}&untilDate=${today}&metricId=60`,
     );
 
-    db.prepare('UPDATE sync_status SET last_success_at = ? WHERE id = 1').run(new Date().toISOString());
-    pruneRaw(db);
+    await db.run('UPDATE fit_sync_status SET last_success_at = ? WHERE id = 1', [new Date().toISOString()]);
+    await pruneRaw(db);
   } catch (error) {
     const message = error instanceof NeedLoginError ? error.message : `Sinkron gagal: ${(error as Error).message}`;
     console.error(message);
-    db.prepare('UPDATE sync_status SET last_error_at = ?, last_error = ? WHERE id = 1').run(new Date().toISOString(), message);
+    await db.run('UPDATE fit_sync_status SET last_error_at = ?, last_error = ? WHERE id = 1', [new Date().toISOString(), message]);
   } finally {
     await session?.close().catch(() => {});
     running = false;
   }
 }
 
-export function syncIfStale(db: Db) {
-  const { last_success_at } = db.prepare('SELECT last_success_at FROM sync_status WHERE id = 1').get() as {
-    last_success_at: string | null;
-  };
+export async function syncIfStale(db: Db) {
+  const { last_success_at } = (await db.one<{ last_success_at: string | null }>('SELECT last_success_at FROM fit_sync_status WHERE id = 1'))!;
   const dayMs = 24 * 60 * 60 * 1000;
   if (!last_success_at || Date.now() - Date.parse(last_success_at) > dayMs) void runSync(db);
 }
