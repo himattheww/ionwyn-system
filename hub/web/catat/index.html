@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catat cepat · Ionwyn</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/design/system.css" />
+    <link rel="stylesheet" href="/styles/catat.css" />
+  </head>
+  <body>
+    <main class="quick">
+      <header class="quick-head">
+        <p class="eyebrow">Ionwyn</p>
+        <h1>Catat cepat</h1>
+        <a class="btn btn-quiet btn-sm" href="/">Beranda</a>
+      </header>
+
+      <section class="quick-card" id="uang" aria-labelledby="uang-title">
+        <h2 id="uang-title" class="section-title">Pengeluaran</h2>
+        <form id="expense" novalidate>
+          <label class="field">
+            <span>Nominal (Rp)</span>
+            <input id="amount" class="amount num" type="text" inputmode="numeric" autocomplete="off" placeholder="0" required />
+          </label>
+          <fieldset class="choice">
+            <legend>Kategori</legend>
+            <label><input type="radio" name="category" value="utama" checked /><span>Utama</span></label>
+            <label><input type="radio" name="category" value="jajan" /><span>Jajan</span></label>
+            <label><input type="radio" name="category" value="lainnya" /><span>Lainnya</span></label>
+          </fieldset>
+          <label class="field">
+            <span>Catatan (opsional)</span>
+            <input id="note" type="text" maxlength="200" autocomplete="off" />
+          </label>
+          <button class="btn btn-primary" type="submit">Simpan pengeluaran</button>
+          <p class="quick-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="quick-card" id="absen" aria-labelledby="absen-title">
+        <h2 id="absen-title" class="section-title">Absen</h2>
+        <label class="field">
+          <span>Jam</span>
+          <input id="time" class="num" type="time" required />
+        </label>
+        <div class="quick-actions">
+          <button class="btn btn-primary" type="button" data-entry="masuk">Masuk</button>
+          <button class="btn" type="button" data-entry="keluar">Keluar</button>
+        </div>
+        <p class="quick-status" id="absen-status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script type="module" src="/lib/catat.js"></script>
+  </body>
+</html>

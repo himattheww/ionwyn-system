@@ -1,4 +1,4 @@
-import postgres from 'postgres'
+import { db } from './db.ts'
 
 export interface RelationStatus {
   id: string
@@ -9,8 +9,6 @@ export interface RelationStatus {
   lastResult: string | null
 }
 
-let sql: postgres.Sql | null = null
-const db = () => (sql ??= postgres(process.env.DATABASE_URL!, { prepare: false, max: 1, idle_timeout: 20 }))
 const memory = new Map<string, RelationStatus>()
 
 const iso = (value: Date | null) => (value ? value.toISOString() : null)

@@ -77,7 +77,7 @@ writeFileSync(
         { src: `^/(${prefixes.join('|')})$`, status: 308, headers: { Location: '/$1/' } },
         { handle: 'filesystem' },
         ...prefixes.map(prefix => ({ src: `^/${prefix}/(?!assets/).*$`, dest: `/${prefix}/index.html` })),
-        { src: '^/(beranda|masuk|konsep)/?$', dest: '/$1/index.html' }
+        { src: '^/(beranda|masuk|konsep|catat)/?$', dest: '/$1/index.html' }
       ]
     },
     null,

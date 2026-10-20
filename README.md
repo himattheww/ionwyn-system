@@ -58,6 +58,11 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Rekap bulanan dengan lembur, akhir pekan, dan hari libur. Datanya tersimpan di Google Sheets lewat Apps Script.
 - Bot Telegram: `masuk 08.00`, `keluar 17.30`, `kegiatan ...`, `izin`, `rekap`. Bisa diberi tanggal di depan, misalnya `kemarin masuk 08.00`.
 
+### Catat cepat (`/catat/`)
+- Halaman ringkas untuk HP: catat pengeluaran (nominal, kategori Utama/Jajan/Lainnya, catatan) dan absen masuk/keluar dengan sekali tap.
+- Pengeluaran langsung masuk ke Keuangan, absen langsung masuk ke Timesheet.
+- Dipakai juga oleh shortcut aplikasi Android Ionwyn.
+
 ### Yang menyatukan semuanya
 - **Satu login.** Versi online meminta login sekali dengan akun Supabase. Jadwal dan Keuangan ikut masuk dengan sesi yang sama.
 - **Satu database.** Semua data aplikasi ada di satu project Supabase dengan RLS di setiap tabel.
