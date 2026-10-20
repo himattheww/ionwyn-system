@@ -1,5 +1,7 @@
 # Ionwyn System
 
+[![test](https://github.com/himattheww/ionwyn-system/actions/workflows/test.yml/badge.svg)](https://github.com/himattheww/ionwyn-system/actions/workflows/test.yml)
+
 Tujuh aplikasi pribadi yang digabung menjadi satu sistem: satu alamat, satu navigasi, satu login, satu database. Aktivitas di satu aplikasi ikut mengisi aplikasi lain, misalnya lari yang tercatat di Garmin otomatis mencentang jadwal lari dan menambah exp di Leveling.
 
 - **Online:** di-deploy ke Vercel + Supabase, perlu login.
@@ -404,7 +406,9 @@ Hubungan yang membutuhkan aplikasi itu dilewati di siklus tersebut. Error-nya te
 npm test
 ```
 
-Menjalankan tes hub, tes Catatan Malam, Fitness, Leveling, Jadwal (unit), dan typecheck semua aplikasi yang punya. Tes integrasi Jadwal ke Supabase tidak ikut, karena menulis ke database asli. Jalankan manual di `reminder-and-scheduling` dengan `npm test` kalau perlu.
+Menjalankan tes hub, tes Catatan Malam, Fitness, Leveling, Jadwal (unit), dan typecheck semua aplikasi yang punya. Tes database memakai PGlite, jadi tidak butuh internet atau Supabase. Tes integrasi Jadwal ke Supabase tidak ikut, karena menulis ke database asli. Jalankan manual di `reminder-and-scheduling` dengan `npm test` kalau perlu.
+
+GitHub Actions (`.github/workflows/test.yml`) menjalankan `npm run setup` dan `npm test` di setiap push ke `main` dan setiap pull request. Hasilnya terlihat dari badge di atas README dan tanda di samping setiap commit.
 
 Cek tampilan (sebelum/sesudah perubahan):
 
