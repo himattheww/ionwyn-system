@@ -108,23 +108,21 @@ flowchart TB
 - Laptop mengambil data dari Garmin Connect dan menulisnya langsung ke database. AI Learn juga berjalan dari laptop.
 - Bot Telegram Keuangan berjalan di project Vercel FinTrack sendiri, bot Telegram Timesheet di Apps Script.
 
-### Hubungan antar-aplikasi
+### Aplikasi saling mengisi
 
 ```mermaid
 flowchart LR
-  GC["Garmin Connect"] --> FIT["Fitness"]
-  FIT -->|"H4 lari, beban, renang selesai"| J["Jadwal"]
-  FIT -->|"H7 pola lari jadi rutinitas"| J
-  CM["Catatan Malam"] -->|"H5 jurnal malam selesai"| J
-  LE["Learn"] -->|"H6 sesi belajar selesai"| J
-  TS["Timesheet"] -->|"H8 hadir kerja selesai"| J
-
-  FIT -->|H1| LV["Leveling"]
-  CM -->|H1| LV
-  LE -->|"H1, H3"| LV
-  TS -->|H1| LV
-  KU["Keuangan"] -->|H1| LV
-  J -->|"H1, H2 tanpa exp ganda"| LV
+  garmin["Garmin Connect"] --> fitness["Fitness"]
+  fitness -->|"H4 latihan selesai, H7 pola lari"| jadwal["Jadwal"]
+  catatan["Catatan Malam"] -->|"H5 jurnal malam selesai"| jadwal
+  learn["Learn"] -->|"H6 sesi belajar selesai"| jadwal
+  timesheet["Timesheet"] -->|"H8 hadir kerja selesai"| jadwal
+  fitness -->|"H1"| leveling["Leveling"]
+  catatan -->|"H1"| leveling
+  learn -->|"H1, H3"| leveling
+  timesheet -->|"H1"| leveling
+  keuangan["Keuangan"] -->|"H1"| leveling
+  jadwal -->|"H1, H2 tanpa exp ganda"| leveling
 ```
 
 Panah ke Jadwal artinya item Jadwal dengan tipe aktivitas yang cocok ditandai selesai otomatis. Panah ke Leveling artinya aktivitas itu menjadi exp. Beranda membaca ringkasan dari semua aplikasi. Penjelasan tiap kode H ada di [Hubungan antar-aplikasi](#hubungan-antar-aplikasi).
