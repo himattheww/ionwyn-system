@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import * as entries from './db.js'
-import type { Db } from './db.js'
+import type { Query } from './db.js'
 import { checkNewEntry, isValidDate, monthBefore, nightStatus } from './time.js'
 
 const dateSchema = z.string().refine(isValidDate, 'Format tanggal harus YYYY-MM-DD.')
@@ -44,17 +44,17 @@ function snippetAround(text: string, keyword: string) {
   return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`
 }
 
-export function apiRouter(db: Db) {
+export function apiRouter(db: Query) {
   const router = Router()
 
-  router.get('/today', (_req, res) => {
+  router.get('/today', async (_req, res) => {
     const status = nightStatus(new Date())
     const year = Number(status.tonight.slice(0, 4))
     const monthAgo = monthBefore(status.tonight)
-    const monthAgoEntry = monthAgo ? entries.findEntry(db, monthAgo) : null
+    const monthAgoEntry = monthAgo ? await entries.findEntry(db, monthAgo) : null
     const onThisDay = [
       ...(monthAgoEntry ? [{ label: 'Sebulan lalu', entry: monthAgoEntry }] : []),
-      ...entries.listSameDayEarlierYears(db, status.tonight).map((entry) => {
+      ...(await entries.listSameDayEarlierYears(db, status.tonight)).map((entry) => {
         const yearsAgo = year - Number(entry.date.slice(0, 4))
         return { label: yearsAgo === 1 ? 'Setahun lalu' : `${yearsAgo} tahun lalu`, entry }
       }),
@@ -62,49 +62,49 @@ export function apiRouter(db: Db) {
 
     res.json({
       ...status,
-      tonightEntry: entries.findEntry(db, status.tonight),
-      yesterdayEmpty: !entries.findEntry(db, status.yesterday),
-      recent: entries.listRecent(db, 5),
+      tonightEntry: await entries.findEntry(db, status.tonight),
+      yesterdayEmpty: !(await entries.findEntry(db, status.yesterday)),
+      recent: await entries.listRecent(db, 5),
       onThisDay,
     })
   })
 
-  router.get('/entries', (req, res) => {
+  router.get('/entries', async (req, res) => {
     const month = z
       .string({ error: 'Parameter month wajib diisi.' })
       .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Format month harus YYYY-MM.')
       .parse(req.query.month)
-    res.json(entries.listMonth(db, month))
+    res.json(await entries.listMonth(db, month))
   })
 
-  router.get('/entries/:date', (req, res) => {
-    const entry = entries.findEntry(db, dateSchema.parse(req.params.date))
+  router.get('/entries/:date', async (req, res) => {
+    const entry = await entries.findEntry(db, dateSchema.parse(req.params.date))
     if (!entry) return res.status(404).json({ error: 'Catatan untuk tanggal ini belum ada.' })
     res.json(entry)
   })
 
-  router.put('/entries/:date', (req, res) => {
+  router.put('/entries/:date', async (req, res) => {
     const date = dateSchema.parse(req.params.date)
     const input = entrySchema.parse(req.body)
 
-    if (entries.findEntry(db, date)) return res.json(entries.updateEntry(db, date, input))
+    if (await entries.findEntry(db, date)) return res.json(await entries.updateEntry(db, date, input))
 
     const check = checkNewEntry(date, new Date())
     if (!check.ok) return res.status(422).json({ error: check.reason })
-    res.status(201).json(entries.insertEntry(db, date, input, check.isBackfilled))
+    res.status(201).json(await entries.insertEntry(db, date, input, check.isBackfilled))
   })
 
-  router.get('/lessons', (req, res) => {
+  router.get('/lessons', async (req, res) => {
     const { from, to } = rangeSchema.parse(req.query)
-    res.json(entries.listField(db, 'lessons', from, to))
+    res.json(await entries.listField(db, 'lessons', from, to))
   })
 
-  router.get('/good-things', (req, res) => {
+  router.get('/good-things', async (req, res) => {
     const { from, to } = rangeSchema.parse(req.query)
-    res.json(entries.listField(db, 'good_things', from, to))
+    res.json(await entries.listField(db, 'good_things', from, to))
   })
 
-  router.get('/search', (req, res) => {
+  router.get('/search', async (req, res) => {
     const keyword = z
       .string({ error: 'Kata kunci wajib diisi.' })
       .trim()
@@ -112,7 +112,7 @@ export function apiRouter(db: Db) {
       .max(200, 'Kata kunci maksimal 200 karakter.')
       .parse(req.query.q)
 
-    const results = entries.searchEntries(db, keyword).flatMap((entry) => {
+    const results = (await entries.searchEntries(db, keyword)).flatMap((entry) => {
       const match = fields.find(([key]) => entry[key]?.toLowerCase().includes(keyword.toLowerCase()))
       if (!match) return []
       const [key, label] = match

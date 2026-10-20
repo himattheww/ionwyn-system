@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3'
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
+import postgres from 'postgres'
+
+export type Query = <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>
 
 type EntryRow = {
   entry_date: string
@@ -8,7 +8,7 @@ type EntryRow = {
   good_things: string
   lessons: string
   free_text: string | null
-  is_backfilled: number
+  is_backfilled: boolean
   created_at: string
   updated_at: string
 }
@@ -20,27 +20,14 @@ export type EntryInput = {
   freeText: string | null
 }
 
-export function openDatabase(path: string) {
-  mkdirSync(dirname(path), { recursive: true })
-  const db = new Database(path)
-  db.pragma('journal_mode = WAL')
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS entries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      entry_date TEXT NOT NULL UNIQUE,
-      happened TEXT NOT NULL,
-      good_things TEXT NOT NULL,
-      lessons TEXT NOT NULL,
-      free_text TEXT,
-      is_backfilled INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    )
-  `)
-  return db
+export function connect(url: string): Query {
+  const sql = postgres(url, { prepare: false, max: Number(process.env.PG_POOL_MAX ?? 3), idle_timeout: 20 })
+  return (text, params = []) => sql.unsafe(text, params as never[]) as never
 }
 
-export type Db = ReturnType<typeof openDatabase>
+const columns = `entry_date::text as entry_date, happened, good_things, lessons, free_text, is_backfilled,
+  to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as created_at,
+  to_char(updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as updated_at`
 
 function toEntry(row: EntryRow) {
   return {
@@ -49,73 +36,77 @@ function toEntry(row: EntryRow) {
     goodThings: row.good_things,
     lessons: row.lessons,
     freeText: row.free_text,
-    isBackfilled: row.is_backfilled === 1,
+    isBackfilled: row.is_backfilled,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
 }
 
-export function findEntry(db: Db, date: string) {
-  const row = db.prepare('SELECT * FROM entries WHERE entry_date = ?').get(date) as EntryRow | undefined
+export async function findEntry(query: Query, date: string) {
+  const [row] = await query<EntryRow>(`select ${columns} from catatan_entries where entry_date = $1`, [date])
   return row ? toEntry(row) : null
 }
 
-export function insertEntry(db: Db, date: string, input: EntryInput, isBackfilled: boolean) {
-  const now = new Date().toISOString()
-  db.prepare(
-    `INSERT INTO entries (entry_date, happened, good_things, lessons, free_text, is_backfilled, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(date, input.happened, input.goodThings, input.lessons, input.freeText, isBackfilled ? 1 : 0, now, now)
-  return findEntry(db, date)!
+export async function insertEntry(query: Query, date: string, input: EntryInput, isBackfilled: boolean) {
+  const [row] = await query<EntryRow>(
+    `insert into catatan_entries (entry_date, happened, good_things, lessons, free_text, is_backfilled)
+     values ($1, $2, $3, $4, $5, $6) returning ${columns}`,
+    [date, input.happened, input.goodThings, input.lessons, input.freeText, isBackfilled],
+  )
+  return toEntry(row!)
 }
 
-export function updateEntry(db: Db, date: string, input: EntryInput) {
-  db.prepare(
-    `UPDATE entries SET happened = ?, good_things = ?, lessons = ?, free_text = ?, updated_at = ?
-     WHERE entry_date = ?`,
-  ).run(input.happened, input.goodThings, input.lessons, input.freeText, new Date().toISOString(), date)
-  return findEntry(db, date)!
+export async function updateEntry(query: Query, date: string, input: EntryInput) {
+  const [row] = await query<EntryRow>(
+    `update catatan_entries set happened = $2, good_things = $3, lessons = $4, free_text = $5, updated_at = now()
+     where entry_date = $1 returning ${columns}`,
+    [date, input.happened, input.goodThings, input.lessons, input.freeText],
+  )
+  return toEntry(row!)
 }
 
-export function listMonth(db: Db, month: string) {
-  const rows = db
-    .prepare('SELECT entry_date, is_backfilled FROM entries WHERE entry_date LIKE ? ORDER BY entry_date')
-    .all(`${month}-%`) as Pick<EntryRow, 'entry_date' | 'is_backfilled'>[]
-  return rows.map((r) => ({ date: r.entry_date, isBackfilled: r.is_backfilled === 1 }))
+export async function listMonth(query: Query, month: string) {
+  const rows = await query<Pick<EntryRow, 'entry_date' | 'is_backfilled'>>(
+    `select entry_date::text as entry_date, is_backfilled from catatan_entries
+     where entry_date >= ($1 || '-01')::date and entry_date < ($1 || '-01')::date + interval '1 month'
+     order by entry_date`,
+    [month],
+  )
+  return rows.map((r) => ({ date: r.entry_date, isBackfilled: r.is_backfilled }))
 }
 
-export function listRecent(db: Db, limit: number) {
-  const rows = db.prepare('SELECT * FROM entries ORDER BY entry_date DESC LIMIT ?').all(limit) as EntryRow[]
+export async function listRecent(query: Query, limit: number) {
+  const rows = await query<EntryRow>(`select ${columns} from catatan_entries order by entry_date desc limit $1`, [limit])
   return rows.map(toEntry)
 }
 
-export function listSameDayEarlierYears(db: Db, date: string) {
-  const rows = db
-    .prepare('SELECT * FROM entries WHERE substr(entry_date, 6) = ? AND entry_date < ? ORDER BY entry_date DESC')
-    .all(date.slice(5), date) as EntryRow[]
+export async function listSameDayEarlierYears(query: Query, date: string) {
+  const rows = await query<EntryRow>(
+    `select ${columns} from catatan_entries
+     where to_char(entry_date, 'MM-DD') = to_char($1::date, 'MM-DD') and entry_date < $1::date
+     order by entry_date desc`,
+    [date],
+  )
   return rows.map(toEntry)
 }
 
-export function listField(db: Db, column: 'lessons' | 'good_things', from?: string, to?: string) {
-  const rows = db
-    .prepare(
-      `SELECT entry_date, ${column} AS text FROM entries
-       WHERE entry_date >= ? AND entry_date <= ?
-       ORDER BY entry_date DESC`,
-    )
-    .all(from ?? '0000-01-01', to ?? '9999-12-31') as { entry_date: string; text: string }[]
+export async function listField(query: Query, column: 'lessons' | 'good_things', from?: string, to?: string) {
+  const rows = await query<{ entry_date: string; text: string }>(
+    `select entry_date::text as entry_date, ${column} as text from catatan_entries
+     where entry_date between $1::date and $2::date
+     order by entry_date desc`,
+    [from ?? '0001-01-01', to ?? '9999-12-31'],
+  )
   return rows.map((r) => ({ date: r.entry_date, text: r.text }))
 }
 
-export function searchEntries(db: Db, keyword: string) {
+export async function searchEntries(query: Query, keyword: string) {
   const pattern = `%${keyword.replace(/[\\%_]/g, '\\$&')}%`
-  const rows = db
-    .prepare(
-      `SELECT * FROM entries
-       WHERE happened LIKE @pattern ESCAPE '\\' OR good_things LIKE @pattern ESCAPE '\\'
-          OR lessons LIKE @pattern ESCAPE '\\' OR free_text LIKE @pattern ESCAPE '\\'
-       ORDER BY entry_date DESC LIMIT 100`,
-    )
-    .all({ pattern }) as EntryRow[]
+  const rows = await query<EntryRow>(
+    `select ${columns} from catatan_entries
+     where happened ilike $1 or good_things ilike $1 or lessons ilike $1 or free_text ilike $1
+     order by entry_date desc limit 100`,
+    [pattern],
+  )
   return rows.map(toEntry)
 }
