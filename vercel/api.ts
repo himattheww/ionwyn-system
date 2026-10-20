@@ -3,6 +3,7 @@ import { createApp as catatanApp } from '../catatan-malam/server/src/app.ts'
 import { connect } from '../catatan-malam/server/src/db.ts'
 import { createApp as fitApp } from '../fitness-track/server/src/app.ts'
 import { openDb as fitDb } from '../fitness-track/server/src/db.ts'
+import { alert } from '../hub/src/alert.ts'
 import { hubRoutes } from '../hub/src/routes.ts'
 import { createApp as learnApp } from '../learning/server/src/app.ts'
 import { createApp as levelingApp } from '../leveling/server/src/app.ts'
@@ -36,5 +37,10 @@ app.use('/fit', fitApp(fitDb(databaseUrl)))
 app.use('/leveling', levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) }).app)
 app.use('/learn', learnApp())
 app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
+app.use(async (error: Error, req: Request, res: Response, _next: NextFunction) => {
+  console.error(`${req.method} ${req.path}:`, error)
+  await alert(`api:${req.method} ${req.path}`, `Error di ${req.method} ${req.path}: ${error.message}`)
+  if (!res.headersSent) res.status(500).json({ error: 'Terjadi kesalahan di server.' })
+})
 
 export default app

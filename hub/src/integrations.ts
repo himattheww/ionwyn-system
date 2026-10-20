@@ -13,6 +13,7 @@ import { config } from './config.ts'
 import { kindFor, matchItems, runTemplateTitle, scheduleWeekday, type Fact, type FactKind } from './match.ts'
 import { newId, scheduleStore } from './schedule.ts'
 import { diaryFacts, fitFacts, getJson, learnFacts, workFacts } from './sources.ts'
+import { alert } from './alert.ts'
 import { loadStatus, saveStatus, type RelationStatus } from './status.ts'
 
 const relations: { id: string; label: string; kinds: FactKind[]; facts: (from: string, to: string) => Promise<Fact[]> }[] = [
@@ -120,6 +121,15 @@ async function syncRunPattern(store: Store) {
   }
 }
 
+async function report(before: RelationStatus[], after: RelationStatus[]) {
+  const previous = new Map(before.map(s => [s.id, s]))
+  for (const s of after) {
+    const was = previous.get(s.id)?.lastError ?? null
+    if (s.lastError && !was) await alert(`gagal:${s.id}`, `${s.id} ${s.label} gagal: ${s.lastError}`, 0)
+    if (!s.lastError && was) await alert(`pulih:${s.id}`, `${s.id} ${s.label} pulih: ${s.lastResult ?? 'ok'}`, 0)
+  }
+}
+
 let running: Promise<void> | null = null
 
 export function runIntegrations() {
@@ -132,7 +142,12 @@ export function runIntegrations() {
     try {
       await runAll()
     } finally {
-      await saveStatus([...status.values()]).catch(error => console.error('Status integrasi tidak tersimpan:', error.message))
+      const after = [...status.values()]
+      await saveStatus(after).catch(error => {
+        console.error('Status integrasi tidak tersimpan:', error.message)
+        return alert('status', `Status integrasi tidak tersimpan: ${error.message}`)
+      })
+      await report(before, after)
     }
   })().finally(() => {
     running = null

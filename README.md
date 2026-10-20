@@ -269,6 +269,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
    | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | untuk build Keuangan |
    | `LEARN_API_URL` | `https://<domain-vercel-mu>/learn` |
    | `FIT_ENABLED`, `DIARY_ENABLED`, `LEARN_ENABLED`, `SCHEDULE_ENABLED`, `FINANCE_ENABLED`, `TIMESHEET_ENABLED` | `true` |
+   | `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | opsional, untuk notifikasi error (lihat [Monitoring](#monitoring)) |
 5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job.
 6. Di Supabase → Authentication → Sign In / Providers, matikan pendaftaran user baru.
 
@@ -318,6 +319,7 @@ Ada dua tingkat:
 | `HUB_PORT`, `CATATAN_PORT`, `LEARN_API_PORT`, `FIT_PORT`, `LEVELING_PORT` | Port versi lokal. Biarkan default kalau tidak bentrok |
 | `DATABASE_URL` | Connection string Supabase **Session pooler** (port 5432). Dipakai Catatan Malam, Fitness, Leveling, dan backup |
 | `OWNER_USER_ID`, `INTERNAL_SECRET`, `HUB_APP_BASE` | Hanya untuk versi Vercel. Lokal boleh kosong |
+| `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | Bot dan chat Telegram untuk notifikasi error. Kosong berarti notifikasi mati |
 | `BACKUP_FOLDER` | Folder backup, default `backups` di root |
 | `BACKUP_KEEP` | Jumlah backup harian yang disimpan, default 30 |
 | `INTEGRATION_INTERVAL_MIN` | Jarak antar-siklus hubungan antar-aplikasi, default 10 menit. `0` mematikan siklus otomatis |
@@ -399,6 +401,19 @@ H7 hanya mengubah judul dan status aktif rutinitas `run_done`. Jam dan durasi ya
 ### Kalau satu aplikasi mati
 
 Hubungan yang membutuhkan aplikasi itu dilewati di siklus tersebut. Error-nya tercatat di Beranda dan di log terminal. Hubungan lain tetap jalan. Leveling memakai data terakhir dari sumber yang gagal dibaca.
+
+## Monitoring
+
+- **Status integrasi** H4–H8 disimpan di tabel `hub_integration_status`, jadi Beranda menampilkan hasil dan error terakhir walaupun fungsi Vercel baru dinyalakan ulang.
+- **Notifikasi Telegram** dikirim saat:
+  - sebuah integrasi berubah dari berhasil menjadi gagal, dan saat pulih lagi. Error yang sama tidak dikirim berulang;
+  - API di Vercel melempar error. Paling banyak satu pesan per endpoint tiap 30 menit.
+- Notifikasi aktif kalau `ALERT_TELEGRAM_TOKEN` dan `ALERT_TELEGRAM_CHAT_ID` diisi, di `.env` root untuk versi lokal dan di Environment Variables Vercel untuk versi online.
+
+Cara mengisinya:
+1. Buat bot baru lewat @BotFather di Telegram, lalu salin token-nya ke `ALERT_TELEGRAM_TOKEN`.
+2. Kirim pesan apa saja ke bot itu dari akunmu.
+3. Cari chat id-mu, misalnya lewat @userinfobot, lalu isi `ALERT_TELEGRAM_CHAT_ID`.
 
 ## Tes
 
