@@ -1,0 +1,26 @@
+.sign-in {
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 18vh var(--space-4) var(--space-8);
+  animation: rise var(--dur-slow) var(--ease) both;
+}
+
+.sign-in h1 {
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.sign-in-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: var(--hair) solid var(--rule);
+}
+
+.sign-in-form .btn {
+  width: 100%;
+}
+
+.sign-in-form .state-error {
+  font-size: var(--text-sm);
+}

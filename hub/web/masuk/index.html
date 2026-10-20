@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masuk · Ionwyn</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/design/system.css" />
+    <link rel="stylesheet" href="/styles/masuk.css" />
+  </head>
+  <body>
+    <main class="sign-in">
+      <p class="eyebrow">Ionwyn</p>
+      <h1>Masuk</h1>
+      <p class="muted">Satu akun untuk semua aplikasi.</p>
+      <form id="form" class="sign-in-form" novalidate>
+        <label class="field">
+          <span>Email</span>
+          <input id="email" type="email" autocomplete="username" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <p id="error" class="state-error" role="alert" hidden></p>
+        <button class="btn btn-primary" id="submit" type="submit">Masuk</button>
+      </form>
+    </main>
+    <script type="module" src="/lib/masuk.js"></script>
+  </body>
+</html>

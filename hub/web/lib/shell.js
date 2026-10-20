@@ -1,3 +1,5 @@
+import { sessionState, signOut } from './session.js'
+
 const frame = document.getElementById('frame')
 const nav = document.getElementById('apps')
 const newTab = document.getElementById('newtab')
@@ -62,6 +64,15 @@ async function loadApps() {
   }
   highlight(target())
 }
+
+const state = await sessionState()
+if (state === 'signed-out') location.replace('/masuk/')
+const signOutButton = document.getElementById('sign-out')
+signOutButton.hidden = state !== 'signed-in'
+signOutButton.addEventListener('click', async () => {
+  await signOut()
+  location.replace('/masuk/')
+})
 
 window.addEventListener('hashchange', open)
 frame.addEventListener('load', () => {
