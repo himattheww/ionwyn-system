@@ -175,7 +175,11 @@ async function ask<T>(system: string, instruction: string, input: object, schema
   throw new AiError('Jawaban AI tidak sesuai format setelah 2 percobaan. Coba lagi sebentar lagi.')
 }
 
-const complete = env.AI_PROVIDER === 'api' ? completeWithApi : completeWithCli
+const completeOff = async (): Promise<never> => {
+  throw new AiError('Fitur AI dijalankan dari laptop. Buka Ionwyn lokal untuk membuat jalur atau study case.')
+}
+
+const complete = env.AI_PROVIDER === 'api' ? completeWithApi : env.AI_PROVIDER === 'off' ? completeOff : completeWithCli
 
 export const ai: AiService = {
   async planTopics(input) {
