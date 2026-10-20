@@ -30,10 +30,10 @@ export function hubRoutes() {
   const router = Router()
   router.get('/hub/api/apps', (_req, res) => res.json(apps.map(a => ({ prefix: a.prefix, label: a.label }))))
   router.get('/hub/api/today', async (_req, res) => res.json(await todaySummary()))
-  router.get('/hub/api/integrations', (_req, res) => res.json(integrationStatus()))
+  router.get('/hub/api/integrations', async (_req, res) => res.json(await integrationStatus()))
   router.post('/hub/api/integrations/run', async (_req, res) => {
     await runIntegrations()
-    res.json(integrationStatus())
+    res.json(await integrationStatus())
   })
   router.post('/timesheet/api', express.text({ type: '*/*', limit: '100kb' }), timesheetApi)
   return router

@@ -116,6 +116,6 @@ export async function todaySummary() {
   return {
     today,
     cards: { jadwal: jadwalCard, catatan: catatanCard, fit: fitCard, learn: learnCard, leveling: levelingCard, timesheet: timesheetCard, uang: uangCard },
-    integrations: integrationStatus()
+    integrations: await integrationStatus().catch(() => [])
   }
 }

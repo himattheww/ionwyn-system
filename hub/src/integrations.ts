@@ -13,15 +13,7 @@ import { config } from './config.ts'
 import { kindFor, matchItems, runTemplateTitle, scheduleWeekday, type Fact, type FactKind } from './match.ts'
 import { newId, scheduleStore } from './schedule.ts'
 import { diaryFacts, fitFacts, getJson, learnFacts, workFacts } from './sources.ts'
-
-interface RelationStatus {
-  id: string
-  label: string
-  lastRunAt: string | null
-  lastOkAt: string | null
-  lastError: string | null
-  lastResult: string | null
-}
+import { loadStatus, saveStatus, type RelationStatus } from './status.ts'
 
 const relations: { id: string; label: string; kinds: FactKind[]; facts: (from: string, to: string) => Promise<Fact[]> }[] = [
   { id: 'H4', label: 'Garmin menyelesaikan item latihan', kinds: ['run', 'strength', 'swim'], facts: fitFacts },
@@ -30,14 +22,16 @@ const relations: { id: string; label: string; kinds: FactKind[]; facts: (from: s
   { id: 'H8', label: 'Hadir Timesheet menyelesaikan item work_done', kinds: ['work'], facts: workFacts }
 ]
 
-const status = new Map<string, RelationStatus>(
-  [...relations, { id: 'H7', label: 'Pola lari Fitness menjadi rutinitas lari' }].map(r => [
-    r.id,
-    { id: r.id, label: r.label, lastRunAt: null, lastOkAt: null, lastError: null, lastResult: null }
-  ])
-)
+const defaults: RelationStatus[] = [...relations, { id: 'H7', label: 'Pola lari Fitness menjadi rutinitas lari' }]
+  .map(r => ({ id: r.id, label: r.label, lastRunAt: null, lastOkAt: null, lastError: null, lastResult: null }))
+  .sort((a, b) => a.id.localeCompare(b.id))
 
-export const integrationStatus = () => [...status.values()].sort((a, b) => a.id.localeCompare(b.id))
+export async function integrationStatus(): Promise<RelationStatus[]> {
+  const saved = new Map((await loadStatus()).map(s => [s.id, s]))
+  return defaults.map(d => ({ ...d, ...saved.get(d.id), label: d.label }))
+}
+
+let status = new Map<string, RelationStatus>()
 
 function record(id: string, result: { ok: string } | { error: unknown }) {
   const s = status.get(id)!
@@ -130,29 +124,42 @@ let running: Promise<void> | null = null
 
 export function runIntegrations() {
   running ??= (async () => {
-    const today = formatDate(new Date())
-    const from = addDays(today, -config.lookbackDays)
-    let store: Store
+    const before = await integrationStatus().catch(error => {
+      console.error('Status integrasi tidak terbaca:', error.message)
+      return defaults
+    })
+    status = new Map(before.map(s => [s.id, { ...s }]))
     try {
-      store = await scheduleStore()
-    } catch (error) {
-      for (const id of status.keys()) record(id, { error })
-      return
-    }
-    await syncRunPattern(store)
-    try {
-      const [items, logs] = await Promise.all([
-        store.itemsBetween(from, today),
-        store.logsBetween(parseDate(addDays(from, -1)), parseDate(addDays(today, 2)))
-      ])
-      await completeFromFacts(store, items, logs, from, today)
-    } catch (error) {
-      for (const r of relations) record(r.id, { error })
+      await runAll()
+    } finally {
+      await saveStatus([...status.values()]).catch(error => console.error('Status integrasi tidak tersimpan:', error.message))
     }
   })().finally(() => {
     running = null
   })
   return running
+}
+
+async function runAll() {
+  const today = formatDate(new Date())
+  const from = addDays(today, -config.lookbackDays)
+  let store: Store
+  try {
+    store = await scheduleStore()
+  } catch (error) {
+    for (const id of status.keys()) record(id, { error })
+    return
+  }
+  await syncRunPattern(store)
+  try {
+    const [items, logs] = await Promise.all([
+      store.itemsBetween(from, today),
+      store.logsBetween(parseDate(addDays(from, -1)), parseDate(addDays(today, 2)))
+    ])
+    await completeFromFacts(store, items, logs, from, today)
+  } catch (error) {
+    for (const r of relations) record(r.id, { error })
+  }
 }
 
 export function scheduleIntegrations() {
