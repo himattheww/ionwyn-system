@@ -2,8 +2,8 @@
 
 Tujuh aplikasi pribadi yang digabung menjadi satu sistem: satu alamat, satu navigasi, satu login, satu database. Aktivitas di satu aplikasi ikut mengisi aplikasi lain, misalnya lari yang tercatat di Garmin otomatis mencentang jadwal lari dan menambah exp di Leveling.
 
-- **Online:** https://ionwyn-system.vercel.app (Vercel + Supabase, perlu login)
-- **Lokal:** http://localhost:4000 setelah `npm start` (tanpa login)
+- **Online:** di-deploy ke Vercel + Supabase, perlu login.
+- **Lokal:** dijalankan di laptop dengan `npm start`, tanpa login.
 
 Dua-duanya memakai database Supabase yang sama, jadi isinya selalu sama.
 
@@ -57,7 +57,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Bot Telegram: `masuk 08.00`, `keluar 17.30`, `kegiatan ...`, `izin`, `rekap`. Bisa diberi tanggal di depan, misalnya `kemarin masuk 08.00`.
 
 ### Yang menyatukan semuanya
-- **Satu login.** Versi online meminta login sekali di `/masuk/` dengan akun Supabase. Jadwal dan Keuangan ikut masuk dengan sesi yang sama.
+- **Satu login.** Versi online meminta login sekali dengan akun Supabase. Jadwal dan Keuangan ikut masuk dengan sesi yang sama.
 - **Satu database.** Semua data aplikasi ada di satu project Supabase dengan RLS di setiap tabel.
 - **Hubungan otomatis.** Supabase `pg_cron` menjalankan integrasi tiap 10 menit dan hitung ulang Leveling tiap 30 menit, walaupun laptop mati.
 - **Satu tampilan.** Semua aplikasi memakai sistem desain yang sama di `design/`, dengan mode terang dan gelap.
@@ -66,7 +66,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 ## Cara pakai
 
 ### Sehari-hari (online)
-1. Buka https://ionwyn-system.vercel.app/masuk/ dan login dengan akun Keuangan. Sesi tersimpan, jadi cukup sekali per browser.
+1. Buka alamat Vercel-mu dan login dengan akun Keuangan. Sesi tersimpan, jadi cukup sekali per browser.
 2. **Pagi:** buka Beranda untuk melihat jadwal hari ini. Absen masuk lewat Timesheet atau bot Telegram.
 3. **Siang:** catat pengeluaran di Keuangan atau lewat bot Telegram FinTrack.
 4. **Sesudah latihan:** jalankan sinkron Garmin dari laptop (lihat di bawah). Item `run_done`, `strength_done`, atau `swim_done` di Jadwal tercentang sendiri dalam 10 menit.
@@ -81,9 +81,9 @@ Dua fitur ini butuh laptop. Hasilnya langsung terlihat di versi online karena da
 
 | Fitur | Cara |
 | --- | --- |
-| Sinkron Garmin | `npm run garmin:sync -w fitness-track` dari folder `ionwyn-system`, atau tombol **Sinkron** di `localhost:4000/fit/` |
+| Sinkron Garmin | `npm run garmin:sync -w fitness-track` dari folder `ionwyn-system`, atau tombol **Sinkron** di Fitness versi lokal |
 | Login ulang Garmin | `cd fitness-track` lalu `npm run garmin:login`, kalau sinkron menampilkan "Perlu login ulang" |
-| AI Learn (buat jalur, study case) | Buka Learn lewat `localhost:4000/learn/`. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
+| AI Learn (buat jalur, study case) | Buka Learn di versi lokal. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
 
 ### Menjalankan di laptop
 Dari folder `ionwyn-system`:
@@ -92,7 +92,7 @@ Dari folder `ionwyn-system`:
 npm start
 ```
 
-Buka http://localhost:4000. Log semua bagian tampil di satu terminal dengan label per aplikasi. Hub menjalankan integrasi sendiri tiap 10 menit selama `npm start` hidup. Tekan `Ctrl+C` untuk berhenti.
+Buka alamat yang tampil di terminal. Log semua bagian tampil di satu terminal dengan label per aplikasi. Hub menjalankan integrasi sendiri tiap 10 menit selama `npm start` hidup. Tekan `Ctrl+C` untuk berhenti.
 
 ## Prasyarat
 
@@ -125,7 +125,7 @@ npm run build
 
 Setelah mengubah kode frontend, jalankan `npm run build` lagi. Untuk satu aplikasi saja: `npm run build -- catatan` (nama: `catatan`, `fit`, `leveling`, `learn`, `jadwal`, `uang`, `timesheet`).
 
-Pertama kali membuka `localhost:4000`, login sekali di Jadwal atau Keuangan. Browser menyimpan sesi per alamat, jadi sesi lokal dan sesi online terpisah.
+Pertama kali membuka versi lokal, login sekali di Jadwal atau Keuangan. Browser menyimpan sesi per alamat, jadi sesi lokal dan sesi online terpisah.
 
 ## Desain
 
@@ -151,13 +151,13 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 
 | Bagian | Di Vercel | Di laptop |
 | --- | --- | --- |
-| Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start`, localhost:4000 |
+| Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start` |
 | API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
 | Sinkron Garmin | Tidak bisa, tombolnya memberi tahu | `npm run garmin:sync -w fitness-track` atau tombol Sinkron di versi lokal |
 | AI Learn (buat jalur, study case) | Tidak bisa (`AI_PROVIDER=off`) | Pakai langganan Claude (`AI_PROVIDER=cli`) |
 | Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
 
-**Login.** Versi Vercel meminta login sekali di `/masuk/` dengan akun Supabase-mu. Hanya user dengan id `OWNER_USER_ID` yang diterima. Sesi disimpan di cookie HttpOnly untuk semua API, dan diteruskan ke Jadwal dan Keuangan. Versi lokal tetap tanpa login.
+**Login.** Versi Vercel meminta login sekali dengan akun Supabase-mu, dan hanya akun pemilik yang diterima. Jadwal dan Keuangan ikut masuk dengan sesi yang sama. Versi lokal tetap tanpa login.
 
 **Langkah pertama kali:**
 1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`.
@@ -169,7 +169,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
    | --- | --- |
    | `DATABASE_URL` | connection string Session pooler (port 5432) |
    | `OWNER_USER_ID` | id user Supabase-mu |
-   | `INTERNAL_SECRET` | string acak panjang, sama dengan yang dipakai `pg_cron` |
+   | `INTERNAL_SECRET` | string acak panjang buatanmu sendiri, sama dengan yang dipakai `pg_cron` |
    | `HUB_APP_BASE` | `https://<domain-vercel-mu>` |
    | `FINANCE_SUPABASE_URL`, `FINANCE_SUPABASE_KEY`, `FINANCE_EMAIL`, `FINANCE_PASSWORD` | sama dengan `.env` root |
    | `SCHEDULE_SUPABASE_URL`, `SCHEDULE_SUPABASE_KEY`, `SCHEDULE_EMAIL`, `SCHEDULE_PASSWORD` | sama dengan `.env` root |
@@ -191,7 +191,7 @@ ionwyn-system/
 ├── package.json             setup, build, start, backup, test
 ├── .env.example             contoh konfigurasi root (tanpa nilai rahasia)
 ├── scripts/
-│   ├── apps.mjs             daftar aplikasi, port internal, base path
+│   ├── apps.mjs             daftar aplikasi dan base path
 │   ├── run.mjs              npm start: menjalankan semua bagian
 │   ├── build.mjs            npm run build: build semua frontend dengan base path-nya
 │   ├── setup.mjs            npm run setup: npm ci di semua folder
@@ -208,28 +208,14 @@ ionwyn-system/
 └── docs/audit.md            audit dan rancangan
 ```
 
-### Port
-
-Hanya `4000` yang perlu dibuka. Port lain dipakai di dalam dan hanya mendengarkan di `127.0.0.1`.
-
-| Bagian | Port |
-| --- | --- |
-| Hub (gateway, shell, Beranda, integrasi) | 4000 |
-| Catatan Malam | 4710 |
-| Learn API | 4711 |
-| Fitness | 4712 |
-| Leveling | 4713 |
-
-Jadwal, Learn web, Keuangan, dan Timesheet tidak punya proses sendiri. Hasil build-nya disajikan langsung oleh hub.
-
 ## Supabase dan login
 
 Jadwal, Learn, dan Keuangan memakai **satu project Supabase** (project FinTrack). Skema Jadwal dan Learn ditambahkan lewat `supabase/migrations/20261019230000_gabung_jadwal_learn.sql`.
 
-- **Login sekali.** Jadwal dan Keuangan memakai project dan origin yang sama, jadi sesi login tersimpan di satu kunci (`sb-<project>-auth-token`). Login di salah satunya membuat yang lain ikut masuk, dan keluar di salah satunya ikut mengeluarkan yang lain.
-- **Learn** membaca dan menulis lewat servernya sendiri dengan secret key. Tabel Learn memakai RLS tanpa policy, jadi tidak terbaca dari browser.
-- **Timesheet** tidak perlu mengisi Koneksi. `API_KEY` disimpan di `.env` root, dan web memanggil Apps Script lewat hub (`/timesheet/api`).
-- Project lama `scheduling-reminder` dan `learningg` tidak dipakai lagi. Datanya ada di `backups/pra-gabung-*`. Project itu bisa di-pause atau dihapus dari dashboard Supabase kapan saja.
+- **Login sekali.** Jadwal dan Keuangan memakai project dan alamat yang sama, jadi sesi login-nya juga sama. Login di salah satunya membuat yang lain ikut masuk, dan keluar di salah satunya ikut mengeluarkan yang lain.
+- **Learn** membaca dan menulis lewat servernya sendiri. Tabelnya tidak bisa dibaca langsung dari browser.
+- **Timesheet** tidak perlu mengisi Koneksi. `API_KEY` disimpan di `.env` root, dan web memanggil Apps Script lewat hub.
+- Project Supabase lama milik Jadwal dan Learn tidak dipakai lagi. Datanya sudah dibackup sebelum digabung.
 
 ## Konfigurasi
 
@@ -239,7 +225,7 @@ Ada dua tingkat:
 
 | Variabel | Fungsi |
 | --- | --- |
-| `HUB_PORT`, `CATATAN_PORT`, `LEARN_API_PORT`, `FIT_PORT`, `LEVELING_PORT` | Port |
+| `HUB_PORT`, `CATATAN_PORT`, `LEARN_API_PORT`, `FIT_PORT`, `LEVELING_PORT` | Port versi lokal. Biarkan default kalau tidak bentrok |
 | `DATABASE_URL` | Connection string Supabase **Session pooler** (port 5432). Dipakai Catatan Malam, Fitness, Leveling, dan backup |
 | `OWNER_USER_ID`, `INTERNAL_SECRET`, `HUB_APP_BASE` | Hanya untuk versi Vercel. Lokal boleh kosong |
 | `BACKUP_FOLDER` | Folder backup, default `backups` di root |
@@ -287,9 +273,9 @@ Di laptop, hub menjalankannya setiap `INTEGRATION_INTERVAL_MIN` menit. Di versi 
 
 | | Hubungan | Cara kerja |
 | --- | --- | --- |
-| H1 | Leveling membaca semua sumber | Fitness dan Catatan Malam lewat tabel Postgres, Jadwal dan Keuangan lewat Supabase, Learn lewat `GET /api/export`, Timesheet lewat Apps Script |
+| H1 | Leveling membaca semua sumber | Fitness dan Catatan Malam lewat tabel Postgres, Jadwal dan Keuangan lewat Supabase, Learn lewat API export-nya, Timesheet lewat Apps Script |
 | H2 | Tanpa exp ganda | Item jadwal yang tipenya termasuk `disiplin.linkedActivityTypes` di `leveling/config/rules.json` tidak memberi exp disiplin. Exp-nya datang dari aplikasi asal faktanya |
-| H3 | Leveling membaca Learn | Endpoint baru `GET /api/export` di Learn |
+| H3 | Leveling membaca Learn | Endpoint export baru di Learn |
 | H4 | Garmin menyelesaikan item latihan | Item `run_done`, `strength_done`, `swim_done` |
 | H5 | Catatan Malam menyelesaikan pengingat | Item `diary_done` |
 | H6 | Sesi Learn menyelesaikan item belajar | Item `learn:<id jalur>` (jalur tertentu) atau `learn_done` (jalur apa pun) |
@@ -346,8 +332,8 @@ Login sekali dulu dengan `node scripts/screenshots.mjs gateway login --login`. P
 Semua perbedaan ini tidak mengubah tampilan:
 - Frontend membaca base path dari `APP_BASE` saat build (`vite.config.ts`, router `createWebHistory(import.meta.env.BASE_URL)`, fetch API memakai `BASE_URL`). Tanpa `APP_BASE`, misalnya `npm run dev` atau deploy Vercel FinTrack, semuanya tetap di `/` seperti sebelumnya.
 - Scheduling: service worker dan manifest memakai path relatif.
-- FinTrack: `redirectTo` login Google dan reset password ikut base path. Tambahkan `http://localhost:4000/uang/auth/callback` dan `http://localhost:4000/uang/auth/reset-password` di Supabase → Authentication → URL Configuration.
-- Learn: server hanya mendengarkan di `127.0.0.1`, plus endpoint baru `GET /api/export`.
+- FinTrack: `redirectTo` login Google dan reset password ikut base path. Tambahkan `<alamat>/uang/auth/callback` dan `<alamat>/uang/auth/reset-password` untuk alamat lokal dan alamat Vercel-mu di Supabase → Authentication → URL Configuration.
+- Learn: server hanya bisa diakses dari laptop itu sendiri, plus endpoint export baru.
 - Leveling: adapter Learn membaca API Learn, adapter Timesheet membaca Apps Script, aturan `linkedActivityTypes` (H2).
 
 ## Windows
