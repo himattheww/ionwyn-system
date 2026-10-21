@@ -55,7 +55,7 @@ writeFileSync(
       runtime: 'nodejs24.x',
       handler: 'index.mjs',
       launcherType: 'Nodejs',
-      maxDuration: 60,
+      maxDuration: 300,
       environment: { GARMIN_SYNC: 'false', AI_PROVIDER: 'off', PG_POOL_MAX: '1' }
     },
     null,

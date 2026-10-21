@@ -5,6 +5,7 @@ import { config } from './config.ts';
 import { addDays, jakartaDate, weekRange } from './dates.ts';
 import { average7, groupSets, isRun, matchRunPattern, type RunPattern, type SetRow } from './stats.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
+import { connection, exchangeTicket, saveTokens, TokenSession } from './garmin/token.ts';
 import { availableMonths, buildMonthlyReport, loadMonth, previousMonth } from './report.ts';
 
 const dateParam = z.object({ date: z.iso.date() });
@@ -21,6 +22,7 @@ const conditionBody = z.object({
 });
 const weightBody = z.object({ kg: z.number().min(20).max(300) });
 const mealBody = z.object({ protein_met: z.boolean(), rice_portions: z.number().min(0).max(20) });
+const ticketBody = z.object({ ticket: z.string().regex(/^ST-[\w.-]+$/).max(500) });
 const runPatternBody = z.record(z.enum(['1', '2', '3', '4', '5', '6', '7']), z.string().trim().min(1).max(30));
 
 export function apiRouter(db: Db) {
@@ -33,6 +35,7 @@ export function apiRouter(db: Db) {
     ...(await db.one('SELECT last_success_at, last_error_at, last_error FROM fit_sync_status WHERE id = 1')),
     running: isSyncRunning(),
     local: config.garminSyncEnabled,
+    garmin: await connection(db),
   });
 
   const setsFor = async (activityIds: number[]) => {
@@ -226,11 +229,23 @@ export function apiRouter(db: Db) {
 
   api.post('/sync', async (_req, res) => {
     if (!config.garminSyncEnabled) {
-      res.status(409).json({ error: 'Sinkron Garmin dijalankan dari laptop: buka Ionwyn lokal lalu tekan Sinkron, atau jalankan npm run garmin:sync.' });
+      await runSync(db, { open: () => TokenSession.open(db), pauseMs: 300, maxDays: 30 });
+      res.json(await syncStatus());
       return;
     }
     void runSync(db);
     res.status(202).json(await syncStatus());
+  });
+
+  api.post('/garmin/ticket', async (req, res) => {
+    const { ticket } = ticketBody.parse(req.body);
+    try {
+      await saveTokens(db, await exchangeTicket(ticket));
+    } catch (error) {
+      res.status(502).json({ error: (error as Error).message });
+      return;
+    }
+    res.json(await syncStatus());
   });
 
   api.get('/settings', async (_req, res) => res.json({ run_pattern: await runPattern() }));
