@@ -93,6 +93,10 @@ export class GarminSession {
     return JSON.parse(result.body);
   }
 
+  async sleepPath(date: string) {
+    return `/sleep-service/sleep/dailySleepData?date=${date}&nonSleepBufferMinutes=60`;
+  }
+
   close() {
     return this.context.close();
   }

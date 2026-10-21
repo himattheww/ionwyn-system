@@ -1,6 +1,7 @@
 import type { Db } from '../db.ts';
 import { addDays, datesBetween, jakartaDate } from '../dates.ts';
 import { GarminSession, NeedLoginError } from './client.ts';
+import { NeedConnectError } from './token.ts';
 import { applyRaw, pruneRaw, saveRaw, type RawKind } from './store.ts';
 
 const FIRST_SYNC_DAYS = 90;
@@ -18,18 +19,27 @@ export function syncStartDate(lastSuccessAt: string | null, today: string) {
   return addDays(jakartaDate(lastSuccessAt), -OVERLAP_DAYS);
 }
 
-const pause = () => new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+export interface GarminSource {
+  get(path: string): Promise<unknown>;
+  sleepPath(date: string): Promise<string>;
+  close(): Promise<void>;
+}
 
-export async function runSync(db: Db) {
+type SyncOptions = { open?: () => Promise<GarminSource>; pauseMs?: number; maxDays?: number };
+
+export async function runSync(db: Db, { open = () => GarminSession.open(), pauseMs = 1000, maxDays = FIRST_SYNC_DAYS }: SyncOptions = {}) {
+  const pause = () => new Promise((resolve) => setTimeout(resolve, pauseMs + Math.random() * pauseMs));
   if (running) return;
   running = true;
   const status = (await db.one<{ last_success_at: string | null }>('SELECT last_success_at FROM fit_sync_status WHERE id = 1'))!;
   const today = jakartaDate();
-  const start = syncStartDate(status.last_success_at, today);
-  let session: GarminSession | null = null;
+  const earliest = addDays(today, -(maxDays - 1));
+  const wanted = syncStartDate(status.last_success_at, today);
+  const start = wanted < earliest ? earliest : wanted;
+  let session: GarminSource | null = null;
 
   try {
-    session = await GarminSession.open();
+    session = await open();
     const fetchAndApply = async (kind: RawKind, ref: string, path: string) => {
       await pause();
       const payload = await session!.get(path);
@@ -60,7 +70,7 @@ export async function runSync(db: Db) {
     }
 
     for (const date of datesBetween(start, today)) {
-      await fetchAndApply('sleep', date, `/sleep-service/sleep/dailySleepData?date=${date}&nonSleepBufferMinutes=60`);
+      await fetchAndApply('sleep', date, await session.sleepPath(date));
     }
 
     await pause();
@@ -75,7 +85,7 @@ export async function runSync(db: Db) {
     await db.run('UPDATE fit_sync_status SET last_success_at = ? WHERE id = 1', [new Date().toISOString()]);
     await pruneRaw(db);
   } catch (error) {
-    const message = error instanceof NeedLoginError ? error.message : `Sinkron gagal: ${(error as Error).message}`;
+    const message = error instanceof NeedLoginError || error instanceof NeedConnectError ? error.message : `Sinkron gagal: ${(error as Error).message}`;
     console.error(message);
     await db.run('UPDATE fit_sync_status SET last_error_at = ?, last_error = ? WHERE id = 1', [new Date().toISOString(), message]);
   } finally {
