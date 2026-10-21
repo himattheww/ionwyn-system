@@ -3,6 +3,8 @@ export type SyncStatus = {
   last_error_at: string | null;
   last_error: string | null;
   running: boolean;
+  local?: boolean;
+  garmin?: { connected: boolean; expiresAt: number | null };
 };
 
 export type Activity = {

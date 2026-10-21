@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { api, useApi } from '../lib/api';
 import StateView from '../components/StateView.vue';
 import SyncNotice from '../components/SyncNotice.vue';
@@ -8,6 +8,10 @@ import type { SyncStatus } from '../types';
 
 const { data, loading, error, load } = useApi<SyncStatus>(() => '/sync');
 const startError = ref<string | null>(null);
+const syncing = ref(false);
+const online = computed(() => data.value?.local === false);
+const connected = computed(() => !!data.value?.garmin?.connected);
+const inApp = navigator.userAgent.includes('IonwynApp');
 let timer: ReturnType<typeof setInterval> | undefined;
 
 watch(
@@ -29,10 +33,13 @@ async function refresh() {
 
 async function start() {
   startError.value = null;
+  syncing.value = true;
   try {
     data.value = await api<SyncStatus>('/sync', { method: 'POST' });
   } catch (e) {
     startError.value = (e as Error).message;
+  } finally {
+    syncing.value = false;
   }
 }
 </script>
@@ -50,13 +57,25 @@ async function start() {
             <dt>Error terakhir</dt>
             <dd>{{ data.last_error_at ? `${formatDateTime(data.last_error_at)} — ${data.last_error}` : '-' }}</dd>
           </dl>
-          <button :disabled="data.running" @click="start">{{ data.running ? 'Sedang sinkron...' : 'Sinkron sekarang' }}</button>
+          <button :disabled="data.running || syncing || (online && !connected)" @click="start">
+            {{ data.running || syncing ? 'Sedang sinkron...' : 'Sinkron sekarang' }}
+          </button>
           <p v-if="startError" class="toast toast-error">{{ startError }}</p>
+        </div>
+
+        <div v-if="online" class="card">
+          <h2>{{ connected ? 'Garmin terhubung' : 'Hubungkan Garmin' }}</h2>
+          <p class="muted">
+            Versi online mengambil data Garmin sendiri tiap 3 jam. Kalau sesi Garmin habis, hubungkan lagi lewat login Garmin di aplikasi
+            Android Ionwyn.
+          </p>
+          <a v-if="inApp" class="btn" href="ionwyn://garmin" target="_top">{{ connected ? 'Hubungkan ulang' : 'Login Garmin' }}</a>
+          <p v-else class="muted">Buka halaman ini dari aplikasi Android Ionwyn untuk login Garmin.</p>
         </div>
       </template>
     </StateView>
 
-    <div class="card">
+    <div v-if="data?.local !== false" class="card">
       <h2>Login ulang Garmin</h2>
       <ol class="steps">
         <li>Kalau sinkron sedang berjalan, tunggu sampai selesai.</li>

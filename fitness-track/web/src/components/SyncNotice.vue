@@ -8,7 +8,7 @@ const props = defineProps<{ status: SyncStatus }>();
 const failed = computed(
   () => !!props.status.last_error_at && (!props.status.last_success_at || props.status.last_error_at > props.status.last_success_at),
 );
-const needsLogin = computed(() => failed.value && props.status.last_error?.startsWith('Perlu login ulang'));
+const needsLogin = computed(() => failed.value && (props.status.last_error?.startsWith('Perlu login ulang') || props.status.last_error?.startsWith('Perlu hubungkan')));
 </script>
 
 <template>
