@@ -176,7 +176,7 @@ Dua fitur ini butuh laptop. Hasilnya langsung terlihat di versi online karena da
 
 | Fitur | Cara |
 | --- | --- |
-| Sinkron Garmin | `npm run garmin:sync -w fitness-track` dari folder `ionwyn-system`, atau tombol **Sinkron** di Fitness versi lokal |
+| Sinkron Garmin | `cd fitness-track` lalu `npm run garmin:sync`, atau tombol **Sinkron** di Fitness versi lokal |
 | Login ulang Garmin | `cd fitness-track` lalu `npm run garmin:login`, kalau sinkron menampilkan "Perlu login ulang" |
 | AI Learn (buat jalur, study case) | Buka Learn di versi lokal. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
 
@@ -248,7 +248,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 | --- | --- | --- |
 | Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start` |
 | API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
-| Sinkron Garmin | Tidak bisa, tombolnya memberi tahu | `npm run garmin:sync -w fitness-track` atau tombol Sinkron di versi lokal |
+| Sinkron Garmin | Tidak bisa, tombolnya memberi tahu | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
 | AI Learn (buat jalur, study case) | Tidak bisa (`AI_PROVIDER=off`) | Pakai langganan Claude (`AI_PROVIDER=cli`) |
 | Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
 
