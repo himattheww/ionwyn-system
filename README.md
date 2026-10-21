@@ -176,7 +176,7 @@ Dua fitur ini butuh laptop. Hasilnya langsung terlihat di versi online karena da
 
 | Fitur | Cara |
 | --- | --- |
-| Sinkron Garmin | `cd fitness-track` lalu `npm run garmin:sync`, atau tombol **Sinkron** di Fitness versi lokal |
+| Sinkron Garmin (cara lama) | `cd fitness-track` lalu `npm run garmin:sync`, atau tombol **Sinkron** di Fitness versi lokal. Butuh port database terbuka, jadi tidak jalan di jaringan yang memblokirnya |
 | Login ulang Garmin | `cd fitness-track` lalu `npm run garmin:login`, kalau sinkron menampilkan "Perlu login ulang" |
 | AI Learn (buat jalur, study case) | Buka Learn di versi lokal. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
 
@@ -248,14 +248,14 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 | --- | --- | --- |
 | Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start` |
 | API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
-| Sinkron Garmin | Tidak bisa, tombolnya memberi tahu | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
+| Sinkron Garmin | Otomatis tiap 3 jam dan tombol **Sinkron**, setelah login Garmin sekali dari aplikasi Android | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
 | AI Learn (buat jalur, study case) | Tidak bisa (`AI_PROVIDER=off`) | Pakai langganan Claude (`AI_PROVIDER=cli`) |
 | Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
 
 **Login.** Versi Vercel meminta login sekali dengan akun Supabase-mu, dan hanya akun pemilik yang diterima. Jadwal dan Keuangan ikut masuk dengan sesi yang sama. Versi lokal tetap tanpa login.
 
 **Langkah pertama kali:**
-1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`.
+1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`, `20261021090000_garmin_tokens.sql`.
 2. Isi `DATABASE_URL` di `.env` root dengan connection string **Session pooler** (Supabase → Connect, port 5432). Transaction pooler (6543) macet saat query paralel.
 3. Pindahkan data lama dari SQLite: `node --env-file=.env scripts/migrate-sqlite.mjs`. Aman diulang, tidak membuat duplikat.
 4. Di Vercel: import repo ini. `vercel.json` sudah mengatur install dan build. Isi Environment Variables:
@@ -275,7 +275,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
    | `LEARN_API_URL` | `https://<domain-vercel-mu>/learn` |
    | `FIT_ENABLED`, `DIARY_ENABLED`, `LEARN_ENABLED`, `SCHEDULE_ENABLED`, `FINANCE_ENABLED`, `TIMESHEET_ENABLED` | `true` |
    | `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | opsional, untuk notifikasi error (lihat [Monitoring](#monitoring)) |
-5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job.
+5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job. Setelah itu jalankan juga `supabase/cron/garmin-sinkron.sql` untuk sinkron Garmin tiap 3 jam.
 6. Di Supabase → Authentication → Sign In / Providers, matikan pendaftaran user baru.
 
 Cek build Vercel di laptop tanpa deploy: `node scripts/build-vercel.mjs`. Hasilnya di `.vercel/output` (tidak masuk git).
@@ -312,6 +312,19 @@ Jadwal, Learn, dan Keuangan memakai **satu project Supabase** (project FinTrack)
 - **Learn** membaca dan menulis lewat servernya sendiri. Tabelnya tidak bisa dibaca langsung dari browser.
 - **Timesheet** tidak perlu mengisi Koneksi. `API_KEY` disimpan di `.env` root, dan web memanggil Apps Script lewat hub.
 - Project Supabase lama milik Jadwal dan Learn tidak dipakai lagi. Datanya sudah dibackup sebelum digabung.
+
+### Sinkron Garmin
+
+Ada dua cara, dan keduanya menulis ke tabel yang sama:
+
+| | Cara lama (laptop) | Cara baru (online) |
+| --- | --- | --- |
+| Login | `npm run garmin:login`, sesi disimpan di profil browser `.garmin-profile` | Halaman **Sinkron** di Fitness, tombol **Login Garmin** di aplikasi Android. Halaman login resmi Garmin terbuka di aplikasi |
+| Mengambil data | Browser di laptop (Playwright) | Server Vercel dengan token Garmin yang disimpan di `fit_garmin_tokens` |
+| Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` tiap 3 jam |
+| Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
+
+Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
 
 ## Konfigurasi
 
