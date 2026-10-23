@@ -68,7 +68,7 @@ tracks.get('/:id', async (req, res) => {
   const track = unwrap(
     await db
       .from('tracks')
-      .select('*, topics(id, order, title, objective, status, est_sessions, study_cases(status, difficulty))')
+      .select('*, topics(id, order, title, objective, status, est_sessions, prerequisites, study_cases(status, difficulty), topic_lessons(topic_id))')
       .eq('id', id)
       .order('order', { referencedTable: 'topics' })
       .maybeSingle(),
@@ -100,6 +100,8 @@ tracks.get('/:id', async (req, res) => {
       objective: t.objective,
       status: t.status,
       estSessions: t.est_sessions,
+      prerequisites: t.prerequisites,
+      hasLesson: Boolean(t.topic_lessons),
       studyCase: t.study_cases ? { status: t.study_cases.status, difficulty: t.study_cases.difficulty } : null,
     })),
     sessions: sessions.map((s: any) => ({

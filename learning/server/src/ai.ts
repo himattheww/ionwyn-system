@@ -32,6 +32,49 @@ const studyCaseSchema = z.object({
   estSessions: z.number().int().positive(),
 })
 
+export const exerciseLanguages = ['javascript', 'typescript', 'python', 'csharp', 'sql', 'lainnya'] as const
+
+const lessonSchema = z.object({
+  overview: z.string().trim().min(1),
+  sections: z.array(z.object({ heading: z.string().trim().min(1), paragraphs: z.array(z.string().trim().min(1)).min(1) })).min(1).max(6),
+  examples: z
+    .array(z.object({ title: z.string().trim().min(1), language: z.string().trim().min(1), code: z.string().min(1), explanation: z.string().trim().min(1) }))
+    .min(1)
+    .max(3),
+  keyPoints: z.array(z.string().trim().min(1)).min(2).max(8),
+  quiz: z
+    .array(
+      z.object({
+        question: z.string().trim().min(1),
+        options: z.array(z.string().trim().min(1)).length(4),
+        answer: z.number().int().min(0).max(3),
+        explanation: z.string().trim().min(1),
+      }),
+    )
+    .min(3)
+    .max(8),
+  exercise: z.object({
+    language: z.enum(exerciseLanguages),
+    title: z.string().trim().min(1),
+    prompt: z.string().trim().min(1),
+    starter: z.string(),
+    tests: z.array(z.object({ name: z.string().trim().min(1), call: z.string().trim().min(1), expected: z.string().trim().min(1) })).max(8),
+    rubric: z.array(z.string().trim().min(1)).max(8),
+  }),
+})
+
+const gradeSchema = z.object({
+  passed: z.boolean(),
+  score: z.number().int().min(0).max(100),
+  feedback: z.string().trim().min(1),
+  issues: z.array(z.string()).default([]),
+})
+
+export type AiLesson = z.infer<typeof lessonSchema>
+export type AiGrade = z.infer<typeof gradeSchema>
+export type LessonInput = { goal: string; currentLevel: string; topicTitle: string; topicObjective: string; sources: { title: string; url: string }[] }
+export type GradeInput = { topicTitle: string; language: string; prompt: string; rubric: string[]; code: string }
+
 export type AiTopic = z.infer<typeof topicPlanSchema>['topics'][number]
 export type AiStudyCase = z.infer<typeof studyCaseSchema>
 
@@ -48,6 +91,8 @@ export type StudyCaseInput = {
 export interface AiService {
   planTopics(input: TopicPlanInput): Promise<AiTopic[]>
   createStudyCase(input: StudyCaseInput): Promise<AiStudyCase>
+  createLesson(input: LessonInput): Promise<AiLesson>
+  gradeCode(input: GradeInput): Promise<AiGrade>
 }
 
 const jsonOnly = 'Jawab hanya dengan JSON valid sesuai skema, tanpa teks lain. Bahasa Indonesia, istilah teknis tetap English.'
@@ -64,6 +109,27 @@ const caseSystem = `Kamu pembuat latihan praktik. ${jsonOnly}`
 const caseInstruction = `Buat satu study case praktik yang bisa diselesaikan dalam 1-3 sesi 60 menit dan memaksa penerapan topik ini sesuai difficulty.
 Kalau domainHint terisi, pakai domain itu untuk skenarionya. Berikan skenario realistis, requirement bernomor, kriteria selesai yang bisa dicek, dan 1-2 tantangan tambahan opsional. Jangan berikan kode solusi.
 Skema: {"title":"","scenario":"","requirements":[],"acceptanceCriteria":[],"stretchGoals":[],"estSessions":1}`
+
+const lessonSystem = `Kamu pengajar yang menulis materi ringkas dan akurat. ${jsonOnly}`
+
+const lessonInstruction = `Tulis materi belajar untuk satu topik, sesuai currentLevel, supaya pembaca bisa mencapai topicObjective tanpa membuka sumber lain.
+- overview: 2-3 kalimat inti topik.
+- sections: 2-5 bagian, tiap bagian 1-4 paragraf pendek. Tulis kode inline di antara backtick.
+- examples: 1-3 contoh kode lengkap yang benar dan bisa dijalankan, dengan penjelasan singkat.
+- keyPoints: 3-6 poin yang harus diingat.
+- quiz: 5 soal pilihan ganda tentang materi ini, tepat 4 opsi, answer adalah indeks opsi benar (0-3), explanation menjelaskan kenapa.
+- exercise: satu latihan kode kecil (15-30 menit) yang menguji topik ini.
+  Kalau teknologi goal berbasis JavaScript (termasuk library seperti three.js), pakai language "javascript" dan buat latihan berupa fungsi murni: tanpa DOM, tanpa import, tanpa library. starter berisi kerangka fungsi dengan nama yang jelas. tests berisi 3-6 kasus: call adalah ekspresi JavaScript yang memanggil fungsi itu, expected adalah hasil yang diharapkan dalam format JSON (misal "6", "[1,2]", "{\"x\":1}", "\"teks\""). Pastikan setiap expected benar.
+  Kalau bukan JavaScript, pilih language yang sesuai, tests kosong, dan isi rubric dengan 3-5 kriteria penilaian yang bisa dicek dari kode.
+  rubric boleh diisi juga untuk JavaScript sebagai catatan kualitas.
+Jangan menyertakan solusi lengkap latihan.
+Skema: {"overview":"","sections":[{"heading":"","paragraphs":[""]}],"examples":[{"title":"","language":"","code":"","explanation":""}],"keyPoints":[""],"quiz":[{"question":"","options":["","","",""],"answer":0,"explanation":""}],"exercise":{"language":"javascript","title":"","prompt":"","starter":"","tests":[{"name":"","call":"","expected":""}],"rubric":[""]}}`
+
+const graderSystem = `Kamu reviewer kode yang tegas tapi adil. ${jsonOnly}`
+
+const graderInstruction = `Nilai kode jawaban untuk latihan ini berdasarkan prompt dan rubric. Anggap kode dijalankan sebagaimana ditulis; jangan meluluskan kode yang tidak akan bekerja.
+passed true hanya kalau semua kriteria utama terpenuhi. score 0-100. feedback 2-4 kalimat yang menjelaskan apa yang sudah benar dan apa yang perlu diperbaiki, tanpa memberikan solusi lengkap. issues berisi daftar masalah spesifik (boleh kosong).
+Skema: {"passed":false,"score":0,"feedback":"","issues":[]}`
 
 type Complete = (system: string, prompt: string, jsonSchema: object) => Promise<string>
 
@@ -126,7 +192,7 @@ const completeWithApi: Complete = async (system, prompt) => {
       },
       body: JSON.stringify({
         model: env.ANTHROPIC_MODEL,
-        max_tokens: 4096,
+        max_tokens: 8192,
         system,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -176,7 +242,7 @@ async function ask<T>(system: string, instruction: string, input: object, schema
 }
 
 const completeOff = async (): Promise<never> => {
-  throw new AiError('Fitur AI dijalankan dari laptop. Buka Ionwyn lokal untuk membuat jalur atau study case.')
+  throw new AiError('Fitur AI dijalankan dari laptop. Buka Ionwyn lokal untuk membuat jalur, study case, materi, atau menilai kode non-JavaScript.')
 }
 
 const complete = env.AI_PROVIDER === 'api' ? completeWithApi : env.AI_PROVIDER === 'off' ? completeOff : completeWithCli
@@ -188,5 +254,11 @@ export const ai: AiService = {
   },
   createStudyCase(input) {
     return ask(caseSystem, caseInstruction, input, studyCaseSchema)
+  },
+  createLesson(input) {
+    return ask(lessonSystem, lessonInstruction, input, lessonSchema)
+  },
+  gradeCode(input) {
+    return ask(graderSystem, graderInstruction, input, gradeSchema)
   },
 }
