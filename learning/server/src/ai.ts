@@ -35,24 +35,7 @@ const studyCaseSchema = z.object({
 export const exerciseLanguages = ['javascript', 'typescript', 'python', 'csharp', 'sql', 'lainnya'] as const
 
 const lessonSchema = z.object({
-  overview: z.string().trim().min(1),
-  sections: z.array(z.object({ heading: z.string().trim().min(1), paragraphs: z.array(z.string().trim().min(1)).min(1) })).min(1).max(6),
-  examples: z
-    .array(z.object({ title: z.string().trim().min(1), language: z.string().trim().min(1), code: z.string().min(1), explanation: z.string().trim().min(1) }))
-    .min(1)
-    .max(3),
-  keyPoints: z.array(z.string().trim().min(1)).min(2).max(8),
-  quiz: z
-    .array(
-      z.object({
-        question: z.string().trim().min(1),
-        options: z.array(z.string().trim().min(1)).length(4),
-        answer: z.number().int().min(0).max(3),
-        explanation: z.string().trim().min(1),
-      }),
-    )
-    .min(3)
-    .max(8),
+  summary: z.array(z.string().trim().min(1)).min(1).max(4),
   exercise: z.object({
     language: z.enum(exerciseLanguages),
     title: z.string().trim().min(1),
@@ -110,20 +93,16 @@ const caseInstruction = `Buat satu study case praktik yang bisa diselesaikan dal
 Kalau domainHint terisi, pakai domain itu untuk skenarionya. Berikan skenario realistis, requirement bernomor, kriteria selesai yang bisa dicek, dan 1-2 tantangan tambahan opsional. Jangan berikan kode solusi.
 Skema: {"title":"","scenario":"","requirements":[],"acceptanceCriteria":[],"stretchGoals":[],"estSessions":1}`
 
-const lessonSystem = `Kamu pengajar yang menulis materi ringkas dan akurat. ${jsonOnly}`
+const lessonSystem = `Kamu pengajar yang menjelaskan dengan singkat dan akurat. ${jsonOnly}`
 
-const lessonInstruction = `Tulis materi belajar untuk satu topik, sesuai currentLevel, supaya pembaca bisa mencapai topicObjective tanpa membuka sumber lain.
-- overview: 2-3 kalimat inti topik.
-- sections: 2-5 bagian, tiap bagian 1-4 paragraf pendek. Tulis kode inline di antara backtick.
-- examples: 1-3 contoh kode lengkap yang benar dan bisa dijalankan, dengan penjelasan singkat.
-- keyPoints: 3-6 poin yang harus diingat.
-- quiz: 5 soal pilihan ganda tentang materi ini, tepat 4 opsi, answer adalah indeks opsi benar (0-3), explanation menjelaskan kenapa.
+const lessonInstruction = `Tulis penjelasan singkat dan satu latihan kode untuk satu topik, sesuai currentLevel.
+- summary: 2-4 paragraf pendek yang menjelaskan inti topik supaya pembaca paham apa yang dipelajari dan kenapa penting. Tulis kode inline di antara backtick. Jangan membuat materi panjang, daftar bagian, atau contoh kode panjang; pendalaman ada di sumber resmi.
 - exercise: satu latihan kode kecil (15-30 menit) yang menguji topik ini.
   Kalau teknologi goal berbasis JavaScript (termasuk library seperti three.js), pakai language "javascript" dan buat latihan berupa fungsi murni: tanpa DOM, tanpa import, tanpa library. starter berisi kerangka fungsi dengan nama yang jelas. tests berisi 3-6 kasus: call adalah ekspresi JavaScript yang memanggil fungsi itu, expected adalah hasil yang diharapkan dalam format JSON (misal "6", "[1,2]", "{\"x\":1}", "\"teks\""). Pastikan setiap expected benar.
   Kalau bukan JavaScript, pilih language yang sesuai, tests kosong, dan isi rubric dengan 3-5 kriteria penilaian yang bisa dicek dari kode.
   rubric boleh diisi juga untuk JavaScript sebagai catatan kualitas.
 Jangan menyertakan solusi lengkap latihan.
-Skema: {"overview":"","sections":[{"heading":"","paragraphs":[""]}],"examples":[{"title":"","language":"","code":"","explanation":""}],"keyPoints":[""],"quiz":[{"question":"","options":["","","",""],"answer":0,"explanation":""}],"exercise":{"language":"javascript","title":"","prompt":"","starter":"","tests":[{"name":"","call":"","expected":""}],"rubric":[""]}}`
+Skema: {"summary":[""],"exercise":{"language":"javascript","title":"","prompt":"","starter":"","tests":[{"name":"","call":"","expected":""}],"rubric":[""]}}`
 
 const graderSystem = `Kamu reviewer kode yang tegas tapi adil. ${jsonOnly}`
 

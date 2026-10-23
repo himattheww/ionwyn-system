@@ -60,8 +60,6 @@ export const sessionRequest = z.object({
   summary: z.string().trim().min(1).max(200),
 })
 
-export const quizAttemptRequest = z.object({ answers: z.array(z.number().int().min(-1).max(3)).min(1).max(20) })
-
 export const codeAttemptRequest = z.object({
   code: z.string().min(1).max(20_000),
   results: z.object({ passed: z.number().int().min(0), total: z.number().int().min(1) }).optional(),
