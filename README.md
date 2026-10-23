@@ -37,13 +37,15 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Pengaturan pola lari mingguan (misalnya Senin easy, Rabu tempo, Minggu long run). Pola ini otomatis menjadi rutinitas di Jadwal.
 
 ### Learn (`/learn/`)
-- Tulis apa yang mau dipelajari dan tujuannya. AI menyusun jalur belajar berupa topik berurutan, dan kamu review dulu sebelum disimpan.
-- **Roadmap**: topik digambar sebagai peta yang terhubung sesuai prasyaratnya. Klik satu node untuk membuka halaman belajarnya. Tampilan daftar tetap tersedia.
-- **Penjelasan singkat** per topik (2-4 paragraf) yang ditulis AI, ditambah link sumber resmi (dicek masih hidup) untuk pendalaman.
-- **Latihan kode** per topik. Latihan JavaScript dijalankan langsung di browser dengan test case (di Web Worker, dibatasi 3 detik), jadi bisa dikerjakan dari web dan HP. Bahasa lain, misalnya C#, dinilai AI dengan umpan balik per kriteria.
-- Topik otomatis ditandai selesai setelah latihan kodenya lulus.
-- Study case per topik, sesi belajar yang mencentang item belajar di Jadwal dan memberi exp di Leveling, serta hapus jalur.
-- Membuat jalur, penjelasan dan latihan, study case, serta menilai kode non-JavaScript memakai AI, jadi hanya bisa dari laptop. Hasilnya tersimpan dan bisa dibuka dari mana saja.
+- Jalur belajar untuk apa saja: coding (React, C#, three.js) maupun non-coding (public speaking, memasak, lari).
+- **Dibuat lewat chat Claude.** Konektor Ionwyn Learn membuat Claude bisa menyusun jalur lengkap dengan topik, penjelasan singkat, dan latihannya, lalu menyimpannya langsung ke sini. Bisa dari laptop maupun HP, tanpa API key (lihat [Konektor Claude (MCP)](#konektor-claude-mcp)).
+- **Roadmap**: topik digambar sebagai peta yang terhubung sesuai prasyaratnya. Klik node untuk mulai belajar. Tampilan daftar tetap tersedia.
+- **Per topik**: penjelasan singkat 2-4 paragraf, maksimal 3 sumber resmi (dicek masih hidup), dan satu latihan:
+  - JavaScript: kode dijalankan di browser dengan test case (Web Worker, batas 3 detik);
+  - bahasa lain dan praktik non-coding: daftar cek mandiri.
+- **Tandai selesai** setelah latihan lulus. Sesi belajar tercatat otomatis (mencentang item belajar di Jadwal dan memberi exp di Leveling), lalu muncul tombol **Topik berikutnya**.
+- **Saat semua topik selesai**, jalur ditandai selesai dan muncul prompt "Mau lanjut ke mana?" untuk ditanyakan ke Claude.
+- Arsip dan hapus jalur.
 
 ### Leveling (`/leveling/`)
 - Karakter ala RPG: level, tier, gelar, dan lima atribut yang dihitung dari aktivitas nyata di semua aplikasi.
@@ -97,7 +99,7 @@ flowchart TB
   end
 
   GS["Apps Script + Google Sheets<br/>Timesheet"]
-  LP["Laptop<br/>sinkron Garmin, AI Learn, versi lokal"]
+  LP["Laptop<br/>sinkron Garmin, versi lokal"]
   GC["Garmin Connect"]
 
   U --> S
@@ -116,7 +118,7 @@ flowchart TB
 - Browser memuat halaman statis dari Vercel, login sekali ke Supabase Auth, lalu memanggil API aplikasi lewat satu Vercel Function. Jadwal dan Keuangan membaca Supabase langsung dari browser dengan sesi login yang sama.
 - Semua data aplikasi ada di satu database Postgres. Timesheet tetap di Google Sheets lewat Apps Script.
 - `pg_cron` di Supabase memanggil Vercel Function secara terjadwal untuk menjalankan integrasi dan menghitung ulang Leveling.
-- Laptop mengambil data dari Garmin Connect dan menulisnya langsung ke database. AI Learn juga berjalan dari laptop.
+- Laptop mengambil data dari Garmin Connect dan menulisnya langsung ke database (cara lama). Chat Claude membaca dan menulis Learn lewat konektor MCP.
 - Bot Telegram Keuangan berjalan di project Vercel FinTrack sendiri, bot Telegram Timesheet di Apps Script.
 
 ### Aplikasi saling mengisi
@@ -182,7 +184,6 @@ Dua fitur ini butuh laptop. Hasilnya langsung terlihat di versi online karena da
 | --- | --- |
 | Sinkron Garmin (cara lama) | `cd fitness-track` lalu `npm run garmin:sync`, atau tombol **Sinkron** di Fitness versi lokal. Butuh port database terbuka, jadi tidak jalan di jaringan yang memblokirnya |
 | Login ulang Garmin | `cd fitness-track` lalu `npm run garmin:login`, kalau sinkron menampilkan "Perlu login ulang" |
-| AI Learn (buat jalur, study case) | Buka Learn di versi lokal. Memakai langganan Claude Code CLI, jadi tidak perlu API key |
 
 ### Menjalankan di laptop
 Dari folder `ionwyn-system`:
@@ -198,7 +199,6 @@ Buka alamat yang tampil di terminal. Log semua bagian tampil di satu terminal de
 - Node.js 24 LTS, minimal 24.15 (`node -v`)
 - Project Supabase (tier gratis cukup)
 - Opera GX atau Chrome untuk sinkron Garmin (lihat `fitness-track/README.md`)
-- Claude Code CLI yang sudah login, untuk fitur AI Learn (lihat `learning/README.md`)
 
 ## Pertama kali (lokal)
 
@@ -253,13 +253,13 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 | Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start` |
 | API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
 | Sinkron Garmin | Otomatis tiap 3 jam dan tombol **Sinkron**, setelah login Garmin sekali dari aplikasi Android | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
-| AI Learn (buat jalur, study case) | Tidak bisa (`AI_PROVIDER=off`) | Pakai langganan Claude (`AI_PROVIDER=cli`) |
+| Buat jalur Learn | Lewat chat Claude dengan konektor MCP | Sama, lewat chat Claude |
 | Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
 
 **Login.** Versi Vercel meminta login sekali dengan akun Supabase-mu, dan hanya akun pemilik yang diterima. Jadwal dan Keuangan ikut masuk dengan sesi yang sama. Versi lokal tetap tanpa login.
 
 **Langkah pertama kali:**
-1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`, `20261021090000_garmin_tokens.sql`, `20261023090000_learn_lessons.sql`, `20261023120000_learn_short_lessons.sql`.
+1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`, `20261021090000_garmin_tokens.sql`, `20261023090000_learn_lessons.sql`, `20261023120000_learn_short_lessons.sql`, `20261024090000_learn_simple_mcp.sql`.
 2. Isi `DATABASE_URL` di `.env` root dengan connection string **Session pooler** (Supabase → Connect, port 5432). Transaction pooler (6543) macet saat query paralel.
 3. Pindahkan data lama dari SQLite: `node --env-file=.env scripts/migrate-sqlite.mjs`. Aman diulang, tidak membuat duplikat.
 4. Di Vercel: import repo ini. `vercel.json` sudah mengatur install dan build. Isi Environment Variables:
@@ -316,6 +316,33 @@ Jadwal, Learn, dan Keuangan memakai **satu project Supabase** (project FinTrack)
 - **Learn** membaca dan menulis lewat servernya sendiri. Tabelnya tidak bisa dibaca langsung dari browser.
 - **Timesheet** tidak perlu mengisi Koneksi. `API_KEY` disimpan di `.env` root, dan web memanggil Apps Script lewat hub.
 - Project Supabase lama milik Jadwal dan Learn tidak dipakai lagi. Datanya sudah dibackup sebelum digabung.
+
+## Konektor Claude (MCP)
+
+Server MCP Ionwyn Learn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel>/mcp`. Claude memakai alat-alat ini:
+
+| Alat | Fungsi |
+| --- | --- |
+| `list_tracks`, `get_track`, `get_topic` | Membaca jalur, topik, dan progres |
+| `learning_progress` | Ringkasan semua jalur dan topik yang baru selesai, untuk saran belajar berikutnya |
+| `create_track` | Membuat jalur lengkap dengan topik, penjelasan, sumber, dan latihan |
+| `add_topics`, `update_topic` | Menambah topik di akhir jalur dan mengubah isi topik |
+| `set_track_status` | Mengubah status jalur (aktif, selesai, arsip) |
+
+Konektor tidak bisa menghapus jalur. Hapus hanya dari aplikasi.
+
+**Keamanan.** Konektor memakai OAuth 2.1 dengan PKCE dari SDK MCP resmi (`learning/server/src/oauth.ts`):
+- Claude mendaftar sebagai klien. Alamat redirect hanya diterima dari `claude.ai`, `claude.com`, atau `localhost`.
+- Saat menghubungkan, kamu login di Ionwyn lalu menekan **Izinkan**. Hanya akun pemilik (`OWNER_USER_ID`) yang bisa memberi izin.
+- Token akses berlaku 1 jam dan refresh token 90 hari, dirotasi setiap dipakai. Di database hanya tersimpan hash-nya (`mcp_tokens`).
+
+**Cara memasang di Claude:**
+1. Di claude.ai, buka **Settings → Connectors → Add custom connector**.
+2. Isi nama `Ionwyn Learn` dan URL `<alamat-vercel>/mcp`, lalu simpan.
+3. Klik **Connect**. Halaman login Ionwyn terbuka. Login, lalu tekan **Izinkan**.
+4. Di chat baru, aktifkan konektor Ionwyn Learn, lalu minta misalnya "Pakai Ionwyn Learn, buatkan jalur belajar React untuk pemula, 4 jam per minggu".
+
+Konektor yang dipasang di claude.ai juga ikut muncul di aplikasi Claude di HP.
 
 ### Sinkron Garmin
 
