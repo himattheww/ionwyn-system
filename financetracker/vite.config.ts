@@ -11,7 +11,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
+      includeAssets: ['favicon.ico', 'favicon.svg'],
       manifest: {
         name: 'FinTrack — Personal Finance Manager',
         short_name: 'FinTrack',
