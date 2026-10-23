@@ -37,7 +37,7 @@ onMounted(load)
       <p v-if="active.length" class="muted">{{ formatMinutes(weekMinutes) }} dari {{ weekHours }} jam target, di semua jalur aktif.</p>
       <p v-else class="muted">Progres dihitung Senin sampai Minggu.</p>
     </div>
-    <RouterLink to="/tracks/new" class="button primary">+ Jalur baru</RouterLink>
+    <RouterLink to="/tracks/new" class="button primary">+ Buat jalur</RouterLink>
   </div>
 
   <div v-if="loading" class="state"><span class="spinner" />Memuat jalur...</div>
@@ -48,7 +48,7 @@ onMounted(load)
   </div>
 
   <div v-else-if="!tracks.length" class="card state">
-    <p>Belum ada jalur belajar. Tulis apa yang mau kamu pelajari, AI menyusun topiknya.</p>
+    <p>Belum ada jalur belajar. Minta Claude menyusunkannya untukmu.</p>
     <RouterLink to="/tracks/new" class="button primary">Buat jalur pertama</RouterLink>
   </div>
 
@@ -68,7 +68,6 @@ onMounted(load)
         </p>
         <div class="row">
           <RouterLink :to="`/tracks/${main.id}`" class="button primary">Buka jalur →</RouterLink>
-          <RouterLink :to="`/sessions/new?trackId=${main.id}`" class="button">Catat sesi</RouterLink>
         </div>
       </div>
     </section>

@@ -91,7 +91,7 @@ watch(() => props.topics, () => nextTick(draw), { deep: true })
       >
         <span class="roadmap-mark">{{ isDone(t) ? '✓' : t.order }}</span>
         <span class="roadmap-title">{{ t.title }}</span>
-        <span class="roadmap-meta">{{ statusLabel[t.status] }}{{ t.hasLesson ? ' · materi siap' : '' }}</span>
+        <span class="roadmap-meta">{{ statusLabel[t.status] }}{{ t.hasContent ? '' : ' · belum ada isi' }}</span>
       </RouterLink>
     </div>
   </div>

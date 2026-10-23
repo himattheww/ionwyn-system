@@ -3,7 +3,7 @@
     <RouterLink to="/" class="brand">Learn</RouterLink>
     <nav>
       <RouterLink to="/">Jalur</RouterLink>
-      <RouterLink to="/sessions/new">Catat sesi</RouterLink>
+      <RouterLink to="/tracks/new">Buat jalur</RouterLink>
     </nav>
   </header>
   <main class="page">

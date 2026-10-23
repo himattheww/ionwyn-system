@@ -148,13 +148,6 @@
   color: var(--ink-3);
 }
 
-.case-line {
-  display: block;
-  font-size: var(--text-sm);
-  color: var(--accent);
-  margin-top: var(--space-1);
-}
-
 .step {
   display: flex;
   align-items: center;
@@ -468,4 +461,33 @@ ol {
 
 .pre-line {
   white-space: pre-line;
+}
+
+.prompt-card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.prompt-text {
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--paper-sunk);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.check-item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: var(--space-2) 0;
+  border-bottom: var(--hair) solid var(--rule-soft);
+  cursor: pointer;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-4);
 }

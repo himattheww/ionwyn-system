@@ -1,14 +1,14 @@
 export type Level = 'pemula' | 'menengah' | 'mahir'
+export type TrackKind = 'coding' | 'praktik'
 export type TrackStatus = 'aktif' | 'selesai' | 'arsip'
 export type TopicStatus = 'belum' | 'sedang' | 'selesai' | 'sudah_bisa'
-export type Difficulty = 'mudah' | 'sedang' | 'sulit'
-export type StudyCaseStatus = 'belum' | 'dikerjakan' | 'selesai'
 
 export type Source = { title: string; url: string }
 
 export type TrackSummary = {
   id: number
   goal: string
+  kind: TrackKind
   currentLevel: Level
   hoursPerWeek: number
   status: TrackStatus
@@ -17,36 +17,29 @@ export type TrackSummary = {
   minutesThisWeek: number
 }
 
-export type PlannedTopic = {
+export type TrackTopic = {
+  id: number
+  order: number
   title: string
   objective: string
+  status: TopicStatus
   estSessions: number
   prerequisites: string[]
-  sources: Source[]
+  hasContent: boolean
+  exerciseType: 'code' | 'praktik' | null
+  completedAt: string | null
 }
-
-export type DraftTopic = PlannedTopic & { key: number; known: boolean }
 
 export type TrackDetail = {
   id: number
   goal: string
+  kind: TrackKind
   currentLevel: Level
   hoursPerWeek: number
-  domainHint: string | null
   status: TrackStatus
   createdAt: string
   minutesThisWeek: number
-  topics: {
-    id: number
-    order: number
-    title: string
-    objective: string
-    status: TopicStatus
-    estSessions: number
-    prerequisites: string[]
-    hasLesson: boolean
-    studyCase: { status: StudyCaseStatus; difficulty: Difficulty } | null
-  }[]
+  topics: TrackTopic[]
   sessions: {
     id: number
     topicId: number | null
@@ -57,19 +50,11 @@ export type TrackDetail = {
   }[]
 }
 
-export type StudyCase = {
-  id: number
-  title: string
-  scenario: string
-  requirements: string[]
-  acceptanceCriteria: string[]
-  stretchGoals: string[]
-  difficulty: Difficulty
-  estSessions: number
-  status: StudyCaseStatus
-  resultLink: string | null
-  createdAt: string
-}
+export type ExerciseTest = { name: string; call: string; expected: string }
+
+export type Exercise =
+  | { type: 'code'; title: string; prompt: string; language: string; starter: string; tests: ExerciseTest[]; checklist: string[] }
+  | { type: 'praktik'; title: string; prompt: string; checklist: string[] }
 
 export type TopicDetail = {
   id: number
@@ -80,32 +65,14 @@ export type TopicDetail = {
   estSessions: number
   prerequisites: string[]
   sources: Source[]
-  track: { id: number; goal: string }
-  studyCase: StudyCase | null
-  lesson: Lesson | null
-  lastAttempt: Attempt | null
+  summary: string | null
+  exercise: Exercise | null
+  completedAt: string | null
+  track: { id: number; goal: string; kind: TrackKind }
+  lastAttempt: { score: number; total: number; passed: boolean; code: string | null; createdAt: string } | null
+  nextTopic: { id: number; title: string } | null
 }
 
-export type ExerciseLanguage = 'javascript' | 'typescript' | 'python' | 'csharp' | 'sql' | 'lainnya'
-
-export type ExerciseTest = { name: string; call: string; expected: string }
-
-export type Lesson = {
-  summary: string
-  exercise: { language: ExerciseLanguage; title: string; prompt: string; starter: string; tests: ExerciseTest[]; rubric: string[] }
-  createdAt: string
-}
-
-export type Attempt = {
-  id: number
-  score: number
-  total: number
-  passed: boolean
-  code: string | null
-  feedback: string | null
-  createdAt: string
-}
-
-export type CodeResult = { passed: boolean; score: number; total: number; feedback?: string; lastAttempt: Attempt | null }
+export type CompleteResult = { trackDone: boolean; nextTopic: { id: number; title: string } | null }
 
 export type TestOutcome = { name: string; passed: boolean; actual: string; error: string | null }

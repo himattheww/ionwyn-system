@@ -196,11 +196,6 @@ input.big {
 
 .badge.aktif,
 .badge.sedang,
-.badge.dikerjakan {
-  background: var(--warn-wash);
-  color: var(--warn);
-}
-
 .badge.selesai,
 .badge.sudah_bisa,
 .badge.mudah {

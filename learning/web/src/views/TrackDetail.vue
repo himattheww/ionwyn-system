@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, errorMessage } from '../lib/api'
-import { difficultyLabel, formatDate, formatMinutes, levelLabel, statusLabel, weekPercent } from '../lib/labels'
+import PromptCard from '../components/PromptCard.vue'
 import RoadmapMap from '../components/RoadmapMap.vue'
+import { formatDate, formatMinutes, levelLabel, statusLabel, weekPercent } from '../lib/labels'
+import { prompts } from '../lib/prompts'
 import type { TrackDetail, TrackStatus } from '../types'
 
 const props = defineProps<{ id: string }>()
@@ -31,6 +33,7 @@ const currentId = computed(
   () => track.value?.topics.find((t) => t.status === 'sedang')?.id ?? track.value?.topics.find((t) => t.status === 'belum')?.id,
 )
 const isDone = (status: string) => status === 'selesai' || status === 'sudah_bisa'
+const allDone = computed(() => !!track.value?.topics.length && track.value.topics.every((t) => isDone(t.status)))
 
 async function load() {
   loading.value = true
@@ -91,7 +94,7 @@ onMounted(load)
         <div class="row">
           <span class="badge">{{ levelLabel[track.currentLevel] }}</span>
           <span class="badge">Target {{ track.hoursPerWeek }} jam/minggu</span>
-          <span v-if="track.domainHint" class="badge">Domain: {{ track.domainHint }}</span>
+          <span class="badge">{{ track.kind === 'praktik' ? 'Praktik' : 'Coding' }}</span>
         </div>
       </div>
       <div class="row">
@@ -106,11 +109,15 @@ onMounted(load)
             {{ s.label }}
           </button>
         </div>
-        <RouterLink :to="`/sessions/new?trackId=${track.id}`" class="button primary">Catat sesi</RouterLink>
       </div>
     </div>
 
     <div v-if="statusError" class="error">{{ statusError }}</div>
+
+    <section v-if="allDone" class="section">
+      <div class="success">✓ Semua {{ track.topics.length }} topik di jalur ini selesai.</div>
+      <PromptCard class="mt-4" title="Mau lanjut ke mana?" :prompt="prompts.finished(track.goal)" />
+    </section>
 
     <div class="layout">
       <section>
@@ -137,9 +144,6 @@ onMounted(load)
               <div class="shrink">
                 <strong>{{ t.title }}</strong>
                 <span class="muted small">{{ t.objective }}</span>
-                <span v-if="t.studyCase" class="case-line">
-                  Study case: {{ difficultyLabel[t.studyCase.difficulty] }} · {{ statusLabel[t.studyCase.status] }}
-                </span>
               </div>
               <span class="badge" :class="t.status">{{ statusLabel[t.status] }}</span>
             </RouterLink>
@@ -166,7 +170,6 @@ onMounted(load)
           <span class="kicker sage">Riwayat sesi</span>
           <div v-if="!track.sessions.length" class="muted small">
             Belum ada sesi tercatat.
-            <div class="mt-2"><RouterLink :to="`/sessions/new?trackId=${track.id}`">Catat sesi pertama</RouterLink></div>
           </div>
           <div v-else class="sessions">
             <div v-for="s in track.sessions" :key="s.id">

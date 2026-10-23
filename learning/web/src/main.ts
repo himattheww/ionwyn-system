@@ -10,7 +10,6 @@ const router = createRouter({
     { path: '/tracks/new', component: () => import('./views/TrackNew.vue') },
     { path: '/tracks/:id', component: () => import('./views/TrackDetail.vue'), props: true },
     { path: '/topics/:id', component: () => import('./views/TopicDetail.vue'), props: true },
-    { path: '/sessions/new', component: () => import('./views/SessionNew.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
