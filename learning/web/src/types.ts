@@ -83,7 +83,7 @@ export type TopicDetail = {
   track: { id: number; goal: string }
   studyCase: StudyCase | null
   lesson: Lesson | null
-  attempts: { quiz: Attempt | null; code: Attempt | null }
+  lastAttempt: Attempt | null
 }
 
 export type ExerciseLanguage = 'javascript' | 'typescript' | 'python' | 'csharp' | 'sql' | 'lainnya'
@@ -91,18 +91,13 @@ export type ExerciseLanguage = 'javascript' | 'typescript' | 'python' | 'csharp'
 export type ExerciseTest = { name: string; call: string; expected: string }
 
 export type Lesson = {
-  overview: string
-  sections: { heading: string; paragraphs: string[] }[]
-  examples: { title: string; language: string; code: string; explanation: string }[]
-  keyPoints: string[]
-  quiz: { question: string; options: string[] }[]
+  summary: string
   exercise: { language: ExerciseLanguage; title: string; prompt: string; starter: string; tests: ExerciseTest[]; rubric: string[] }
   createdAt: string
 }
 
 export type Attempt = {
   id: number
-  kind: 'quiz' | 'code'
   score: number
   total: number
   passed: boolean
@@ -111,14 +106,6 @@ export type Attempt = {
   createdAt: string
 }
 
-export type QuizResult = {
-  score: number
-  total: number
-  passed: boolean
-  review: { answer: number; explanation: string }[]
-  attempts: TopicDetail['attempts']
-}
-
-export type CodeResult = { passed: boolean; score: number; total: number; feedback?: string; attempts: TopicDetail['attempts'] }
+export type CodeResult = { passed: boolean; score: number; total: number; feedback?: string; lastAttempt: Attempt | null }
 
 export type TestOutcome = { name: string; passed: boolean; actual: string; error: string | null }

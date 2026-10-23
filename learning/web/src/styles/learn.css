@@ -422,11 +422,6 @@ ol {
   gap: var(--space-4);
 }
 
-.lesson-section h3 {
-  margin-bottom: var(--space-2);
-}
-
-.lesson-example pre,
 .code-editor {
   margin: var(--space-2) 0;
   padding: var(--space-3);
@@ -451,47 +446,9 @@ ol {
   gap: var(--space-1);
 }
 
-.quiz,
 .exercise {
   display: grid;
   gap: var(--space-4);
-}
-
-.quiz-question {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.quiz-question legend {
-  margin-bottom: var(--space-2);
-  font-weight: 500;
-}
-
-.quiz-option {
-  display: flex;
-  gap: var(--space-2);
-  align-items: flex-start;
-  padding: var(--space-2) var(--space-3);
-  border: var(--hair) solid var(--rule-soft);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.quiz-option.picked {
-  border-color: var(--ink);
-}
-
-.quiz-option.right {
-  border-color: var(--ok);
-  background: var(--ok-wash);
-}
-
-.quiz-option.wrong {
-  border-color: var(--bad);
-  background: var(--bad-wash);
 }
 
 .test-list {

@@ -2,10 +2,10 @@
 import { computed, ref } from 'vue'
 import { api, errorMessage } from '../lib/api'
 import { runTests } from '../lib/runTests'
-import type { Attempt, CodeResult, Lesson, TestOutcome, TopicDetail } from '../types'
+import type { Attempt, CodeResult, Lesson, TestOutcome } from '../types'
 
 const props = defineProps<{ topicId: number; exercise: Lesson['exercise']; last: Attempt | null }>()
-const emit = defineEmits<{ attempts: [value: TopicDetail['attempts']] }>()
+const emit = defineEmits<{ attempt: [value: Attempt | null] }>()
 
 const code = ref(props.last?.code ?? props.exercise.starter)
 const outcomes = ref<TestOutcome[] | null>(null)
@@ -34,7 +34,7 @@ async function check() {
       results = { passed: passedCount.value, total: outcomes.value.length }
     }
     result.value = await api.post<CodeResult>(`/topics/${props.topicId}/code`, { code: code.value, results })
-    emit('attempts', result.value.attempts)
+    emit('attempt', result.value.lastAttempt)
   } catch (err) {
     error.value = errorMessage(err)
   } finally {
