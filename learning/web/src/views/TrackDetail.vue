@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api, errorMessage } from '../lib/api'
 import { difficultyLabel, formatDate, formatMinutes, levelLabel, statusLabel, weekPercent } from '../lib/labels'
+import RoadmapMap from '../components/RoadmapMap.vue'
 import type { TrackDetail, TrackStatus } from '../types'
 
 const props = defineProps<{ id: string }>()
@@ -11,6 +12,7 @@ const track = ref<TrackDetail | null>(null)
 const loading = ref(true)
 const error = ref('')
 const statusError = ref('')
+const view = ref<'peta' | 'daftar'>('peta')
 const confirmingDelete = ref(false)
 const deleting = ref(false)
 const deleteError = ref('')
@@ -112,8 +114,15 @@ onMounted(load)
 
     <div class="layout">
       <section>
-        <h2>Urutan topik</h2>
+        <div class="row spread">
+          <h2>Roadmap</h2>
+          <div class="seg">
+            <button :class="{ on: view === 'peta' }" :disabled="view === 'peta'" @click="view = 'peta'">Peta</button>
+            <button :class="{ on: view === 'daftar' }" :disabled="view === 'daftar'" @click="view = 'daftar'">Daftar</button>
+          </div>
+        </div>
         <div v-if="!track.topics.length" class="card state">Jalur ini belum punya topik.</div>
+        <RoadmapMap v-else-if="view === 'peta'" :topics="track.topics" :current-id="currentId" />
         <div v-else class="path">
           <div
             v-for="t in track.topics"

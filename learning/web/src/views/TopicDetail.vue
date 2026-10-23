@@ -2,7 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { api, errorMessage } from '../lib/api'
 import { difficultyLabel, statusLabel } from '../lib/labels'
-import type { Difficulty, StudyCase, TopicDetail } from '../types'
+import CodeExercise from '../components/CodeExercise.vue'
+import LessonView from '../components/LessonView.vue'
+import QuizCard from '../components/QuizCard.vue'
+import type { Difficulty, Lesson, StudyCase, TopicDetail } from '../types'
 
 const props = defineProps<{ id: string }>()
 
@@ -13,6 +16,8 @@ const generating = ref<Difficulty | null>(null)
 const completing = ref(false)
 const actionError = ref('')
 const resultLink = ref('')
+const writingLesson = ref(false)
+const lessonError = ref('')
 
 const levels: Difficulty[] = ['mudah', 'sedang', 'sulit']
 const studyCase = computed(() => topic.value?.studyCase ?? null)
@@ -62,6 +67,27 @@ async function complete() {
   }
 }
 
+async function createLesson() {
+  if (!topic.value) return
+  if (topic.value.lesson && !confirm('Materi, quiz, dan latihan sekarang akan diganti. Lanjut?')) return
+  lessonError.value = ''
+  writingLesson.value = true
+  try {
+    topic.value.lesson = await api.post<Lesson>(`/topics/${props.id}/lesson`)
+    if (topic.value.status === 'belum') topic.value.status = 'sedang'
+  } catch (err) {
+    lessonError.value = errorMessage(err)
+  } finally {
+    writingLesson.value = false
+  }
+}
+
+function updateAttempts(attempts: TopicDetail['attempts']) {
+  if (!topic.value) return
+  topic.value.attempts = attempts
+  if (attempts.quiz?.passed && attempts.code?.passed) topic.value.status = 'selesai'
+}
+
 onMounted(load)
 
 async function load() {
@@ -99,8 +125,20 @@ async function load() {
     <p class="lead">{{ topic.objective }}</p>
 
     <section class="section">
-      <div class="step"><span class="dot sage">1</span><h2>Pahami dari sumber resmi</h2></div>
-      <p class="muted small mb-3">Materi tidak ditulis AI. Semua tautan sudah dicek dan bisa dibuka.</p>
+      <div class="step"><span class="dot sage">1</span><h2>Pelajari materi</h2></div>
+      <div v-if="lessonError" class="error">{{ lessonError }}</div>
+      <div v-if="writingLesson" class="notice"><span class="spinner" />AI sedang menulis materi, quiz, dan latihan, bisa 30-90 detik...</div>
+      <div v-if="!topic.lesson" class="card state">
+        <p>Belum ada materi untuk topik ini. AI akan menulis ringkasan, contoh kode, quiz, dan latihan kode.</p>
+        <button class="primary" :disabled="writingLesson" @click="createLesson">Buat materi</button>
+        <span class="small muted">Pembuatan materi memakai AI, jadi hanya bisa dari laptop. Setelah tersimpan, bisa dibuka dari web dan HP.</span>
+      </div>
+      <template v-else>
+        <LessonView :lesson="topic.lesson" />
+        <button class="mt-2" :disabled="writingLesson" @click="createLesson">Tulis ulang materi</button>
+      </template>
+
+      <h3 class="mt-4">Pendalaman dari sumber resmi</h3>
       <p v-if="!topic.sources.length" class="muted">Tidak ada sumber yang lolos pengecekan.</p>
       <div v-else class="sources">
         <a v-for="s in topic.sources" :key="s.url" :href="s.url" target="_blank" rel="noopener" class="card">
@@ -114,8 +152,33 @@ async function load() {
       </div>
     </section>
 
+    <template v-if="topic.lesson">
+      <section class="section">
+        <div class="step"><span class="dot">2</span><h2>Quiz</h2></div>
+        <QuizCard
+          :key="topic.lesson.createdAt"
+          :topic-id="topic.id"
+          :quiz="topic.lesson.quiz"
+          :last="topic.attempts.quiz"
+          @attempts="updateAttempts"
+        />
+      </section>
+
+      <section class="section">
+        <div class="step"><span class="dot">3</span><h2>Latihan kode</h2></div>
+        <CodeExercise
+          :key="topic.lesson.createdAt"
+          :topic-id="topic.id"
+          :exercise="topic.lesson.exercise"
+          :last="topic.attempts.code"
+          @attempts="updateAttempts"
+        />
+        <p class="small muted">Topik otomatis ditandai selesai setelah quiz dan latihan kode sama-sama lulus.</p>
+      </section>
+    </template>
+
     <section class="section">
-      <div class="step"><span class="dot accent">2</span><h2>Kerjakan study case</h2></div>
+      <div class="step"><span class="dot accent">{{ topic.lesson ? 4 : 2 }}</span><h2>Kerjakan study case</h2></div>
       <div v-if="actionError" class="error">{{ actionError }}</div>
       <div v-if="generating" class="notice">
         <span class="spinner" />AI sedang membuat study case ({{ difficultyLabel[generating] }}), bisa 10-30 detik...
@@ -171,7 +234,7 @@ async function load() {
     </section>
 
     <section v-if="studyCase" class="section">
-      <div class="step"><span class="dot">3</span><h2>Tandai selesai</h2></div>
+      <div class="step"><span class="dot">{{ topic.lesson ? 5 : 3 }}</span><h2>Tandai study case selesai</h2></div>
       <div v-if="isDoneCase" class="success">
         ✓ Study case selesai.
         <template v-if="studyCase.resultLink">
