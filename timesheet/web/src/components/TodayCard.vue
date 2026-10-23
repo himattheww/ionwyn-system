@@ -23,6 +23,7 @@ const short = computed(() => end.value !== null && worked.value < WORKDAY)
 const text = ref('')
 const time = ref(nowClock())
 const manual = ref(false)
+const kind = ref<'masuk' | 'keluar'>('masuk')
 const confirming = ref<AbsenceKind | null>(null)
 
 watch(
@@ -39,6 +40,14 @@ watch(
     time.value = nowClock()
     manual.value = !isToday.value
     confirming.value = null
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [props.date, start.value] as const,
+  () => {
+    kind.value = start.value === null ? 'masuk' : 'keluar'
   },
   { immediate: true },
 )
@@ -96,9 +105,9 @@ function sendPrimary() {
   if (primary.value) emit('submit', { type: primary.value.type, time: props.now })
 }
 
-function sendTime(type: 'masuk' | 'keluar') {
+function sendTime() {
   const value = toMinutes(time.value)
-  if (value !== null) emit('submit', { type, time: value })
+  if (value !== null) emit('submit', { type: kind.value, time: value })
 }
 
 function sendText() {
@@ -171,12 +180,17 @@ function confirmAbsence() {
     </button>
 
     <div v-if="manual" class="manual">
+      <div class="segmented" role="radiogroup" aria-label="Jenis jam">
+        <button type="button" role="radio" :aria-checked="kind === 'masuk'" @click="kind = 'masuk'">Masuk</button>
+        <button type="button" role="radio" :aria-checked="kind === 'keluar'" @click="kind = 'keluar'">Keluar</button>
+      </div>
       <label class="dlabel">
         Jam
         <input v-model="time" class="dinput" type="time" />
       </label>
-      <button class="dbtn" :disabled="disabled || !timeValid" @click="sendTime('masuk')">Masuk</button>
-      <button class="dbtn" :disabled="disabled || !timeValid" @click="sendTime('keluar')">Keluar</button>
+      <button class="dbtn dbtn-primary" type="button" :disabled="disabled || !timeValid" @click="sendTime">
+        {{ busy ? 'Menyimpan…' : 'Simpan jam ' + kind }}
+      </button>
     </div>
     <button v-else-if="row && !absence" class="dbtn dbtn-ghost" @click="manual = true">Atur jam manual</button>
 
