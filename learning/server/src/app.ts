@@ -1,9 +1,7 @@
 import express, { type ErrorRequestHandler } from 'express'
 import { z } from 'zod'
-import { AiError } from './ai.js'
 import { NotFoundError } from './db.js'
 import { exportRoute } from './routes/export.js'
-import { sessions } from './routes/sessions.js'
 import { topics } from './routes/topics.js'
 import { tracks } from './routes/tracks.js'
 
@@ -13,7 +11,6 @@ export function createApp() {
 
   app.use('/api/tracks', tracks)
   app.use('/api/topics', topics)
-  app.use('/api/sessions', sessions)
   app.use('/api/export', exportRoute)
 
   const handleError: ErrorRequestHandler = (err, _req, res, _next) => {
@@ -23,8 +20,6 @@ export function createApp() {
       res.status(400).json({ message: 'Body bukan JSON yang valid' })
     } else if (err instanceof NotFoundError) {
       res.status(404).json({ message: err.message })
-    } else if (err instanceof AiError) {
-      res.status(502).json({ message: err.message })
     } else if (String(err?.message).includes('fetch failed')) {
       console.error(err)
       res.status(503).json({ message: 'Tidak bisa terhubung ke database Supabase. Cek SUPABASE_URL dan koneksi internet.' })
