@@ -38,8 +38,13 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 
 ### Learn (`/learn/`)
 - Tulis apa yang mau dipelajari dan tujuannya. AI menyusun jalur belajar berupa topik berurutan, dan kamu review dulu sebelum disimpan.
-- Tiap topik punya tautan sumber resmi (dicek masih hidup) dan study case buatan AI untuk dikerjakan.
-- Catat sesi belajar: durasi dan ringkasan. Sesi ini mencentang item belajar di Jadwal dan memberi exp di Leveling.
+- **Roadmap**: topik digambar sebagai peta yang terhubung sesuai prasyaratnya. Klik satu node untuk membuka halaman belajarnya. Tampilan daftar tetap tersedia.
+- **Materi di dalam aplikasi**: AI menulis ringkasan, contoh kode, dan poin penting per topik, ditambah link sumber resmi (dicek masih hidup) untuk pendalaman.
+- **Quiz** 5 soal pilihan ganda per topik. Kunci jawaban baru dikirim setelah quiz diperiksa, dan lulus kalau minimal 80% benar.
+- **Latihan kode** per topik. Latihan JavaScript dijalankan langsung di browser dengan test case (di Web Worker, dibatasi 3 detik), jadi bisa dikerjakan dari web dan HP. Bahasa lain dinilai AI.
+- Topik otomatis ditandai selesai setelah quiz dan latihan kode sama-sama lulus.
+- Study case per topik, sesi belajar yang mencentang item belajar di Jadwal dan memberi exp di Leveling, serta hapus jalur.
+- Membuat jalur, materi, study case, dan menilai kode non-JavaScript memakai AI, jadi hanya bisa dari laptop. Hasilnya tersimpan dan bisa dibuka dari mana saja.
 
 ### Leveling (`/leveling/`)
 - Karakter ala RPG: level, tier, gelar, dan lima atribut yang dihitung dari aktivitas nyata di semua aplikasi.
@@ -255,7 +260,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 **Login.** Versi Vercel meminta login sekali dengan akun Supabase-mu, dan hanya akun pemilik yang diterima. Jadwal dan Keuangan ikut masuk dengan sesi yang sama. Versi lokal tetap tanpa login.
 
 **Langkah pertama kali:**
-1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`, `20261021090000_garmin_tokens.sql`.
+1. Jalankan migrasi di SQL Editor Supabase, urut: `20261020100000_catatan_malam.sql`, `20261020101000_fitness.sql`, `20261020102000_leveling.sql`, `20261020110000_hub_status.sql`, `20261021090000_garmin_tokens.sql`, `20261023090000_learn_lessons.sql`.
 2. Isi `DATABASE_URL` di `.env` root dengan connection string **Session pooler** (Supabase → Connect, port 5432). Transaction pooler (6543) macet saat query paralel.
 3. Pindahkan data lama dari SQLite: `node --env-file=.env scripts/migrate-sqlite.mjs`. Aman diulang, tidak membuat duplikat.
 4. Di Vercel: import repo ini. `vercel.json` sudah mengatur install dan build. Isi Environment Variables:
