@@ -56,7 +56,7 @@ writeFileSync(
       handler: 'index.mjs',
       launcherType: 'Nodejs',
       maxDuration: 300,
-      environment: { GARMIN_SYNC: 'false', AI_PROVIDER: 'off', PG_POOL_MAX: '1' }
+      environment: { GARMIN_SYNC: 'false', PG_POOL_MAX: '1' }
     },
     null,
     2
@@ -74,6 +74,8 @@ writeFileSync(
         { src: `^/(${apiApps.join('|')})/api/(.*)$`, dest: '/api?__path=/$1/api/$2' },
         { src: '^/hub/api/(.*)$', dest: '/api?__path=/hub/api/$1' },
         { src: '^/timesheet/api$', dest: '/api?__path=/timesheet/api' },
+        { src: '^/(authorize|token|register|revoke|consent|mcp)$', dest: '/api?__path=/$1' },
+        { src: '^/\\.well-known/(oauth-[a-z-]+.*)$', dest: '/api?__path=/.well-known/$1' },
         { src: `^/(${prefixes.join('|')})$`, status: 308, headers: { Location: '/$1/' } },
         { handle: 'filesystem' },
         ...prefixes.map(prefix => ({ src: `^/${prefix}/(?!assets/).*$`, dest: `/${prefix}/index.html` })),

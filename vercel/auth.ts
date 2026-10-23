@@ -97,6 +97,8 @@ export function authRoutes() {
   return router
 }
 
+export const isOwner = (req: Request, res: Response) => authorize(req, res)
+
 export async function requireOwner(req: Request, res: Response, next: NextFunction) {
   try {
     if (await authorize(req, res)) return next()

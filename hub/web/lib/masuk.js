@@ -9,7 +9,10 @@ const showError = message => {
   error.hidden = !message
 }
 
-if ((await sessionState()) !== 'signed-out') location.replace('/')
+const next = new URLSearchParams(location.search).get('next')
+const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
+
+if ((await sessionState()) !== 'signed-out') location.replace(target)
 
 form.addEventListener('input', () => showError(''))
 form.addEventListener('submit', async event => {
@@ -21,7 +24,7 @@ form.addEventListener('submit', async event => {
   submit.textContent = 'Masuk…'
   try {
     await signIn(email, password)
-    location.replace('/')
+    location.replace(target)
   } catch (failure) {
     showError(failure.message)
     submit.disabled = false

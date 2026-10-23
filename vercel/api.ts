@@ -6,11 +6,13 @@ import { openDb as fitDb } from '../fitness-track/server/src/db.ts'
 import { alert } from '../hub/src/alert.ts'
 import { hubRoutes } from '../hub/src/routes.ts'
 import { createApp as learnApp } from '../learning/server/src/app.ts'
+import { handleMcp } from '../learning/server/src/mcp.ts'
+import { mcpAuth } from '../learning/server/src/oauth.ts'
 import { createApp as levelingApp } from '../leveling/server/src/app.ts'
 import { openDb as levelingDb } from '../leveling/server/src/db.ts'
 import { readEnv } from '../leveling/server/src/env.ts'
 import rules from '../leveling/config/rules.json' with { type: 'json' }
-import { authRoutes, requireOwner } from './auth.ts'
+import { authRoutes, isOwner, requireOwner } from './auth.ts'
 
 process.env.TZ = 'Asia/Jakarta'
 
@@ -30,8 +32,19 @@ function restorePath(req: Request, _res: Response, next: NextFunction) {
 
 const app = express()
 app.disable('x-powered-by')
+app.set('trust proxy', 1)
 app.use(restorePath)
 app.use(authRoutes())
+
+const baseUrl = process.env.HUB_APP_BASE
+const internalSecret = process.env.INTERNAL_SECRET
+if (baseUrl && internalSecret) {
+  const { router, bearer } = mcpAuth({ baseUrl: new URL(baseUrl), secret: internalSecret, isOwner })
+  app.use(router)
+  app.post('/mcp', bearer, express.json({ limit: '1mb' }), handleMcp)
+  app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'Gunakan POST.' }))
+}
+
 app.use(requireOwner)
 app.use(hubRoutes())
 app.use('/catatan', catatanApp(connect(databaseUrl)))
