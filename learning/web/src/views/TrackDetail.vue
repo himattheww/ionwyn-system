@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { api, errorMessage } from '../lib/api'
 import { difficultyLabel, formatDate, formatMinutes, levelLabel, statusLabel, weekPercent } from '../lib/labels'
 import type { TrackDetail, TrackStatus } from '../types'
@@ -10,6 +11,10 @@ const track = ref<TrackDetail | null>(null)
 const loading = ref(true)
 const error = ref('')
 const statusError = ref('')
+const confirmingDelete = ref(false)
+const deleting = ref(false)
+const deleteError = ref('')
+const router = useRouter()
 
 const statuses: { value: TrackStatus; label: string }[] = [
   { value: 'aktif', label: 'Aktif' },
@@ -47,6 +52,18 @@ async function changeStatus(status: TrackStatus) {
   } catch (err) {
     track.value.status = previous
     statusError.value = errorMessage(err)
+  }
+}
+
+async function remove() {
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await api.delete(`/tracks/${props.id}`)
+    router.push('/')
+  } catch (err) {
+    deleteError.value = errorMessage(err)
+    deleting.value = false
   }
 }
 
@@ -149,6 +166,28 @@ onMounted(load)
               <span v-if="s.topicTitle" class="t">{{ s.topicTitle }}</span>
             </div>
           </div>
+        </div>
+
+        <div class="card">
+          <span class="kicker">Hapus jalur</span>
+          <template v-if="!confirmingDelete">
+            <span class="small muted">Menghapus jalur beserta topik, study case, dan riwayat sesinya.</span>
+            <button class="danger" @click="confirmingDelete = true">Hapus jalur</button>
+          </template>
+          <template v-else>
+            <span class="small">
+              Hapus "{{ track.goal }}"?
+              <template v-if="track.sessions.length">
+                {{ track.sessions.length }} sesi ikut terhapus, dan exp Leveling dari sesi itu hilang saat dihitung ulang.
+              </template>
+              Tidak bisa dibatalkan.
+            </span>
+            <div class="row">
+              <button class="danger" :disabled="deleting" @click="remove">{{ deleting ? 'Menghapus...' : 'Ya, hapus' }}</button>
+              <button :disabled="deleting" @click="confirmingDelete = false">Batal</button>
+            </div>
+          </template>
+          <div v-if="deleteError" class="error">{{ deleteError }}</div>
         </div>
       </aside>
     </div>

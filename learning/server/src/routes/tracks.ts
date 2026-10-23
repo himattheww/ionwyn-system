@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { ai } from '../ai.js'
-import { db, unwrap } from '../db.js'
+import { db, NotFoundError, unwrap } from '../db.js'
 import { idParam, planRequest, saveTrackRequest, trackStatusRequest } from '../schemas.js'
 import { keepReachable } from '../urlCheck.js'
 import { currentWeek } from '../week.js'
@@ -117,5 +117,12 @@ tracks.patch('/:id', async (req, res) => {
   const { id } = idParam.parse(req.params)
   const { status } = trackStatusRequest.parse(req.body)
   unwrap(await db.from('tracks').update({ status }).eq('id', id).select('id').maybeSingle())
+  res.status(204).end()
+})
+
+tracks.delete('/:id', async (req, res) => {
+  const { id } = idParam.parse(req.params)
+  const deleted = unwrap(await db.from('tracks').delete().eq('id', id).select('id').maybeSingle())
+  if (!deleted) throw new NotFoundError('Jalur tidak ditemukan')
   res.status(204).end()
 })

@@ -22,6 +22,7 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, data: unknown = {}) => request<T>(path, { method: 'POST', body: JSON.stringify(data) }),
   patch: <T>(path: string, data: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: (path: string) => request<void>(path, { method: 'DELETE' }),
 }
 
 export const errorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Terjadi kesalahan')
