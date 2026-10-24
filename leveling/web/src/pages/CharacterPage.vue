@@ -25,25 +25,29 @@ onUnmounted(() => window.removeEventListener(refreshEvent, reload))
   <StateView :loading="loading" :error="error" :empty="!data?.state" empty-text="Belum ada data karakter. Buka halaman Sumber lalu tekan Hitung ulang." @retry="reload">
     <template v-if="data?.state">
       <section class="hero">
-        <div class="hero-level">
-          <span class="kicker">Level</span>
-          <div class="level-num">{{ data.state.level }}</div>
-        </div>
         <div class="hero-title">
-          <span class="tag tag-accent">{{ data.state.tier }}</span>
-          <h1>{{ data.state.className }}</h1>
+          <span class="kicker">Tier {{ data.state.tier }}</span>
+          <h1>Level {{ data.state.level }}</h1>
           <p class="deck">
-            {{ data.state.subclassName ?? 'Tanpa subkelas' }}<template v-if="data.state.specialization">, spesialis {{ data.state.specialization }}</template>
+            {{ data.state.className }} · {{ data.state.subclassName ?? 'tanpa subkelas' }}<template v-if="data.state.specialization">, spesialis {{ data.state.specialization }}</template>.
+            Karakter dihitung dari aktivitas nyata di semua aplikasi.
           </p>
           <div class="hero-exp">
-            <div class="bar thick accent"><span :style="{ width: percent(data.state.levelExp, data.state.levelNeed) }" /></div>
             <div class="row small">
-              <span><strong>{{ num(data.state.levelExp) }}</strong> / {{ num(data.state.levelNeed) }} exp menuju level {{ data.state.level + 1 }}</span>
-              <span class="muted">total {{ num(data.state.totalExp) }} exp</span>
+              <span class="kicker">Exp</span>
+              <span class="num">{{ num(data.state.levelExp) }} / {{ num(data.state.levelNeed) }}</span>
             </div>
+            <div class="bar thick accent"><span :style="{ width: percent(data.state.levelExp, data.state.levelNeed) }" /></div>
+            <p class="small muted">Total {{ num(data.state.totalExp) }} exp · menuju level {{ data.state.level + 1 }}</p>
           </div>
         </div>
-        <AttributeOrb class="hero-orb" :attributes="data.state.attributes" />
+        <div class="rune">
+          <svg class="rune-ring" viewBox="0 0 200 200" aria-hidden="true">
+            <circle cx="100" cy="100" r="96" class="rune-dots" />
+            <circle cx="100" cy="100" r="84" class="rune-dash" />
+          </svg>
+          <AttributeOrb class="hero-orb" :attributes="data.state.attributes" />
+        </div>
       </section>
 
       <section class="columns">

@@ -3,7 +3,7 @@
   --color-surface: var(--paper-sunk);
   --color-text: var(--ink);
   --color-accent: var(--accent);
-  --color-accent-2: var(--mark-leveling);
+  --color-accent-2: var(--violet);
   --color-divider: var(--rule-soft);
   --color-neutral-100: var(--sheet);
   --color-neutral-300: var(--rule-soft);
@@ -16,8 +16,8 @@
   --color-accent-700: var(--accent);
   --color-accent-800: var(--accent);
   --color-accent-2-100: var(--paper-sunk);
-  --color-accent-2-700: var(--mark-leveling);
-  --color-accent-2-800: var(--mark-leveling);
+  --color-accent-2-700: var(--violet);
+  --color-accent-2-800: var(--violet);
   --color-process-yellow: var(--warn);
   --font-serif: var(--font-display);
   --radius-md: var(--radius-sm);
@@ -43,13 +43,15 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.12;
-  letter-spacing: -0.015em;
+  letter-spacing: 0.04em;
+  color: var(--accent);
   margin: 0;
 }
 h1 {
-  font-size: 56px;
+  font-size: clamp(44px, 7vw, 80px);
+  color: var(--ink);
 }
 h3 {
   font-size: 25px;
@@ -78,82 +80,19 @@ a:hover {
   background: color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-.sheet {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-6) 120px;
-}
-.masthead {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.masthead-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-.brand {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: var(--text-3xl);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--color-text);
-  text-decoration: none;
-}
-.brand:hover {
-  color: var(--color-text);
-}
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-.nav a {
-  color: inherit;
-  text-decoration: none;
-}
-.nav a {
-  font-size: var(--text-sm);
-  color: var(--ink-2);
-  padding-bottom: var(--space-1);
-  border-bottom: 2px solid transparent;
-}
-.nav a:hover {
-  color: var(--ink);
-}
-.nav a.router-link-exact-active {
-  color: var(--ink);
-  border-bottom-color: var(--mark-leveling);
-}
-.rule-thick {
-  height: 1px;
-  margin-top: var(--space-2);
-  background: var(--color-text);
-}
-.rule-thin {
-  height: 1px;
-  background: var(--color-text);
-}
-.dateline {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-  font-size: 13px;
-  padding: 2px 0;
+.subnav {
+  --subnav-font: var(--font-display);
+  --subnav-case: uppercase;
+  --subnav-tracking: 0.12em;
+  padding-inline: max(var(--space-6), calc((100% - 1072px) / 2));
 }
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  padding-top: 56px;
+  gap: var(--space-7);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-6) 120px;
 }
 .lede {
   font-size: 18px;
@@ -166,9 +105,11 @@ a:hover {
   font-size: 14px;
 }
 .kicker {
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--ink-2);
 }
 .num {
   font-variant-numeric: tabular-nums;
@@ -176,16 +117,20 @@ a:hover {
 }
 
 .bar {
-  height: 3px;
-  background: var(--color-neutral-300);
+  height: 6px;
+  background: var(--paper-sunk);
 }
 .bar.thick {
-  height: 6px;
+  height: 12px;
+  border: 1px solid var(--accent);
+  background: transparent;
 }
 .bar > span {
   display: block;
   height: 100%;
-  background: var(--color-text);
+  background: var(--accent);
+  transform-origin: left;
+  animation: meter-fill 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .bar.accent > span {
   background: var(--color-accent);
@@ -208,6 +153,7 @@ a:hover {
   color: var(--color-text);
   background: transparent;
   border: 1px solid transparent;
+  min-height: 44px;
   padding: var(--space-2) 18px;
   border-radius: var(--radius-md);
 }
@@ -216,8 +162,9 @@ a:hover {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 .btn-primary:hover {
   background: var(--color-accent-600);
@@ -244,8 +191,8 @@ a:hover {
 }
 .input {
   width: 100%;
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 44px;
+  padding: 6px 12px;
   font: inherit;
   font-size: 14px;
   color: var(--color-text);
@@ -301,19 +248,22 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-5);
   border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: var(--sheet);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .card-kicker {
-  font-size: 10px;
+  font-family: var(--font-display);
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-accent-700);
 }
 .card-title {
-  font-weight: 500;
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
   line-height: 1.2;
 }
 .card-meta {

@@ -7,11 +7,17 @@ interface Toast {
   lines: string[]
 }
 
+const links = [
+  { to: '/', label: 'Karakter' },
+  { to: '/riwayat', label: 'Riwayat' },
+  { to: '/log', label: 'Log exp' },
+  { to: '/achievement', label: 'Achievement' },
+  { to: '/sumber', label: 'Sumber' },
+]
+
 const toasts = ref<Toast[]>([])
 let lastId: number | null = null
 let timer: ReturnType<typeof setInterval>
-
-const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 async function pollNotifications() {
   try {
@@ -42,29 +48,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="sheet">
-    <header class="masthead">
-      <div class="masthead-top">
-        <RouterLink to="/" class="brand">Leveling</RouterLink>
-        <nav class="nav">
-          <RouterLink to="/">Karakter</RouterLink>
-          <RouterLink to="/riwayat">Riwayat</RouterLink>
-          <RouterLink to="/log">Log exp</RouterLink>
-          <RouterLink to="/achievement">Achievement</RouterLink>
-          <RouterLink to="/sumber">Sumber</RouterLink>
-        </nav>
-      </div>
-      <div class="rule-thick" />
-      <div class="dateline">
-        <em>Lembar karakter satu orang · diisi dari tujuh aplikasi</em>
-        <span>{{ today }}</span>
-      </div>
-      <div class="rule-thin" />
-    </header>
-    <main class="page">
-      <RouterView />
-    </main>
-  </div>
+  <nav class="subnav" aria-label="Halaman Leveling">
+    <RouterLink v-for="link in links" :key="link.to" v-slot="{ href, navigate, isExactActive }" :to="link.to" custom>
+      <a :href="href" :aria-current="isExactActive ? 'page' : undefined" @click="navigate">{{ link.label }}</a>
+    </RouterLink>
+  </nav>
+  <main class="page">
+    <RouterView />
+  </main>
   <div class="toasts">
     <div v-for="toast in toasts" :key="toast.id" class="card elev-lg toast" @click="dismiss(toast.id)">
       <span class="card-kicker">Perubahan karakter</span>

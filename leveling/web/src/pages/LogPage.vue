@@ -53,6 +53,7 @@ const days = computed(() => {
 
 <template>
   <div>
+    <span class="kicker">Pembukuan exp</span>
     <h1>Log exp</h1>
     <p class="lede">Dari mana setiap poin datang, dan berapa yang terpotong batas harian.</p>
   </div>

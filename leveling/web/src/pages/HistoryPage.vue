@@ -25,6 +25,7 @@ const days = computed(() => {
 
 <template>
   <div>
+    <span class="kicker">Gulungan perjalanan</span>
     <h1>Riwayat</h1>
     <p class="lede">Setiap kenaikan level, kelas, dan quest, dihitung ulang dari awal.</p>
   </div>

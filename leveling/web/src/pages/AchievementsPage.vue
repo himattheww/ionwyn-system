@@ -31,6 +31,7 @@ const locked = computed(() => (data.value ?? []).filter(a => !a.date))
 
 <template>
   <div>
+    <span class="kicker">Lambang pencapaian</span>
     <h1>Achievement</h1>
     <p class="lede">{{ earned.length }} dari {{ (data ?? []).length }} tonggak tercapai.</p>
   </div>

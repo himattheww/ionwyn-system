@@ -1,49 +1,70 @@
 .hero {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: var(--space-8) 56px;
-  align-items: end;
-  margin-bottom: 32px;
-}
-.hero-level {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.level-num {
-  font: 500 160px / 0.9 var(--font-mono);
-  letter-spacing: -0.06em;
-  font-variant-numeric: tabular-nums;
-}
-.hero-orb {
-  align-self: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-6) 56px;
+  align-items: center;
 }
 .hero-title {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-3);
-  min-width: 260px;
-  padding-bottom: var(--space-2);
 }
 .hero-title h1 {
-  font-size: 64px;
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 1;
 }
 .deck {
-  font-size: 22px;
-  font-style: italic;
-  text-wrap: pretty;
+  max-width: 46ch;
+  font-size: 19px;
+  color: var(--ink);
 }
 .hero-exp {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  max-width: 560px;
+  max-width: 480px;
   margin-top: var(--space-4);
+}
+.hero-exp .num {
+  font-family: var(--font-display);
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+.rune {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 300px;
+  height: 300px;
+}
+.rune-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: turn 60s linear infinite;
+}
+.rune-ring circle {
+  fill: none;
+}
+.rune-dots {
+  stroke: var(--violet-deco);
+  stroke-width: 1.2;
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+}
+.rune-dash {
+  stroke: var(--violet);
+  stroke-width: 1;
+  stroke-dasharray: 22 14;
+  opacity: 0.8;
+}
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .columns {
   display: grid;
@@ -95,6 +116,7 @@
   color: var(--color-accent-700);
 }
 .quest-label {
+  font-family: var(--font-display);
   font-size: 22px;
   line-height: 1.2;
 }
@@ -135,10 +157,12 @@
   .hero {
     grid-template-columns: 1fr;
   }
-  .level-num {
-    font-size: 110px;
+  .rune {
+    width: 240px;
+    height: 240px;
+    justify-self: center;
   }
-  .hero-title h1 {
-    font-size: 44px;
-  }
+}
+.rune :deep(figcaption) {
+  display: none;
 }

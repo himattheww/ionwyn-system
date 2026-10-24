@@ -47,6 +47,7 @@ async function recalculate() {
 <template>
   <div class="head">
     <div>
+      <span class="kicker">Dari mana exp datang</span>
       <h1>Sumber</h1>
       <p class="lede">Semua sumber hanya dibaca. Hitung ulang otomatis tiap 30 menit.</p>
     </div>
