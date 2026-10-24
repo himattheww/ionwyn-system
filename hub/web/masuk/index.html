@@ -9,22 +9,35 @@
     <link rel="stylesheet" href="/styles/masuk.css" />
   </head>
   <body>
-    <main class="sign-in">
-      <p class="eyebrow">Ionwyn</p>
-      <h1>Masuk</h1>
-      <p class="muted">Satu akun untuk semua aplikasi.</p>
-      <form id="form" class="sign-in-form" novalidate>
-        <label class="field">
-          <span>Email</span>
-          <input id="email" type="email" autocomplete="username" required />
-        </label>
-        <label class="field">
-          <span>Password</span>
-          <input id="password" type="password" autocomplete="current-password" required />
-        </label>
-        <p id="error" class="state-error" role="alert" hidden></p>
-        <button class="btn btn-primary" id="submit" type="submit">Masuk</button>
-      </form>
+    <main class="sign-in-page">
+      <section class="sign-in-intro">
+        <p class="brand">Ionwyn</p>
+        <div>
+          <h1>Satu akun,<br />tujuh <em>ruang.</em></h1>
+          <p class="lede">Jadwal, jurnal malam, latihan, belajar, level, uang, dan absen. Masuk sekali, semuanya terbuka.</p>
+        </div>
+        <svg class="sun" viewBox="0 0 170 92" aria-hidden="true">
+          <path class="sun-rest" d="M 12 84 A 73 73 0 0 1 158 84" />
+          <path class="sun-done" d="M 12 84 A 73 73 0 0 1 158 84" pathLength="100" />
+          <line x1="4" y1="84" x2="166" y2="84" />
+          <circle class="sun-dot" cx="137" cy="35" r="4" />
+        </svg>
+      </section>
+      <section class="sign-in">
+        <h2>Masuk</h2>
+        <form id="form" class="sign-in-form" novalidate>
+          <label class="field">
+            <span>Email</span>
+            <input id="email" type="email" autocomplete="username" placeholder="nama@email.com" required />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input id="password" type="password" autocomplete="current-password" required />
+          </label>
+          <p id="error" class="state-error" role="alert" hidden></p>
+          <button class="btn btn-primary" id="submit" type="submit">Masuk</button>
+        </form>
+      </section>
     </main>
     <script type="module" src="/lib/masuk.js"></script>
   </body>

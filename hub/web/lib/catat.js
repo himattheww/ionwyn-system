@@ -75,3 +75,5 @@ for (const button of document.querySelectorAll('[data-entry]')) {
 const target = new URLSearchParams(location.search).get('mode')
 if (target === 'uang') amount.focus()
 if (target === 'absen') $('absen').scrollIntoView()
+
+document.getElementById('dateline').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })

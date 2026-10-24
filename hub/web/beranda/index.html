@@ -10,12 +10,21 @@
   </head>
   <body>
     <main class="page">
-      <header class="masthead">
+      <header class="hero">
         <div>
           <p class="eyebrow" id="dateline">Memuat…</p>
           <h1>Hari ini</h1>
         </div>
-        <button class="btn btn-quiet btn-sm" id="refresh" type="button">Muat ulang</button>
+        <div class="hero-side">
+          <svg class="sun" id="sun" viewBox="0 0 170 92" aria-hidden="true">
+            <path class="sun-rest" d="M 12 84 A 73 73 0 0 1 158 84" pathLength="100" />
+            <path class="sun-done" d="M 12 84 A 73 73 0 0 1 158 84" pathLength="100" />
+            <line x1="4" y1="84" x2="166" y2="84" />
+            <circle class="sun-dot" r="4" />
+            <text class="sun-time" text-anchor="middle"></text>
+          </svg>
+          <button class="btn" id="refresh" type="button">Muat ulang</button>
+        </div>
       </header>
 
       <section class="strip" id="strip" aria-label="Angka utama"></section>
@@ -27,9 +36,8 @@
 
       <section class="links">
         <div class="section-title">
-          <span class="index">07</span>
-          <h3>Hubungan antar-aplikasi</h3>
-          <button class="btn btn-sm aside" id="run" type="button">Jalankan sekarang</button>
+          <h2>Hubungan antar-aplikasi</h2>
+          <button class="btn btn-primary aside" id="run" type="button">Jalankan sekarang</button>
         </div>
         <table class="ledger">
           <thead>

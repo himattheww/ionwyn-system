@@ -87,6 +87,13 @@ body {
   white-space: nowrap;
 }
 
+.sign-out {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .newtab:hover {
   color: var(--ink);
 }
