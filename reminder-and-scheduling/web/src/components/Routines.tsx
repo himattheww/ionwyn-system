@@ -8,13 +8,12 @@ interface Props {
   templates: RoutineTemplate[]
   onSave: (templates: RoutineTemplate[]) => Promise<void>
   onDelete: (id: string) => Promise<void>
-  onBack: () => void
 }
 
 const weekOrder = [1, 2, 3, 4, 5, 6, 0]
 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
-export function Routines({ templates, onSave, onDelete, onBack }: Props) {
+export function Routines({ templates, onSave, onDelete }: Props) {
   const [weekday, setWeekday] = useState(1)
   const [title, setTitle] = useState('')
   const [kind, setKind] = useState<Kind>('flexible')
@@ -56,10 +55,12 @@ export function Routines({ templates, onSave, onDelete, onBack }: Props) {
   }
 
   return (
-    <main className="page">
-      <header className="bar">
-        <h1>Rutinitas mingguan</h1>
-        <button onClick={onBack}>Kembali</button>
+    <main className="page wide">
+      <header className="masthead">
+        <div>
+          <p className="eyebrow">Diterapkan tiap minggu</p>
+          <h1>Rutinitas</h1>
+        </div>
       </header>
 
       {templates.length === 0 && <p className="meta">Belum ada rutinitas.</p>}

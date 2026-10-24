@@ -40,8 +40,9 @@ import { History } from './History'
 import { NoticeBar } from './NoticeBar'
 import { MonthGrid } from './MonthGrid'
 import type { Toast } from './NoticeBar'
-
-type Screen = 'home' | 'routines' | 'history' | 'settings'
+import { FlapClock } from './FlapClock'
+import { Tabs } from './Tabs'
+import type { Screen } from './Tabs'
 
 type Row =
   | { type: 'item'; at: number; item: Item }
@@ -51,6 +52,15 @@ type Row =
 const minGapMin = 15
 const maxPopups = 3
 const rowOrder = { gap: 0, item: 1, now: 2 }
+
+const isoWeek = (date: string) => {
+  const [y = 0, m = 1, d = 1] = date.split('-').map(Number)
+  const target = new Date(Date.UTC(y, m - 1, d))
+  const day = target.getUTCDay() || 7
+  target.setUTCDate(target.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+  return Math.ceil(((target.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7)
+}
 
 export function Planner({ onSignOut }: { onSignOut: () => void }) {
   const [now, setNow] = useState(() => new Date())
@@ -68,7 +78,6 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [month, setMonth] = useState(() => monthStart(formatDate(new Date())))
-  const [showCalendar, setShowCalendar] = useState(true)
   const [adding, setAdding] = useState(false)
   const [shifting, setShifting] = useState<Item | null>(null)
   const notifying = useRef(false)
@@ -271,37 +280,36 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
     })
 
   const dismissToast = (id: string) => setToasts((current) => current.filter((toast) => toast.id !== id))
+  const tabs = <Tabs screen={screen} onChange={setScreen} onSignOut={onSignOut} />
 
   if (screen === 'routines') {
     return (
-      <Routines
-        templates={templates}
-        onSave={(next) => mutate(() => store.saveTemplates(next))}
-        onDelete={(id) => mutate(() => store.deleteTemplate(id))}
-        onBack={() => setScreen('home')}
-      />
+      <div className="app">
+        {tabs}
+        <Routines
+          templates={templates}
+          onSave={(next) => mutate(() => store.saveTemplates(next))}
+          onDelete={(id) => mutate(() => store.deleteTemplate(id))}
+        />
+      </div>
     )
   }
 
   if (screen === 'history') {
     return (
-      <History
-        items={items}
-        logs={logs}
-        today={today}
-        onAddLog={(log) => store.saveLog(log).then(load)}
-        onBack={() => setScreen('home')}
-      />
+      <div className="app">
+        {tabs}
+        <History items={items} logs={logs} today={today} onAddLog={(log) => store.saveLog(log).then(load)} />
+      </div>
     )
   }
 
   if (screen === 'settings') {
     return (
-      <Settings
-        settings={settings}
-        onSave={(next) => store.saveSettings(next).then(load)}
-        onBack={() => setScreen('home')}
-      />
+      <div className="app">
+        {tabs}
+        <Settings settings={settings} onSave={(next) => store.saveSettings(next).then(load)} />
+      </div>
     )
   }
 
@@ -317,50 +325,8 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
     />
   )
 
-  return (
-    <main className="app">
-      <NoticeBar toasts={toasts} onDismiss={dismissToast} />
-
-      <header className="topnav">
-        <span className="brand">Jadwal</span>
-        <button className="link" aria-current="page">
-          Hari ini
-        </button>
-        <button className="link" onClick={() => setScreen('routines')}>
-          Rutinitas
-        </button>
-        <button className="link" onClick={() => setScreen('history')}>
-          Riwayat
-        </button>
-        <button className="link" onClick={() => setScreen('settings')}>
-          Pengaturan
-        </button>
-        <button className="link" aria-pressed={showCalendar} onClick={() => setShowCalendar(!showCalendar)}>
-          Kalender
-        </button>
-        <button onClick={onSignOut}>Keluar</button>
-      </header>
-
-      <section className="hero">
-        <div className="hero-text">
-          <div className="kicker">{relative ? `${relative} · ${date}` : date}</div>
-          <h1 className="hero-title">{longDateLabel(date)}</h1>
-          <div className="hero-summary">{loading ? 'Memuat…' : summary}</div>
-        </div>
-        <div className="hero-actions">
-          <button className="icon" onClick={() => setDate(addDays(date, -1))} aria-label="Hari sebelumnya">
-            ‹
-          </button>
-          <button className="icon" onClick={() => setDate(addDays(date, 1))} aria-label="Hari berikutnya">
-            ›
-          </button>
-          {date !== today && <button onClick={() => setDate(today)}>Hari ini</button>}
-          <button className="primary" onClick={() => setAdding(true)}>
-            Tambah jadwal <span>+</span>
-          </button>
-        </div>
-      </section>
-
+  const messages = (
+    <>
       {error && (
         <div className="notice error">
           <span>{error}</span>
@@ -377,10 +343,82 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
           </button>
         </div>
       )}
+    </>
+  )
 
-      <div className="layout">
-        <aside className="side">
-          {showCalendar && (
+  const board = (
+    <section className="board">
+      <header className="board-head">
+        <h2>{relative ?? longDateLabel(date)}</h2>
+        <div className="board-nav">
+          <button className="icon" onClick={() => setDate(addDays(date, -1))} aria-label="Hari sebelumnya">
+            ‹
+          </button>
+          <button className="icon" onClick={() => setDate(addDays(date, 1))} aria-label="Hari berikutnya">
+            ›
+          </button>
+          {date !== today && <button onClick={() => setDate(today)}>Hari ini</button>}
+          <button className="primary" onClick={() => setAdding(true)}>
+            Tambah jadwal
+          </button>
+        </div>
+      </header>
+      <p className="board-summary">{loading ? 'Memuat…' : summary}</p>
+      {view.timed.length === 0 && view.anytime.length === 0 && !loading && (
+        <p className="empty">Belum ada jadwal di papan ini. Tambah satu, atau isi dari rutinitas.</p>
+      )}
+      <ul className="timeline">
+        {timeline.map((row) => {
+          if (row.type === 'item') return card(row.item)
+          if (row.type === 'gap')
+            return (
+              <li key={`gap-${row.at}`} className="gap-row">
+                <span>{toHHmm(row.at)}</span>
+                <span>Waktu luang · {durationLabel(row.end - row.at)}</span>
+              </li>
+            )
+          return (
+            <li key="now" className="now-row">
+              <i aria-hidden="true" />
+              Sekarang · {toHHmm(row.at)}
+            </li>
+          )
+        })}
+        {view.anytime.map((item) => card(item))}
+      </ul>
+    </section>
+  )
+
+  const lateBoard = lateElsewhere.length > 0 && (
+    <section className="board late">
+      <header className="board-head">
+        <h2>Perlu dijawab</h2>
+        <span className="board-count">{lateElsewhere.length} dari hari lain</span>
+      </header>
+      <ul className="timeline">{lateElsewhere.map((item) => card(item, dateLabel(item.date, today)))}</ul>
+    </section>
+  )
+
+  const idleBar = (
+    <IdleBar
+      idle={idle}
+      now={now}
+      anytimeCount={items.filter((i) => i.date === today && i.startTime === null && i.status === 'terencana').length}
+      conflictTitle={conflict?.title ?? null}
+      onStart={startIdleSession}
+      onStop={stopIdleSession}
+    />
+  )
+
+  return (
+    <main className="app">
+      <NoticeBar toasts={toasts} onDismiss={dismissToast} />
+      {tabs}
+
+      {screen === 'calendar' ? (
+        <div className="page wide">
+          {messages}
+          <div className="calendar-layout">
             <MonthGrid
               month={month}
               selected={date}
@@ -390,42 +428,26 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
               onPrev={() => setMonth(addMonths(month, -1))}
               onNext={() => setMonth(addMonths(month, 1))}
             />
-          )}
+            <div className="stack-lg">
+              {board}
+              {idleBar}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="page wide">
+          <header className="masthead">
+            <div>
+              <p className="eyebrow">
+                {longDateLabel(today)} · minggu {isoWeek(today)}
+              </p>
+              <h1>Jadwal</h1>
+            </div>
+            <FlapClock now={now} />
+          </header>
 
-          <IdleBar
-            idle={idle}
-            now={now}
-            anytimeCount={items.filter((i) => i.date === today && i.startTime === null && i.status === 'terencana').length}
-            conflictTitle={conflict?.title ?? null}
-            onStart={startIdleSession}
-            onStop={stopIdleSession}
-          />
-
-          <section className="side-block">
-            <h3>Minggu ini</h3>
-            <button className="block" onClick={() => fillRoutines(1)} disabled={templates.length === 0}>
-              Isi minggu ini dari rutinitas <span>›</span>
-            </button>
-            <button className="block" onClick={() => fillRoutines(4)} disabled={templates.length === 0}>
-              Isi 4 minggu ke depan <span>›</span>
-            </button>
-            <button className="block" onClick={copyLastWeek}>
-              Salin minggu lalu <span>›</span>
-            </button>
-            {templates.length === 0 && <p className="meta">Buat rutinitas dulu di menu Rutinitas.</p>}
-          </section>
-        </aside>
-
-        <div className="main">
-          {lateElsewhere.length > 0 && (
-            <section>
-              <div className="section-head alert">
-                <h2>Perlu dijawab</h2>
-                <span>{lateElsewhere.length} dari hari lain</span>
-              </div>
-              <ul className="timeline">{lateElsewhere.map((item) => card(item, dateLabel(item.date, today)))}</ul>
-            </section>
-          )}
+          {messages}
+          {lateBoard}
 
           <DraftPanel
             key={`draft-${date}-${draftSelected.length}`}
@@ -440,55 +462,36 @@ export function Planner({ onSignOut }: { onSignOut: () => void }) {
             onAccept={addDrafts}
           />
 
-          <section>
-            <div className="section-head">
-              <h2>Jadwal</h2>
-              {view.timed.length > 0 && <span>{view.timed.length} item berjam</span>}
-            </div>
-            {view.timed.length === 0 && <p className="empty">Belum ada jadwal berjam.</p>}
-            <ul className="timeline">
-              {timeline.map((row) => {
-                if (row.type === 'item') return card(row.item)
-                if (row.type === 'gap')
-                  return (
-                    <li key={`gap-${row.at}`} className="gap-row">
-                      <span>{toHHmm(row.at)}</span>
-                      <span>Waktu luang · {durationLabel(row.end - row.at)}</span>
-                    </li>
-                  )
-                return (
-                  <li key="now" className="now-row">
-                    <span>{toHHmm(row.at)}</span>
-                    <span>Sekarang</span>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
+          {board}
 
-          <section>
-            <div className="section-head">
-              <h2>Kapan saja</h2>
-              <span>tanpa jam</span>
-            </div>
-            {view.anytime.length === 0 ? (
-              <p className="empty">Kosong.</p>
-            ) : (
-              <ul className="timeline">{view.anytime.map((item) => card(item))}</ul>
-            )}
-          </section>
+          <div className="tools">
+            {idleBar}
+            <section className="side-block">
+              <h3>Minggu ini</h3>
+              <button className="block" onClick={() => fillRoutines(1)} disabled={templates.length === 0}>
+                Isi minggu ini dari rutinitas <span>›</span>
+              </button>
+              <button className="block" onClick={() => fillRoutines(4)} disabled={templates.length === 0}>
+                Isi 4 minggu ke depan <span>›</span>
+              </button>
+              <button className="block" onClick={copyLastWeek}>
+                Salin minggu lalu <span>›</span>
+              </button>
+              {templates.length === 0 && <p className="meta">Buat rutinitas dulu di halaman Rutinitas.</p>}
+            </section>
+          </div>
+
+          <footer className="footnote">
+            <span>
+              Jam tenang {settings.quietStart}–{settings.quietEnd}
+            </span>
+            <span>
+              Ringkasan pagi {settings.morningSummary} · malam {settings.eveningSummary}
+            </span>
+            <span>Pengingat {settings.remindBeforeMin} mnt sebelum mulai</span>
+          </footer>
         </div>
-      </div>
-
-      <footer className="footnote">
-        <span>
-          Jam tenang {settings.quietStart}–{settings.quietEnd}
-        </span>
-        <span>
-          Ringkasan pagi {settings.morningSummary} · malam {settings.eveningSummary}
-        </span>
-        <span>Pengingat {settings.remindBeforeMin} mnt sebelum mulai</span>
-      </footer>
+      )}
 
       {adding && (
         <AddItem date={date} onAdd={(item) => store.saveItems([item]).then(load)} onClose={() => setAdding(false)} />

@@ -9,7 +9,6 @@ interface Props {
   logs: ActivityLog[]
   today: string
   onAddLog: (log: ActivityLog) => Promise<void>
-  onBack: () => void
 }
 
 const rangeOptions = [
@@ -23,7 +22,7 @@ const stamp = (iso: string) => {
   return `${d.getDate()}/${d.getMonth() + 1} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function History({ items, logs, today, onAddLog, onBack }: Props) {
+export function History({ items, logs, today, onAddLog }: Props) {
   const [days, setDays] = useState(7)
   const [filter, setFilter] = useState<Module | 'semua'>('semua')
   const [module, setModule] = useState<Module>('kesehatan')
@@ -62,10 +61,12 @@ export function History({ items, logs, today, onAddLog, onBack }: Props) {
   }
 
   return (
-    <main className="page">
-      <header className="bar">
-        <h1>Riwayat</h1>
-        <button onClick={onBack}>Kembali</button>
+    <main className="page wide">
+      <header className="masthead">
+        <div>
+          <p className="eyebrow">Yang sudah terjadi</p>
+          <h1>Riwayat</h1>
+        </div>
       </header>
 
       <h2>Ringkasan</h2>

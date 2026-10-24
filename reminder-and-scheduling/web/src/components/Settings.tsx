@@ -6,10 +6,9 @@ import { notificationPermission, requestNotificationPermission } from '../lib/no
 interface Props {
   settings: PlannerSettings
   onSave: (settings: PlannerSettings) => Promise<void>
-  onBack: () => void
 }
 
-export function Settings({ settings, onSave, onBack }: Props) {
+export function Settings({ settings, onSave }: Props) {
   const [draft, setDraft] = useState(settings)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,10 +36,12 @@ export function Settings({ settings, onSave, onBack }: Props) {
   }
 
   return (
-    <main className="page">
-      <header className="bar">
-        <h1>Pengaturan</h1>
-        <button onClick={onBack}>Kembali</button>
+    <main className="page wide">
+      <header className="masthead">
+        <div>
+          <p className="eyebrow">Pengingat dan jam tenang</p>
+          <h1>Pengaturan</h1>
+        </div>
       </header>
 
       <h2>Notifikasi browser</h2>
