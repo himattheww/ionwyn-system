@@ -73,7 +73,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - **Satu login.** Versi online meminta login sekali dengan akun Supabase. Jadwal dan Keuangan ikut masuk dengan sesi yang sama.
 - **Satu database.** Semua data aplikasi ada di satu project Supabase dengan RLS di setiap tabel.
 - **Hubungan otomatis.** Supabase `pg_cron` menjalankan integrasi tiap 10 menit dan hitung ulang Leveling tiap 30 menit, walaupun laptop mati.
-- **Satu tampilan.** Semua aplikasi memakai sistem desain yang sama di `design/`, dengan mode terang dan gelap.
+- **Satu kerangka, delapan suasana.** Semua aplikasi memakai kerangka desain yang sama di `design/`, tapi tiap aplikasi punya warna, huruf, dan satu gerakan khas sendiri.
 - **Satu backup.** `npm run backup` menyimpan semua tabel, data Timesheet, dan semua `.env`.
 
 ## Alur sistem
@@ -228,13 +228,25 @@ Pertama kali membuka versi lokal, login sekali di Jadwal atau Keuangan. Browser 
 
 ## Desain
 
-Semua aplikasi memakai satu sistem desain di `design/`. Arahnya "buku lapangan": kertas, tinta, dan satu aksen merah bata.
+Semua aplikasi memakai satu kerangka di `design/`: skala spasi, ukuran huruf, target sentuh 44 px, fokus yang selalu terlihat, dan navigasi dua tingkat (atas untuk pindah aplikasi, bawah untuk halaman di dalam aplikasi). Di atas kerangka itu, tiap aplikasi punya suasana sendiri:
+
+| Aplikasi | Suasana | Gerakan khas |
+| --- | --- | --- |
+| Beranda | Buku lapangan, kertas hangat | Busur matahari sepanjang hari |
+| Jadwal | Papan keberangkatan, gelap dan amber | Jam split-flap |
+| Catatan | Langit malam | Bintang berkedip dan fase bulan asli |
+| Fitness | Layar telemetri, lime di atas hitam | Batang tumbuh dan garis detak jantung |
+| Learn | Atlas di atas perkamen | Rute putus-putus yang bergerak |
+| Leveling | Grimoire, emas di atas ungu tua | Lingkaran rune berputar |
+| Uang | Buku besar akuntan | Garis ganda tinta, batang pengeluaran bergaris miring |
+| Timesheet | Kartu absen | Stempel status dan jam dinding |
 
 | File | Isi |
 | --- | --- |
-| `design/tokens.css` | Warna (terang dan gelap, lulus WCAG AA), font, ukuran teks, spacing, radius, durasi animasi, warna penanda per aplikasi (`--mark-*`) |
-| `design/fonts.css` + `design/fonts/` | Newsreader (judul), IBM Plex Sans (teks), IBM Plex Mono (angka dan label). Self-hosted, tidak butuh internet |
-| `design/base.css` | Dasar bersama: tipografi, `btn`, `field`, `tag`, `ledger`, `meter`, `reveal`, skeleton. Animasi mati otomatis kalau `prefers-reduced-motion` aktif |
+| `design/tokens.css` | Kerangka bersama: spacing, ukuran teks, durasi animasi, nilai awal warna dan huruf (suasana Beranda) |
+| `design/suasana.css` | Warna dan huruf tiap aplikasi, dipilih lewat `data-suasana` di `<html>`. Kontras teks minimal 4,5:1 |
+| `design/fonts.css` + `design/fonts/` | Semua huruf self-hosted (Newsreader, IBM Plex, Barlow Condensed, Fraunces, Figtree, Archivo, JetBrains Mono, Spectral, Source Sans 3, Cinzel, Alegreya Sans, Source Serif 4, Public Sans, Special Elite). Browser hanya mengunduh huruf yang dipakai halaman itu |
+| `design/base.css` | Dasar bersama: tipografi, `btn`, `field`, `tag`, `subnav`, `hero`, `panel`, `meter`, skeleton. Animasi mati otomatis kalau `prefers-reduced-motion` aktif |
 | `design/system.css` | Satu file yang diimpor setiap aplikasi |
 
 Di setiap aplikasi:
