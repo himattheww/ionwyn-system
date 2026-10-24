@@ -30,14 +30,17 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="head">
+  <div class="head atlas-head">
     <div>
-      <span class="kicker">Senin sampai Minggu</span>
-      <h1>Minggu ini</h1>
-      <p v-if="active.length" class="muted">{{ formatMinutes(weekMinutes) }} dari {{ weekHours }} jam target, di semua jalur aktif.</p>
+      <span class="kicker">Atlas belajar</span>
+      <h1>Jalur belajar<span class="atlas-dot">.</span></h1>
+      <p v-if="active.length" class="muted">Minggu ini {{ formatMinutes(weekMinutes) }} dari {{ weekHours }} jam target, di semua jalur aktif.</p>
       <p v-else class="muted">Progres dihitung Senin sampai Minggu.</p>
     </div>
-    <RouterLink to="/tracks/new" class="button primary">+ Buat jalur</RouterLink>
+    <RouterLink to="/tracks/new" class="button primary">Buat jalur</RouterLink>
+    <svg class="atlas-route" viewBox="0 0 1000 16" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M 0 8 C 160 2, 300 14, 480 9 S 800 2, 1000 10" />
+    </svg>
   </div>
 
   <div v-if="loading" class="state"><span class="spinner" />Memuat jalur...</div>
@@ -67,7 +70,7 @@ onMounted(load)
           {{ levelLabel[main.currentLevel] }} · {{ main.topicsDone }}/{{ main.topicCount }} topik selesai · target {{ main.hoursPerWeek }} jam/minggu
         </p>
         <div class="row">
-          <RouterLink :to="`/tracks/${main.id}`" class="button primary">Buka jalur →</RouterLink>
+          <RouterLink :to="`/tracks/${main.id}`" class="button primary">Lanjutkan</RouterLink>
         </div>
       </div>
     </section>

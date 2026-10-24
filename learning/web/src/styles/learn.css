@@ -491,3 +491,155 @@ ol {
   display: grid;
   gap: var(--space-4);
 }
+
+.subnav {
+  padding-inline: max(var(--space-4), calc((100% - 1088px) / 2));
+}
+
+h1 {
+  font-size: clamp(32px, 4.5vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.atlas-head h1 {
+  font-size: clamp(48px, 8vw, 88px);
+}
+
+h2,
+h3 {
+  font-weight: 600;
+}
+
+.kicker {
+  font: 600 var(--text-xs) / 1.4 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.primary,
+.button.primary {
+  background: var(--route);
+  border-color: var(--route);
+  color: var(--accent-ink);
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.primary:hover,
+.button.primary:hover {
+  background: var(--route);
+  border-color: var(--route);
+  color: var(--accent-ink);
+  filter: brightness(1.12);
+}
+
+button,
+.button {
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.progress {
+  height: 8px;
+  background: var(--accent-wash);
+}
+
+.progress > div,
+.meter > span {
+  background: var(--route);
+}
+
+.ring {
+  background: conic-gradient(var(--route) calc(var(--p) * 1%), var(--accent-wash) 0);
+}
+
+.card {
+  border-color: var(--rule-soft);
+}
+
+.atlas-head {
+  position: relative;
+  border-bottom: 0;
+  padding-bottom: var(--space-6);
+}
+
+.atlas-dot {
+  color: var(--accent);
+}
+
+.atlas-route {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 16px;
+}
+
+.atlas-route path,
+.roadmap-lines path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  animation: march 2.4s linear infinite;
+}
+
+@keyframes march {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.roadmap {
+  padding: var(--space-6) var(--space-4);
+  background: var(--sheet);
+  border: 2px solid var(--ink);
+}
+
+.roadmap-lines path.done {
+  stroke: var(--route);
+  stroke-width: 3;
+  stroke-dasharray: none;
+  animation: none;
+}
+
+.roadmap-node {
+  border-style: dashed;
+  border-color: var(--rule-soft);
+  background: var(--paper);
+}
+
+.roadmap-node.done {
+  border-style: solid;
+  border-color: var(--route);
+  background: var(--paper);
+}
+
+.roadmap-node.current {
+  border: 2px solid var(--accent);
+  box-shadow: none;
+}
+
+.roadmap-mark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  border-color: var(--accent);
+}
+
+.roadmap-node.done .roadmap-mark {
+  background: var(--route);
+  border-color: var(--route);
+  color: var(--accent-ink);
+}
+
+.roadmap-node.current .roadmap-mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.roadmap-title {
+  font: 600 var(--text-md) var(--font-display);
+}
