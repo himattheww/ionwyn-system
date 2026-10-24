@@ -38,7 +38,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 
 ### Learn (`/learn/`)
 - Jalur belajar untuk apa saja: coding (React, C#, three.js) maupun non-coding (public speaking, memasak, lari).
-- **Dibuat lewat chat Claude.** Konektor Ionwyn Learn membuat Claude bisa menyusun jalur lengkap dengan topik, penjelasan singkat, dan latihannya, lalu menyimpannya langsung ke sini. Bisa dari laptop maupun HP, tanpa API key (lihat [Konektor Claude (MCP)](#konektor-claude-mcp)).
+- **Dibuat lewat chat Claude.** Konektor Ionwyn membuat Claude bisa menyusun jalur lengkap dengan topik, penjelasan singkat, dan latihannya, lalu menyimpannya langsung ke sini. Bisa dari laptop maupun HP, tanpa API key (lihat [Konektor Claude (MCP)](#konektor-claude-mcp)).
 - **Roadmap**: topik digambar sebagai peta yang terhubung sesuai prasyaratnya. Klik node untuk mulai belajar. Tampilan daftar tetap tersedia.
 - **Per topik**: penjelasan singkat 2-4 paragraf, maksimal 3 sumber resmi (dicek masih hidup), dan satu latihan:
   - JavaScript: kode dijalankan di browser dengan test case (Web Worker, batas 3 detik);
@@ -319,17 +319,22 @@ Jadwal, Learn, dan Keuangan memakai **satu project Supabase** (project FinTrack)
 
 ## Konektor Claude (MCP)
 
-Server MCP Ionwyn Learn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel>/mcp`. Claude memakai alat-alat ini:
+Server MCP Ionwyn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel>/mcp`. Dari chat Claude (web, desktop, atau HP) kamu bisa membaca dan mengisi semua aplikasi:
 
-| Alat | Fungsi |
+| Aplikasi | Alat |
 | --- | --- |
-| `list_tracks`, `get_track`, `get_topic` | Membaca jalur, topik, dan progres |
-| `learning_progress` | Ringkasan semua jalur dan topik yang baru selesai, untuk saran belajar berikutnya |
-| `create_track` | Membuat jalur lengkap dengan topik, penjelasan, sumber, dan latihan |
-| `add_topics`, `update_topic` | Menambah topik di akhir jalur dan mengubah isi topik |
-| `set_track_status` | Mengubah status jalur (aktif, selesai, arsip) |
+| Beranda | `today_summary`, `run_integrations` |
+| Catatan Malam | `diary_tonight`, `diary_get`, `diary_month`, `diary_search`, `diary_collection`, `diary_save` |
+| Fitness | `fitness_summary`, `fitness_activities`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
+| Leveling | `leveling_character`, `leveling_log`, `leveling_achievements` |
+| Jadwal | `schedule_list`, `schedule_add`, `schedule_complete`, `schedule_skip` |
+| Keuangan | `finance_month`, `finance_add` |
+| Timesheet | `timesheet_month`, `timesheet_entry` |
+| Learn | `list_tracks`, `get_track`, `get_topic`, `learning_progress`, `create_track`, `add_topics`, `update_topic`, `set_track_status` |
 
-Konektor tidak bisa menghapus jalur. Hapus hanya dari aplikasi.
+Alat-alat ini memanggil API aplikasi yang sudah ada (`learning/server/src/systemTools.ts`), jadi aturannya sama dengan di aplikasi: jam buka Catatan Malam, validasi Fitness dan Jadwal, kategori Keuangan. Tidak ada alat untuk menghapus data. Hapus hanya dari aplikasi.
+
+Jadwal dan Keuangan mendapat endpoint baru di hub untuk ini: `/hub/api/schedule` (daftar, tambah, selesai, lewati) dan `/hub/api/finance?month=` (ringkasan bulan). Pencatatan cepat `/hub/api/quick/expense` sekarang menerima pemasukan juga (`type: income`).
 
 **Keamanan.** Konektor memakai OAuth 2.1 dengan PKCE dari SDK MCP resmi (`learning/server/src/oauth.ts`):
 - Claude mendaftar sebagai klien. Alamat redirect hanya diterima dari `claude.ai`, `claude.com`, atau `localhost`.
@@ -338,9 +343,9 @@ Konektor tidak bisa menghapus jalur. Hapus hanya dari aplikasi.
 
 **Cara memasang di Claude:**
 1. Di claude.ai, buka **Settings → Connectors → Add custom connector**.
-2. Isi nama `Ionwyn Learn` dan URL `<alamat-vercel>/mcp`, lalu simpan.
+2. Isi nama `Ionwyn` dan URL `<alamat-vercel>/mcp`. Biarkan **Sign in now** dan **Register automatically**, lalu simpan.
 3. Klik **Connect**. Halaman login Ionwyn terbuka. Login, lalu tekan **Izinkan**.
-4. Di chat baru, aktifkan konektor Ionwyn Learn, lalu minta misalnya "Pakai Ionwyn Learn, buatkan jalur belajar React untuk pemula, 4 jam per minggu".
+4. Di chat baru, aktifkan konektornya, lalu minta misalnya "Rangkum hariku dari Ionwyn", "Catat pengeluaran jajan 25 ribu", atau "Buatkan jalur belajar React untuk pemula, 4 jam per minggu".
 
 Konektor yang dipasang di claude.ai juga ikut muncul di aplikasi Claude di HP.
 
