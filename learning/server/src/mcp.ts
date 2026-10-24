@@ -4,16 +4,19 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { addTopics, createTrack, learningProgress, listTracks, setTrackStatus, topicDetail, trackDetail, updateTopic } from './learn.js'
 import { topicInput, topicUpdate, trackInput, trackStatuses } from './schemas.js'
+import { registerSystemTools } from './systemTools.js'
 
 const json = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] })
 
-const guide = `Ionwyn Learn menyimpan jalur belajar milik satu orang. Tiap jalur berisi topik berurutan, dan tiap topik punya penjelasan singkat, maksimal 3 sumber resmi, dan satu latihan.
+const guide = `Ionwyn adalah sistem pribadi satu orang: Beranda, Jadwal, Catatan Malam, Fitness, Learn, Leveling, Keuangan, dan Timesheet. Tanggal memakai zona Asia/Jakarta.
+Alat yang menulis data (diary_save, fitness_log, schedule_*, finance_add, timesheet_entry, create_track, add_topics, update_topic) hanya dipakai kalau pengguna memintanya, dengan nilai dari pengguna. Konfirmasi dulu kalau ada yang ambigu.
+Ionwyn Learn menyimpan jalur belajar milik satu orang. Tiap jalur berisi topik berurutan, dan tiap topik punya penjelasan singkat, maksimal 3 sumber resmi, dan satu latihan.
 Saat membuat jalur: tanyakan dulu tujuan, level, dan waktu per minggu kalau belum jelas. Susun 5-12 topik. Penjelasan cukup 2-4 paragraf pendek.
 Jalur coding berbahasa JavaScript memakai latihan type "code" language "javascript" berupa fungsi murni dengan 3-6 tests yang hasilnya pasti benar. Bahasa lain memakai type "code" dengan checklist. Jalur bukan coding memakai type "praktik" dengan checklist.
 Untuk saran belajar berikutnya, baca learning_progress dulu.`
 
 export function createMcpServer() {
-  const server = new McpServer({ name: 'ionwyn-learn', version: '1.0.0' }, { instructions: guide })
+  const server = new McpServer({ name: 'ionwyn', version: '1.1.0' }, { instructions: guide })
 
   server.registerTool(
     'list_tracks',
@@ -102,6 +105,7 @@ export function createMcpServer() {
     },
   )
 
+  registerSystemTools(server)
   return server
 }
 

@@ -169,7 +169,7 @@ export function mcpAuth({ baseUrl, secret, isOwner }: Options) {
     res.redirect(target.href)
   })
 
-  router.use(mcpAuthRouter({ provider, issuerUrl: baseUrl, resourceServerUrl: resourceUrl, resourceName: 'Ionwyn Learn' }))
+  router.use(mcpAuthRouter({ provider, issuerUrl: baseUrl, resourceServerUrl: resourceUrl, resourceName: 'Ionwyn' }))
 
   const bearer = requireBearerAuth({ verifier: provider, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceUrl) })
 
@@ -189,9 +189,9 @@ function consentPage(clientName: string, request: string) {
   </head>
   <body>
     <main class="sign-in">
-      <p class="eyebrow">Ionwyn Learn</p>
+      <p class="eyebrow">Ionwyn</p>
       <h1>Izinkan akses?</h1>
-      <p class="muted"><strong>${escapeHtml(clientName)}</strong> meminta izin membaca dan mengubah jalur belajar di Ionwyn Learn: melihat progres, membuat jalur, dan mengubah topik.</p>
+      <p class="muted"><strong>${escapeHtml(clientName)}</strong> meminta izin membaca dan mengubah data Ionwyn: Beranda, Jadwal, Catatan Malam, Fitness, Learn, Leveling, Keuangan, dan Timesheet. Menghapus data tetap hanya bisa dari aplikasi.</p>
       <form method="post" action="/consent" class="sign-in-form">
         <input type="hidden" name="request" value="${escapeHtml(request)}" />
         <button class="btn btn-primary" name="decision" value="allow" type="submit">Izinkan</button>
