@@ -6,11 +6,11 @@ import { config, root } from './config.ts'
 
 export const apps = [
   { prefix: 'jadwal', label: 'Jadwal', dist: 'reminder-and-scheduling/dist' },
-  { prefix: 'catatan', label: 'Catatan Malam', target: config.apps.catatan },
+  { prefix: 'catatan', label: 'Catatan', target: config.apps.catatan },
   { prefix: 'fit', label: 'Fitness', target: config.apps.fit },
   { prefix: 'learn', label: 'Learn', dist: 'learning/web/dist', api: config.apps.learn },
   { prefix: 'leveling', label: 'Leveling', target: config.apps.leveling },
-  { prefix: 'uang', label: 'Keuangan', dist: 'financetracker/dist' },
+  { prefix: 'uang', label: 'Uang', dist: 'financetracker/dist' },
   { prefix: 'timesheet', label: 'Timesheet', dist: 'timesheet/web/dist' }
 ]
 

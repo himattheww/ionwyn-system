@@ -29,6 +29,14 @@
   --font-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --display-color: var(--ink);
+  --display-weight: 400;
+  --display-style: normal;
+  --display-case: none;
+  --display-tracking: -0.01em;
+  --label-font: var(--font-mono);
+  --label-case: uppercase;
+  --label-tracking: 0.08em;
 
   --text-xs: 12px;
   --text-sm: 13px;
@@ -60,66 +68,7 @@
 
   --shell-height: 44px;
   --content-width: 1120px;
+  --hero-size: clamp(40px, 8vw, 76px);
 
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --paper: #15140f;
-    --paper-sunk: #1c1b15;
-    --sheet: #1f1e18;
-    --ink: #ece7da;
-    --ink-2: #b0aa9b;
-    --ink-3: #8c8679;
-    --rule: #ece7da;
-    --rule-soft: #34322a;
-    --accent: #e0694d;
-    --accent-ink: #15140f;
-    --accent-wash: #3a2219;
-    --ok: #7fbf8c;
-    --ok-wash: #1d2e21;
-    --warn: #e0b056;
-    --warn-wash: #33291a;
-    --bad: #ef7b6f;
-    --bad-wash: #3a1f1c;
-    --focus: #e0694d;
-    --mark-jadwal: #e0694d;
-    --mark-catatan: #9d9be0;
-    --mark-fit: #7fbf8c;
-    --mark-learn: #e0b056;
-    --mark-leveling: #c39ad1;
-    --mark-uang: #7cbfd1;
-    --mark-timesheet: #b0aa9b;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --paper: #15140f;
-  --paper-sunk: #1c1b15;
-  --sheet: #1f1e18;
-  --ink: #ece7da;
-  --ink-2: #b0aa9b;
-  --ink-3: #8c8679;
-  --rule: #ece7da;
-  --rule-soft: #34322a;
-  --accent: #e0694d;
-  --accent-ink: #15140f;
-  --accent-wash: #3a2219;
-  --ok: #7fbf8c;
-  --ok-wash: #1d2e21;
-  --warn: #e0b056;
-  --warn-wash: #33291a;
-  --bad: #ef7b6f;
-  --bad-wash: #3a1f1c;
-  --focus: #e0694d;
-  --mark-jadwal: #e0694d;
-  --mark-catatan: #9d9be0;
-  --mark-fit: #7fbf8c;
-  --mark-learn: #e0b056;
-  --mark-leveling: #c39ad1;
-  --mark-uang: #7cbfd1;
-  --mark-timesheet: #b0aa9b;
-  color-scheme: dark;
 }

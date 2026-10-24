@@ -15,15 +15,21 @@ body {
   align-items: stretch;
   gap: var(--space-5);
   padding: 0 var(--space-4);
-  border-bottom: var(--hair) solid var(--rule);
+  border-bottom: var(--hair) solid var(--rule-soft);
   background: var(--paper);
+  transition: background-color var(--dur) var(--ease);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  font: 500 var(--text-lg) var(--font-display);
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--display-weight);
+  font-style: var(--display-style);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-tracking);
+  color: var(--display-color);
   text-decoration: none;
 }
 
@@ -54,7 +60,7 @@ body {
   right: var(--space-3);
   bottom: -1px;
   height: 2px;
-  background: var(--mark, var(--accent));
+  background: var(--accent);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--dur) var(--ease);

@@ -25,6 +25,8 @@ function highlight(path) {
     else link.removeAttribute('aria-current')
   }
   newTab.href = path
+  if (prefix === 'beranda' || !prefix) delete document.documentElement.dataset.suasana
+  else document.documentElement.dataset.suasana = prefix
 }
 
 function open() {
@@ -59,7 +61,6 @@ async function loadApps() {
     link.href = `#/${app.prefix}/`
     link.dataset.prefix = app.prefix
     link.textContent = app.label
-    link.style.setProperty('--mark', `var(--mark-${app.prefix})`)
     nav.append(link)
   }
   highlight(target())
