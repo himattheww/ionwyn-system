@@ -10,7 +10,7 @@ export const config = {
   internalSecret: env.INTERNAL_SECRET,
   appBase: remote,
   port: Number(env.PORT ?? env.HUB_PORT ?? 4000),
-  intervalMin: Number(env.INTEGRATION_INTERVAL_MIN ?? 10),
+  intervalMin: Number(env.INTEGRATION_INTERVAL_MIN ?? 0),
   lookbackDays: 7,
   apps: {
     catatan: local(env.CATATAN_PORT, 4710, 'catatan'),

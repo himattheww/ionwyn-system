@@ -376,7 +376,7 @@ Ada dua tingkat:
 | `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | Bot dan chat Telegram untuk notifikasi error. Kosong berarti notifikasi mati |
 | `BACKUP_FOLDER` | Folder backup, default `backups` di root |
 | `BACKUP_KEEP` | Jumlah backup harian yang disimpan, default 30 |
-| `INTEGRATION_INTERVAL_MIN` | Jarak antar-siklus hubungan antar-aplikasi, default 10 menit. `0` mematikan siklus otomatis |
+| `INTEGRATION_INTERVAL_MIN` | Siklus integrasi otomatis di versi lokal, default `0` (mati) karena `pg_cron` online sudah menjalankannya tiap 10 menit. Kalau versi lokal dan online sama-sama menjalankan integrasi, status di Beranda bolak-balik dan notifikasi Telegram terkirim berulang |
 | `RUN_ROUTINE_DURATION_MIN` | Durasi rutinitas lari baru yang dibuat dari pola Fitness (H7) |
 | `SCHEDULE_SUPABASE_URL`, `SCHEDULE_SUPABASE_KEY`, `SCHEDULE_EMAIL`, `SCHEDULE_PASSWORD` | Akun Jadwal untuk hub dan Leveling. Sejak Supabase digabung, isinya sama dengan `FINANCE_*`. Key = anon key |
 | `FINANCE_SUPABASE_URL`, `FINANCE_SUPABASE_KEY`, `FINANCE_EMAIL`, `FINANCE_PASSWORD` | Akun Keuangan. Dipakai Beranda, Leveling, dan backup. Key = anon key |
@@ -415,7 +415,7 @@ Folder `backups/` ada di laptop yang sama. Supaya aman dari laptop rusak, arahka
 
 ## Hubungan antar-aplikasi
 
-Di laptop, hub menjalankannya setiap `INTEGRATION_INTERVAL_MIN` menit. Di versi online, `pg_cron` memanggilnya tiap 10 menit. Keduanya juga bisa dipicu dari tombol **Jalankan sekarang** di Beranda. Hasil dan error terakhir tiap hubungan tampil di Beranda.
+`pg_cron` di versi online menjalankannya tiap 10 menit. Versi lokal tidak ikut menjalankan otomatis (kecuali `INTEGRATION_INTERVAL_MIN` diisi), tapi bisa dipicu dari tombol **Jalankan sekarang** di Beranda. Hasil dan error terakhir tiap hubungan tampil di Beranda.
 
 | | Hubungan | Cara kerja |
 | --- | --- | --- |
