@@ -38,10 +38,10 @@ watch(form, () => {
 })
 
 const questions = [
-  { key: 'happened', label: 'Apa yang terjadi hari ini?', short: 'Terjadi', hint: 'Ceritakan saja apa adanya — kejadian, orang, perasaan.', max: 4000, required: true },
-  { key: 'goodThings', label: 'Hal baik apa yang bisa diambil?', short: 'Hal baik', hint: 'Sekecil apa pun. Secangkir kopi juga boleh.', max: 4000, required: true },
-  { key: 'lessons', label: 'Pelajaran apa yang bisa diambil?', short: 'Pelajaran', hint: 'Apa yang mau kamu lakukan berbeda besok?', max: 4000, required: true },
-  { key: 'freeText', label: 'Catatan bebas', short: 'Bebas', hint: 'Apa saja yang masih mengganjal. Boleh dilewati.', max: 10000, required: false },
+  { key: 'happened', label: 'Apa yang terjadi hari ini?', short: 'Terjadi', field: 'Apa yang terjadi', hint: 'Ceritakan saja apa adanya — kejadian, orang, perasaan.', max: 4000, required: true },
+  { key: 'goodThings', label: 'Hal baik apa yang bisa diambil?', short: 'Hal baik', field: 'Hal baik', hint: 'Sekecil apa pun. Secangkir kopi juga boleh.', max: 4000, required: true },
+  { key: 'lessons', label: 'Pelajaran apa yang bisa diambil?', short: 'Pelajaran', field: 'Pelajaran', hint: 'Apa yang mau kamu lakukan berbeda besok?', max: 4000, required: true },
+  { key: 'freeText', label: 'Catatan bebas', short: 'Bebas', field: 'Catatan bebas', hint: 'Apa saja yang masih mengganjal. Boleh dilewati.', max: 10000, required: false },
 ] as const
 
 type Key = (typeof questions)[number]['key']
@@ -130,10 +130,9 @@ async function save() {
     </template>
 
     <template v-else>
-      <label v-for="(q, i) in questions" :key="q.key" class="field-q">
+      <label v-for="q in questions" :key="q.key" class="field-q" :class="`field-${q.key}`">
         <span class="field-q-label">
-          <span class="field-q-num">0{{ i + 1 }}</span>
-          {{ q.label }}
+          {{ q.field }}
           <small v-if="!q.required">(opsional)</small>
         </span>
         <textarea
@@ -141,7 +140,8 @@ async function save() {
           class="input"
           :required="q.required"
           :maxlength="q.max"
-          :rows="q.key === 'freeText' ? 6 : 5"
+          :rows="q.key === 'happened' ? 5 : 4"
+          :placeholder="q.hint"
         />
         <small class="counter">{{ form[q.key].length }}/{{ q.max }}</small>
       </label>
@@ -168,7 +168,8 @@ async function save() {
         </button>
         <button v-else class="btn btn-primary btn-grow" :disabled="saving || !complete">{{ saveLabel }}</button>
       </template>
-      <button v-else class="btn btn-primary btn-grow" :disabled="saving || !complete">{{ saveLabel }}</button>
+      <button v-else class="btn btn-primary" :disabled="saving || !complete">{{ saveLabel }}</button>
+      <small v-if="mode === 'all' && $slots.note" class="muted"><slot name="note" /></small>
     </div>
   </form>
 </template>

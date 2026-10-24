@@ -38,7 +38,7 @@ const goTo = (offset: number) => router.push({ query: { bulan: addMonths(month.v
     </div>
 
     <AsyncState :loading="loading" :error="error" @retry="reload">
-      <p class="muted month-count">{{ countText }}</p>
+      <p class="muted month-count">{{ countText }} · Tanggal lewat yang kosong masih bisa diisi dan ditandai susulan.</p>
       <div class="calendar">
         <span v-for="w in weekdays" :key="w" class="weekday">{{ w }}</span>
         <template v-for="day in days" :key="day">
@@ -50,7 +50,15 @@ const goTo = (offset: number) => router.push({ query: { bulan: addMonths(month.v
           >
             {{ Number(day.slice(8)) }}<span class="day-dot" />
           </RouterLink>
-          <span v-else class="day" :class="{ 'day-outside': !day.startsWith(month), 'day-today': day === tonight }">
+          <RouterLink
+            v-else-if="day <= tonight"
+            :to="`/entri/${day}`"
+            class="day"
+            :class="{ 'day-outside': !day.startsWith(month), 'day-today': day === tonight, 'day-empty': day < tonight }"
+          >
+            {{ Number(day.slice(8)) }}<span class="day-dot" />
+          </RouterLink>
+          <span v-else class="day day-future" :class="{ 'day-outside': !day.startsWith(month) }">
             {{ Number(day.slice(8)) }}<span class="day-dot" />
           </span>
         </template>
@@ -58,6 +66,7 @@ const goTo = (offset: number) => router.push({ query: { bulan: addMonths(month.v
       <div class="legend">
         <span><i class="swatch swatch-filled" /> Terisi</span>
         <span><i class="swatch swatch-late" /> Diisi belakangan</span>
+        <span><i class="swatch swatch-empty" /> Kosong</span>
         <span><i class="swatch swatch-today" /> Malam ini</span>
       </div>
     </AsyncState>
