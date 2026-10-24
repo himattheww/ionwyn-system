@@ -46,7 +46,10 @@ async function start() {
 
 <template>
   <section>
-    <h1>Sinkron Garmin</h1>
+    <div>
+      <div class="kicker">Garmin Connect</div>
+      <h1>Sinkron</h1>
+    </div>
     <StateView :loading="loading" :error="error" @retry="load">
       <template v-if="data">
         <SyncNotice :status="data" />

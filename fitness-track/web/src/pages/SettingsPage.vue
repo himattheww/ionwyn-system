@@ -33,7 +33,10 @@ async function submit() {
 
 <template>
   <section>
-    <h1>Pengaturan</h1>
+    <div>
+      <div class="kicker">Pola lari dan target</div>
+      <h1>Pengaturan</h1>
+    </div>
     <StateView :loading="loading" :error="error" @retry="load">
       <form class="card form" @submit.prevent="submit">
         <h2>Pola lari mingguan</h2>

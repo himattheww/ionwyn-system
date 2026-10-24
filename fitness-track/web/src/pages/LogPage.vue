@@ -109,7 +109,7 @@ const weightNote = computed(() => {
     <div class="page-head">
       <div>
         <div class="kicker">Berat · makan · kondisi — diisi manual</div>
-        <h1>Catat harian</h1>
+        <h1>Catat</h1>
       </div>
       <label class="field min-w-200">
         Tanggal

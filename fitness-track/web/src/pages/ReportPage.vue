@@ -67,7 +67,10 @@ function delta(current: number | null, previous: number | null, unit = '', digit
 
 <template>
   <section>
-    <h1>Laporan bulanan</h1>
+    <div>
+      <div class="kicker">Laporan bulanan</div>
+      <h1>Laporan</h1>
+    </div>
 
     <label class="inline-field">
       Bulan

@@ -84,17 +84,18 @@ const labelIndexes = computed(() => {
         :width="step * 0.7"
         :y="y(p.value ?? 0)"
         :height="Math.max(0, y(scale.min) - y(p.value ?? 0))"
-        :class="['bar', { hit: target != null && (p.value ?? 0) >= target }]"
+        :class="['bar', { last: i === points.length - 1 }]"
+        :style="{ animationDelay: `${i * 70}ms` }"
       >
         <title>{{ p.label }}: {{ formatNumber(p.value) }} {{ unit }}</title>
       </rect>
     </template>
     <template v-else>
-      <path :d="linePath" class="line" />
+      <path :d="linePath" class="line" pathLength="100" />
       <template v-for="(p, i) in points" :key="i">
-        <rect v-if="p.value != null" :x="x(i) - 3" :y="y(p.value) - 3" width="6" height="6" class="dot">
+        <circle v-if="p.value != null" :cx="x(i)" :cy="y(p.value)" r="4" class="dot">
           <title>{{ p.label }}: {{ formatNumber(p.value) }} {{ unit }}</title>
-        </rect>
+        </circle>
       </template>
     </template>
 

@@ -10,7 +10,10 @@ const { data, loading, error, load } = useApi<Session[]>(() => '/strength');
 
 <template>
   <section>
-    <h1>Latihan beban</h1>
+    <div>
+      <div class="kicker">Strength · per gerakan</div>
+      <h1>Beban</h1>
+    </div>
     <StateView
       :loading="loading"
       :error="error"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HeartLine from '../components/HeartLine.vue';
 import { computed } from 'vue';
 import { useApi } from '../lib/api';
 import Sparkline from '../components/Sparkline.vue';
@@ -177,6 +178,7 @@ const reportBanner = computed(() => {
           </div>
           <span class="muted">{{ formatLong(data.today) }}</span>
         </div>
+        <HeartLine />
 
         <SyncNotice v-if="syncFailed" :status="data.sync" />
 
