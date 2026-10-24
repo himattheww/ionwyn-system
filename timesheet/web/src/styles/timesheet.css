@@ -8,7 +8,7 @@
   --faint: var(--ink-3);
   --line: var(--rule-soft);
   --line-soft: var(--rule-soft);
-  --ts-accent: var(--ink);
+  --ts-accent: var(--accent);
   --accent-strong: var(--ink);
   --accent-soft: var(--paper-sunk);
   --accent-text: var(--paper);
@@ -19,6 +19,7 @@
   --warn-line: var(--warn);
   --warn-dash: var(--warn-wash);
   --late: var(--accent);
+  --stamp-shadow: 4px 4px 0 var(--ink);
   --absent-bg: var(--paper-sunk);
   --absent-text: var(--ink-2);
   --absent: var(--ink-3);
@@ -38,8 +39,8 @@
   --clock-text: var(--ink);
   --clock-muted: var(--ink-2);
   --clock-label: var(--ink-2);
-  --clock-accent: var(--ink);
-  --clock-accent-strong: var(--ink);
+  --clock-accent: var(--accent);
+  --clock-accent-strong: var(--accent);
   --clock-window: var(--accent-wash);
   --clock-track: var(--rule-soft);
   --clock-tick: var(--rule-soft);
@@ -78,44 +79,34 @@ dd {
   color: var(--muted);
 }
 
-.app {
-  max-width: 1240px;
+.subnav {
+  --subnav-font: var(--font-display);
+  --subnav-size: 15px;
+  align-items: center;
+  padding-inline: max(24px, calc((100% - 1112px) / 2));
+  border-bottom: 2px solid var(--ink);
+}
+
+.subnav .status-dot {
+  position: static;
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.page {
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 24px 48px;
+  padding: 48px 24px 64px;
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+.hero {
+  margin-bottom: 8px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-mark rect {
-  fill: var(--clock-bg);
-}
-
-.brand-text {
-  display: grid;
-  line-height: 1.2;
-}
-
-.brand-text strong {
-  font-size: 16px;
-}
-
-.brand-text span {
-  font-size: 12px;
-  color: var(--muted);
+.hero h1 {
+  font-size: clamp(48px, 8vw, 88px);
 }
 
 .month-nav {
@@ -124,37 +115,48 @@ dd {
   gap: 8px;
 }
 
-.month-nav h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 190px;
-  font-size: 20px;
-  font-weight: 600;
+.wall-clock {
+  width: clamp(96px, 14vw, 150px);
+  flex: none;
 }
 
-.topbar-end {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.wall-face {
+  fill: var(--sheet);
+  stroke: var(--ink);
+  stroke-width: 3;
 }
 
-.now-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 8px;
-  background: var(--clock-bg);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
+.wall-tick,
+.wall-hour,
+.wall-minute {
+  stroke: var(--ink);
+  stroke-linecap: round;
 }
 
-.now-chip svg {
-  color: var(--clock-accent);
+.wall-tick {
+  stroke-width: 2;
+}
+
+.wall-hour {
+  stroke-width: 4;
+}
+
+.wall-minute {
+  stroke-width: 2.5;
+}
+
+.wall-second {
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+
+.wall-pin {
+  fill: var(--accent);
+}
+
+.stack-page {
+  display: grid;
+  gap: 24px;
 }
 
 .icon-btn {
@@ -166,7 +168,7 @@ dd {
   width: 40px;
   height: 40px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--card);
   color: var(--text);
   cursor: pointer;
@@ -176,10 +178,11 @@ dd {
   background: var(--card-soft);
 }
 
-.status-dot {
+.icon-btn .status-dot {
   position: absolute;
-  top: 6px;
-  right: 6px;
+}
+
+.status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -209,16 +212,17 @@ button:disabled {
 
 .card {
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  box-shadow: var(--stamp-shadow);
+  padding: 24px;
   display: grid;
   gap: 14px;
 }
 
-.card h2 {
-  font-size: 15px;
-  font-weight: 600;
+.card h2,
+.clock-card h2 {
+  font: 400 24px var(--font-display);
 }
 
 label {
@@ -233,18 +237,19 @@ input,
 textarea {
   color: var(--text);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--ink-2);
+  border-radius: 0;
   min-height: 44px;
   padding: 8px 12px;
   width: 100%;
+  font-family: var(--font-mono);
 }
 
 button {
   color: var(--text);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
   min-height: 44px;
   padding: 0 16px;
   cursor: pointer;
@@ -308,10 +313,11 @@ button.primary {
   background: var(--clock-bg);
   color: var(--clock-text);
   border-radius: var(--radius);
-  padding: 16px 20px 20px;
+  padding: 20px 24px 24px;
   display: grid;
   gap: 16px;
-  border: 1px solid var(--rule);
+  border: 2px solid var(--ink);
+  box-shadow: var(--stamp-shadow);
 }
 
 .clock-card-top {
@@ -518,7 +524,7 @@ button.primary {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--clock-raised);
   color: var(--ink-2);
 }
@@ -568,9 +574,9 @@ button.primary {
   gap: 8px;
   min-height: 44px;
   padding: 0 16px;
-  border: 1px solid var(--clock-line);
-  border-radius: 8px;
-  background: var(--clock-raised);
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: var(--sheet);
   color: var(--clock-text);
   font-size: 14px;
   font-weight: 500;
@@ -586,10 +592,14 @@ button.primary {
 }
 
 .dbtn-primary {
-  background: var(--clock-accent);
-  border-color: var(--clock-accent);
-  color: var(--paper);
-  font-weight: 600;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.28);
 }
 
 .dbtn-primary:hover:not(:disabled) {
@@ -625,7 +635,7 @@ button.primary {
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--clock-line);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--clock-face);
   color: var(--clock-text);
   color-scheme: dark;
@@ -663,7 +673,7 @@ textarea.dinput {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--clock-face);
 }
 
@@ -671,7 +681,7 @@ textarea.dinput {
   flex: 1 1 0;
   min-height: 40px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   color: var(--clock-label);
   font-weight: 500;
@@ -692,7 +702,7 @@ textarea.dinput {
   display: grid;
   gap: 10px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--warn-wash);
   color: var(--warn);
   font-size: 14px;
@@ -998,34 +1008,48 @@ button.day-row.selected:hover {
 
 .chip {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--card-soft);
-  color: var(--text-2);
+  padding: 3px 10px;
+  border: 2px solid var(--ink-2);
+  font: 400 13px var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  animation: stamp 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-.chip-weekend {
-  padding: 0;
-  background: none;
-  color: var(--faint);
-  font-weight: 400;
+.chip-present,
+.chip-today {
+  border-color: var(--stamp-blue);
+  color: var(--stamp-blue);
 }
 
-.chip-empty {
-  background: var(--warn-bg);
-  color: var(--warn-text);
+.chip-late {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: rotate(2deg);
 }
 
 .chip-absent {
-  background: var(--absent-bg);
-  color: var(--absent-text);
+  border-style: double;
+  border-width: 4px;
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
-.chip-today {
-  background: var(--clock-bg);
-  color: var(--paper);
+.chip-empty,
+.chip-weekend {
+  border-style: dashed;
+  color: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
 }
 
 .cell-times {

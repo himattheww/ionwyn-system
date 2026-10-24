@@ -4,14 +4,20 @@ import { fetchMonth, loadSettings, saveSettings, sendEntry, viaHub } from './lib
 import AppIcon from './components/AppIcon.vue'
 import DayList from './components/DayList.vue'
 import MonthSummary from './components/MonthSummary.vue'
+import WallClock from './components/WallClock.vue'
 import SettingsForm from './components/SettingsForm.vue'
 import TodayCard from './components/TodayCard.vue'
-import { clock, firstOfMonth, isoOf, monthName, nowMinutes, shiftMonth } from './lib/format'
+import { firstOfMonth, isoOf, monthName, nowMinutes, shiftMonth } from './lib/format'
 import type { Entry, MonthData, Settings } from './types'
 
 const settings = ref<Settings>(loadSettings())
 const connected = computed(() => viaHub || (settings.value.url !== '' && settings.value.apiKey !== ''))
 const showSettings = ref(!connected.value)
+const tab = ref<'today' | 'harian'>('today')
+const openTab = (next: 'today' | 'harian') => {
+  tab.value = next
+  showSettings.value = false
+}
 
 const today = ref(isoOf(new Date()))
 const selected = ref(today.value)
@@ -69,6 +75,7 @@ function step(delta: number) {
 
 function selectDate(date: string) {
   selected.value = date
+  tab.value = 'today'
   flash('')
 }
 
@@ -109,55 +116,56 @@ onUnmounted(() => {
 
 <template>
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <svg class="brand-mark" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-          <rect width="34" height="34" rx="9" />
-          <circle cx="17" cy="17" r="10" fill="none" stroke="#fff" stroke-width="2" />
-          <path d="M17 17V10.5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
-          <path d="M17 17l4.5 2.5" stroke="#7f9bea" stroke-width="2" stroke-linecap="round" />
-          <circle cx="17" cy="17" r="1.6" fill="#fff" />
-        </svg>
-        <div class="brand-text">
-          <strong>Timesheet</strong>
-          <span>Absensi harian · Google Sheets</span>
+    <nav class="subnav" aria-label="Halaman Timesheet">
+      <a href="#hari-ini" :aria-current="!showSettings && tab === 'today' ? 'page' : undefined" @click.prevent="openTab('today')">Hari ini</a>
+      <a href="#harian" :aria-current="!showSettings && tab === 'harian' ? 'page' : undefined" @click.prevent="openTab('harian')">Harian</a>
+      <a href="#koneksi" :aria-current="showSettings ? 'page' : undefined" @click.prevent="showSettings = true">
+        Koneksi<span class="status-dot" :class="{ off: !connected }" :aria-label="connected ? 'terhubung' : 'belum terhubung'"></span>
+      </a>
+    </nav>
+
+    <div class="page">
+      <header v-if="showSettings" class="hero">
+        <div>
+          <p class="eyebrow">Penghubung data</p>
+          <h1>Koneksi</h1>
         </div>
-      </div>
+      </header>
+      <header v-else-if="tab === 'today'" class="hero">
+        <div>
+          <p class="eyebrow">Kartu absen · {{ monthName(view.month) }} {{ view.year }}</p>
+          <h1>Timesheet</h1>
+        </div>
+        <WallClock />
+      </header>
+      <header v-else class="hero">
+        <div>
+          <p class="eyebrow">Rekap kartu absen</p>
+          <h1>{{ monthName(view.month) }} {{ view.year }}</h1>
+        </div>
+        <div class="month-nav">
+          <button class="icon-btn" :disabled="busy" aria-label="Bulan sebelumnya" @click="step(-1)"><AppIcon name="chevron-left" /></button>
+          <button class="icon-btn" :disabled="busy" aria-label="Bulan berikutnya" @click="step(1)"><AppIcon name="chevron-right" /></button>
+        </div>
+      </header>
 
-      <div class="month-nav">
-        <button class="icon-btn" :disabled="busy" aria-label="Bulan sebelumnya" @click="step(-1)"><AppIcon name="chevron-left" /></button>
-        <h1><AppIcon name="calendar" class="muted" />{{ monthName(view.month) }} {{ view.year }}</h1>
-        <button class="icon-btn" :disabled="busy" aria-label="Bulan berikutnya" @click="step(1)"><AppIcon name="chevron-right" /></button>
-      </div>
+      <SettingsForm v-if="showSettings" :initial="settings" @save="applySettings" @cancel="showSettings = false" />
 
-      <div class="topbar-end">
-        <span class="now-chip mono"><AppIcon name="clock" :size="16" />{{ clock(now) }} WIB</span>
-        <button
-          class="icon-btn"
-          :aria-label="connected ? 'Pengaturan koneksi, terhubung' : 'Pengaturan koneksi, belum terhubung'"
-          :aria-expanded="showSettings"
-          @click="showSettings = !showSettings"
-        >
-          <AppIcon name="gear" />
-          <span class="status-dot" :class="{ off: !connected }"></span>
-        </button>
-      </div>
-    </header>
+      <p v-if="failure" class="banner error" role="alert">{{ failure }}</p>
+      <p v-else-if="notice" class="banner" role="status"><AppIcon name="check" />{{ notice }}</p>
 
-    <SettingsForm v-if="showSettings" :initial="settings" @save="applySettings" @cancel="showSettings = false" />
-
-    <p v-if="failure" class="banner error" role="alert">{{ failure }}</p>
-    <p v-else-if="notice" class="banner" role="status"><AppIcon name="check" />{{ notice }}</p>
-
-    <main v-if="!showSettings || connected" class="layout">
-      <div class="side">
+      <main v-if="!showSettings && tab === 'today'" class="layout">
         <TodayCard :date="selected" :row="currentRow" :today="today" :now="now" :busy="busy" @submit="submit" @back="backToToday" />
         <MonthSummary v-if="month" :days="month.days" :count="month.count" :month="month.month" :today="today" />
-      </div>
+        <p v-else-if="busy" class="card empty">Memuat data bulan ini…</p>
+      </main>
 
-      <DayList v-if="month" :days="month.days" :selected="selected" :today="today" :now="now" @select="selectDate" />
-      <p v-else-if="busy" class="card empty">Memuat data bulan ini…</p>
-      <p v-else-if="!failure" class="card empty">Belum ada data.</p>
-    </main>
+      <main v-else-if="!showSettings" class="stack-page">
+        <MonthSummary v-if="month" :days="month.days" :count="month.count" :month="month.month" :today="today" />
+        <DayList v-if="month" :days="month.days" :selected="selected" :today="today" :now="now" @select="selectDate" />
+        <p v-else-if="busy" class="card empty">Memuat data bulan ini…</p>
+        <p v-else-if="!failure" class="card empty">Belum ada data.</p>
+      </main>
+    </div>
   </div>
 </template>

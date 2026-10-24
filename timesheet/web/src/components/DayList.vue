@@ -41,7 +41,7 @@ const rows = computed(() =>
     const until = day.end ?? (live ? props.now : null)
     const worked = day.start === null ? null : until === null ? null : workedSoFar(day, props.now)
     const overStart = day.start === null ? null : day.start + WORKDAY + (day.lunch ?? 60)
-    const status = absence ? ABSENCE_LABEL[absence] : day.holiday && kind === 'weekend' ? 'Libur' : STATUS[kind] ?? ''
+    const status = absence ? ABSENCE_LABEL[absence] : day.holiday && kind === 'weekend' ? 'Libur' : kind === 'present' && isLate(day) ? 'Telat' : STATUS[kind] ?? ''
     return {
       day,
       kind,
@@ -96,7 +96,7 @@ const rows = computed(() =>
           @click="emit('select', row.day.date)"
         >
           <span class="cell-date">{{ row.label }}</span>
-          <span class="cell-status"><span v-if="row.status" class="chip" :class="'chip-' + (row.kind === 'absent' ? 'absent' : row.kind)">{{ row.status }}</span></span>
+          <span class="cell-status"><span v-if="row.status" class="chip" :class="'chip-' + (row.late && row.kind === 'present' ? 'late' : row.kind)">{{ row.status }}</span></span>
           <span class="cell-times mono">
             <template v-if="row.times"><span :class="{ late: row.late }">{{ row.times }}</span>–{{ row.endTime }}</template>
             <template v-else-if="row.kind === 'empty'">—</template>
