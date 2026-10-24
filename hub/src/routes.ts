@@ -2,7 +2,9 @@ import express, { type Request, type Response, Router } from 'express'
 import { config } from './config.ts'
 import { apps } from './gateway.ts'
 import { integrationStatus, runIntegrations } from './integrations.ts'
+import { financeRoutes } from './finance.ts'
 import { quickRoutes } from './quick.ts'
+import { scheduleRoutes } from './schedule.ts'
 import { todaySummary } from './today.ts'
 
 async function timesheetApi(req: Request, res: Response) {
@@ -37,6 +39,8 @@ export function hubRoutes() {
     res.json(await integrationStatus())
   })
   router.use(quickRoutes())
+  router.use(scheduleRoutes())
+  router.use(financeRoutes())
   router.post('/timesheet/api', express.text({ type: '*/*', limit: '100kb' }), timesheetApi)
   return router
 }

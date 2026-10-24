@@ -52,7 +52,8 @@ app.use('/fit', fitApp(fitDb(databaseUrl)))
 app.use('/leveling', levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) }).app)
 app.use('/learn', learnApp())
 app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
-app.use(async (error: Error, req: Request, res: Response, _next: NextFunction) => {
+app.use(async (error: Error & { status?: number }, req: Request, res: Response, _next: NextFunction) => {
+  if (error.status && error.status < 500) return res.status(error.status).json({ error: error.message })
   console.error(`${req.method} ${req.path}:`, error)
   await alert(`api:${req.method} ${req.path}`, `Error di ${req.method} ${req.path}: ${error.message}`)
   if (!res.headersSent) res.status(500).json({ error: 'Terjadi kesalahan di server.' })
