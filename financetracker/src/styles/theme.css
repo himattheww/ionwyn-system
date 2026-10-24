@@ -58,7 +58,7 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.12;
   letter-spacing: -0.015em;
 }
@@ -76,21 +76,22 @@ a:hover { color: var(--color-accent-600); }
   font-family: var(--font-body); font-weight: 500; font-size: 13px; line-height: 1.2;
   color: var(--color-text); background: transparent;
   border: 1px solid transparent; border-radius: var(--radius-md);
-  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
 }
 .c-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.c-btn-primary { color: var(--paper); background: var(--ink); border-color: var(--ink); }
-.c-btn-primary:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.c-btn-primary { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.c-btn-primary:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); filter: brightness(1.1); }
 .c-btn-primary:active { transform: translateY(1px); }
-.c-btn-secondary { border-color: var(--color-divider); }
+.c-btn-secondary { border-color: var(--ink-2); background: var(--sheet); }
 .c-btn-secondary:hover:not(:disabled) { color: var(--color-text); background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .c-btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
 .c-btn-ghost { color: var(--color-neutral-700); padding-inline: var(--space-1); font-size: 13px; }
 .c-btn-ghost:hover { color: var(--color-accent-700); background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
 
 .c-input {
-  min-height: 36px; padding: 6px 10px; font: inherit; font-size: 14px;
-  color: var(--color-text); caret-color: var(--color-accent); background: transparent;
+  min-height: 44px; padding: 6px 12px; font: inherit; font-size: 15px;
+  color: var(--color-text); caret-color: var(--color-accent); background: var(--sheet);
   border: 1px solid var(--color-divider); border-radius: var(--radius-md);
   font-variant-numeric: tabular-nums;
 }
@@ -106,7 +107,7 @@ a:hover { color: var(--color-accent-600); }
 .c-tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent-700); }
 
 .c-kicker {
-  font: 500 var(--text-xs) / 1.4 var(--font-mono); letter-spacing: 0.04em;
+  font: 600 var(--text-xs) / 1.4 var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--color-neutral-700); font-variant-numeric: tabular-nums;
 }
 .c-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -120,7 +121,7 @@ a:hover { color: var(--color-accent-600); }
 .mt-6 { margin-top: var(--space-5); }
 .mt-7 { margin-top: var(--space-6); }
 .link-block { display: block; text-align: center; text-decoration: none; }
-.swatch-utama { background: var(--mark-uang); }
+.swatch-utama { background: var(--accent); }
 .swatch-jajan { background: var(--warn); }
 .swatch-tabungan { background: var(--ok); }
 .swatch-darurat { background: var(--accent); }

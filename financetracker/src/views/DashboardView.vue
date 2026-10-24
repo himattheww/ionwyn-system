@@ -30,13 +30,6 @@ const loading      = ref(true)
 const currentMonth = dayjs().format('YYYY-MM')
 const todayLabel   = dayjs().format('dddd, D MMMM YYYY')
 const monthName    = dayjs().format('MMMM')
-const firstName    = computed(() => (displayName.value ?? '').split(' ')[0])
-const greeting     = computed(() => {
-  const h = dayjs().hour()
-  if (h < 12) return 'Selamat pagi'
-  if (h < 18) return 'Selamat siang'
-  return 'Selamat malam'
-})
 
 async function load() {
   if (!user.value) return
@@ -104,8 +97,8 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
   <div class="page">
     <header class="page-header">
       <div class="title-block">
-        <span class="c-kicker kicker-accent">{{ todayLabel }}</span>
-        <h1 class="page-title">{{ greeting }}, {{ firstName }}</h1>
+        <span class="c-kicker kicker-accent">Buku besar · {{ todayLabel }}</span>
+        <h1 class="page-title">Keuangan</h1>
       </div>
       <div class="header-actions">
         <input type="month" v-model="selectedExportMonth" class="c-input" />
@@ -127,6 +120,29 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
     </div>
 
     <template v-else>
+      <section class="summary">
+        <div class="summary-item">
+          <span class="c-kicker">Pemasukan</span>
+          <span class="summary-value c-num income">+ {{ formatRpAbs(totalIncome) }}</span>
+          <span class="summary-sub">bulan ini</span>
+        </div>
+        <div class="summary-item">
+          <span class="c-kicker">Pengeluaran</span>
+          <span class="summary-value c-num expense">− {{ formatRpAbs(totalExpense) }}</span>
+          <span class="summary-sub">bulan ini</span>
+        </div>
+        <div class="summary-item balance">
+          <span class="c-kicker">Sisa bulan ini</span>
+          <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRpAbs(balance) }}</span>
+          <span class="summary-sub">{{ balance >= 0 ? 'surplus' : 'defisit' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="c-kicker">Saving rate</span>
+          <span class="summary-value c-num">{{ savingRate }}%</span>
+          <span class="summary-sub">dari pemasukan</span>
+        </div>
+      </section>
+
       <section v-if="allowance" class="allowance">
         <div class="allow-main">
           <div class="allow-head">
@@ -170,29 +186,6 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
         <h2 class="empty-title">Atur budget bulan ini dulu</h2>
         <p class="empty-body">Jatah harian dihitung dari alokasi Utama + Jajan dibagi sisa hari di bulan ini.</p>
         <RouterLink to="/budget" class="c-btn c-btn-primary">Atur budget</RouterLink>
-      </section>
-
-      <section class="summary">
-        <div class="summary-item">
-          <span class="c-kicker">Pemasukan</span>
-          <span class="summary-value c-num income">{{ formatRpAbs(totalIncome) }}</span>
-          <span class="summary-sub">bulan ini</span>
-        </div>
-        <div class="summary-item">
-          <span class="c-kicker">Pengeluaran</span>
-          <span class="summary-value c-num">{{ formatRpAbs(totalExpense) }}</span>
-          <span class="summary-sub">bulan ini</span>
-        </div>
-        <div class="summary-item">
-          <span class="c-kicker">Sisa saldo</span>
-          <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRpAbs(balance) }}</span>
-          <span class="summary-sub">{{ balance >= 0 ? 'surplus' : 'defisit' }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="c-kicker">Saving rate</span>
-          <span class="summary-value c-num">{{ savingRate }}%</span>
-          <span class="summary-sub">dari pemasukan</span>
-        </div>
       </section>
 
       <section class="two-col">
