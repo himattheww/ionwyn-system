@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ABSENCE_LABEL, absenceOf, isLate, targetEnd, WORKDAY, workedSoFar } from '../lib/day'
-import { clock, dayLong, duration, monthName, nowClock, partOfDay, toMinutes } from '../lib/format'
+import { clock, dayLong, duration, monthName, nowClock, partOfDay, toMinutes, typedTime } from '../lib/format'
 import type { AbsenceKind, DayRow, Entry } from '../types'
 import AppIcon, { type IconName } from './AppIcon.vue'
 import ClockDial from './ClockDial.vue'
@@ -98,6 +98,12 @@ const primary = computed(() => {
   return null
 })
 
+function onTime(event: Event) {
+  const input = event.target as HTMLInputElement
+  time.value = typedTime(input.value)
+  input.value = time.value
+}
+
 const timeValid = computed(() => toMinutes(time.value) !== null)
 const disabled = computed(() => props.busy || !props.row)
 
@@ -186,7 +192,16 @@ function confirmAbsence() {
       </div>
       <label class="dlabel">
         Jam
-        <input v-model="time" class="dinput" type="time" />
+        <input
+          :value="time"
+          class="dinput"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="5"
+          placeholder="08:00"
+          @input="onTime"
+        />
       </label>
       <button class="dbtn dbtn-primary" type="button" :disabled="disabled || !timeValid" @click="sendTime">
         {{ busy ? 'Menyimpan…' : 'Simpan jam ' + kind }}

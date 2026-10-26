@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { formatDate, needsShiftDecision, suggestSlots, toHHmm, toMinutes } from '../../../core/src'
 import type { Item, PlannerSettings, Slot } from '../../../core/src'
 import { dateLabel, slotLabel, timeRange } from '../lib/format'
+import { TimeField } from './TimeField'
 
 interface Props {
   item: Item
@@ -84,9 +85,13 @@ export function ShiftDialog({ item, items, settings, now, onShift, onSplit, onDr
               </label>
               <label>
                 Jam
-                <input type="time" value={manualTime} onChange={(e) => setManualTime(e.target.value)} />
+                <TimeField value={manualTime} onChange={setManualTime} />
               </label>
-              <button className="primary" onClick={() => onShift({ date: manualDate, startTime: manualTime || null })}>
+              <button
+                className="primary"
+                disabled={manualTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(manualTime)}
+                onClick={() => onShift({ date: manualDate, startTime: manualTime || null })}
+              >
                 Geser ke sini
               </button>
             </div>

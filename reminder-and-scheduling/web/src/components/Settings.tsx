@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { PlannerSettings } from '../../../core/src'
 import { notificationPermission, requestNotificationPermission } from '../lib/notify'
+import { TimeField } from './TimeField'
 
 interface Props {
   settings: PlannerSettings
@@ -64,21 +65,21 @@ export function Settings({ settings, onSave }: Props) {
           <div className="row">
             <label>
               Ringkasan pagi
-              <input type="time" value={draft.morningSummary} onChange={(e) => set('morningSummary', e.target.value)} required />
+              <TimeField value={draft.morningSummary} onChange={(v) => set('morningSummary', v)} required />
             </label>
             <label>
               Ringkasan malam
-              <input type="time" value={draft.eveningSummary} onChange={(e) => set('eveningSummary', e.target.value)} required />
+              <TimeField value={draft.eveningSummary} onChange={(v) => set('eveningSummary', v)} required />
             </label>
           </div>
           <div className="row">
             <label>
               Jam tenang mulai
-              <input type="time" value={draft.quietStart} onChange={(e) => set('quietStart', e.target.value)} required />
+              <TimeField value={draft.quietStart} onChange={(v) => set('quietStart', v)} required />
             </label>
             <label>
               Jam tenang selesai
-              <input type="time" value={draft.quietEnd} onChange={(e) => set('quietEnd', e.target.value)} required />
+              <TimeField value={draft.quietEnd} onChange={(v) => set('quietEnd', v)} required />
             </label>
           </div>
           <label>

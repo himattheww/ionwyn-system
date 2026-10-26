@@ -46,12 +46,16 @@ $('expense').addEventListener('submit', async event => {
 
 const time = $('time')
 time.value = jakarta({ hour: '2-digit', minute: '2-digit' }).slice(-5)
+time.addEventListener('input', () => {
+  const digits = time.value.replace(/\D/g, '').slice(0, 4)
+  time.value = digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
+})
 
 for (const button of document.querySelectorAll('[data-entry]')) {
   button.addEventListener('click', async () => {
     const status = $('absen-status')
+    if (!time.checkValidity()) return say(status, 'Isi jam dengan format 08:00.', false)
     const [h, m] = time.value.split(':').map(Number)
-    if (Number.isNaN(h) || Number.isNaN(m)) return say(status, 'Isi jam dulu.', false)
     const type = button.dataset.entry
     button.disabled = true
     say(status, 'Mengirim…')

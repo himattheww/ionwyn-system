@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { createItem, modules } from '../../../core/src'
 import type { Item, Kind, Module } from '../../../core/src'
 import { newId } from '../lib/format'
+import { TimeField } from './TimeField'
 
 interface Props {
   date: string
@@ -75,7 +76,7 @@ export function AddItem({ date, onAdd, onClose }: Props) {
           </label>
           <label>
             Jam {kind === 'flexible' ? '(boleh kosong)' : ''}
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            <TimeField value={startTime} onChange={setStartTime} />
           </label>
           <label>
             Durasi (mnt)

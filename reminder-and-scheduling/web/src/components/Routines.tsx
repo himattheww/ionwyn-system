@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { createTemplate, modules } from '../../../core/src'
 import type { Kind, Module, RoutineTemplate } from '../../../core/src'
 import { newId, timeRange } from '../lib/format'
+import { TimeField } from './TimeField'
 
 interface Props {
   templates: RoutineTemplate[]
@@ -135,7 +136,7 @@ export function Routines({ templates, onSave, onDelete }: Props) {
         <div className="row">
           <label>
             Jam {kind === 'flexible' ? '(boleh kosong)' : ''}
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            <TimeField value={startTime} onChange={setStartTime} />
           </label>
           <label>
             Durasi (mnt)

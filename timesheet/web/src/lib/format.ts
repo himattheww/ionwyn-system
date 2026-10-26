@@ -37,7 +37,13 @@ export function duration(min: number | null): string {
 
 export function toMinutes(value: string): number | null {
   const m = /^(\d{2}):(\d{2})$/.exec(value)
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null
+  return Number(m[1]) * 60 + Number(m[2])
+}
+
+export function typedTime(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 4)
+  return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
 }
 
 export function nowClock(): string {
