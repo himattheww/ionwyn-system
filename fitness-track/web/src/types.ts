@@ -58,6 +58,8 @@ export type ActivityDetail = {
   weightKg: number | null;
   laps: LapRow[] | null;
   lapsError?: string | null;
+  context: ActivityContext | null;
+  fueling: Fueling | null;
 };
 
 export type Recovery = {
@@ -66,7 +68,45 @@ export type Recovery = {
   sleep_score: number | null;
   rhr: number | null;
   source: 'garmin' | 'manual';
+  hrv_last_night?: number | null;
+  hrv_weekly?: number | null;
+  hrv_baseline_low?: number | null;
+  hrv_baseline_high?: number | null;
+  hrv_status?: string | null;
+  deep_min?: number | null;
+  light_min?: number | null;
+  rem_min?: number | null;
+  awake_min?: number | null;
+  sleep_respiration?: number | null;
+  readiness_score?: number | null;
+  readiness_level?: string | null;
+  acute_load?: number | null;
 };
 
-export type Condition = { date: string; alcohol: number; sick: number; note: string | null };
+export type Condition = { date: string; alcohol: number; sick: number; injured?: number; note: string | null };
+
+export type ActivityContext = {
+  temp_c: number | null;
+  feels_like_c: number | null;
+  humidity_pct: number | null;
+  dew_point_c: number | null;
+  wind_kph: number | null;
+  weather: string | null;
+  hr_zones: { zone: number; seconds: number; from_bpm: number }[];
+  rpe: number | null;
+  feel: number | null;
+  training_load: number | null;
+  anaerobic_te: number | null;
+  te_label: string | null;
+  shoes: string | null;
+  aqi: number | null;
+  aqi_source: 'station' | 'model' | null;
+  aqi_station: number | null;
+  pm25_station: number | null;
+  station_name: string | null;
+  aqi_model: number | null;
+  pm25_model: number | null;
+};
+
+export type Fueling = { gels: number; gel_km: string | null; drink_ml: number | null; electrolytes: string | null; note: string | null };
 export type Meal = { date: string; protein_met: number; rice_portions: number };

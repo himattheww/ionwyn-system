@@ -23,7 +23,7 @@ const sleepPoints = computed(() =>
 const rhrPoints = computed(() => days.value.map((d) => ({ label: formatShort(d.date), value: d.row?.rhr ?? null })));
 const hasData = computed(() => !!data.value?.recovery.length);
 const recentRows = computed(() => [...days.value].reverse().filter((d) => d.row));
-const notes = computed(() => data.value?.conditions.filter((c) => c.alcohol || c.sick || c.note) ?? []);
+const notes = computed(() => data.value?.conditions.filter((c) => c.alcohol || c.sick || c.injured || c.note) ?? []);
 
 const avg = (values: (number | null | undefined)[]) => {
   const nums = values.filter((v): v is number => v != null);
@@ -94,15 +94,25 @@ async function saveManual() {
           <div v-else class="table-wrap">
             <table>
               <thead>
-                <tr><th>Tanggal</th><th>Tidur</th><th>Skor</th><th>RHR</th><th>Sumber</th></tr>
+                <tr><th>Tanggal</th><th>HRV</th><th>Tidur</th><th>Deep / REM / Awake</th><th>Skor</th><th>Resp.</th><th>RHR</th><th>Readiness</th></tr>
               </thead>
               <tbody>
                 <tr v-for="d in recentRows" :key="d.date">
                   <td class="dim">{{ formatDay(d.date) }}</td>
+                  <td>
+                    <template v-if="d.row!.hrv_last_night != null">
+                      <strong>{{ d.row!.hrv_last_night }}</strong>
+                      <span class="muted"> / {{ d.row!.hrv_baseline_low ?? '?' }}–{{ d.row!.hrv_baseline_high ?? '?' }}</span>
+                      <span v-if="d.row!.hrv_status" :class="['badge', { warn: d.row!.hrv_status !== 'BALANCED' }]">{{ d.row!.hrv_status }}</span>
+                    </template>
+                    <template v-else>-</template>
+                  </td>
                   <td>{{ formatMinutes(d.row!.sleep_min) }}</td>
+                  <td>{{ d.row!.deep_min != null ? `${formatMinutes(d.row!.deep_min)} / ${formatMinutes(d.row!.rem_min ?? null)} / ${formatMinutes(d.row!.awake_min ?? null)}` : '-' }}</td>
                   <td>{{ d.row!.sleep_score ?? '-' }}</td>
+                  <td>{{ d.row!.sleep_respiration ?? '-' }}</td>
                   <td>{{ d.row!.rhr ?? '-' }} bpm</td>
-                  <td><span :class="['badge', { warn: d.row!.source === 'manual' }]">{{ d.row!.source }}</span></td>
+                  <td>{{ d.row!.readiness_score != null ? `${d.row!.readiness_score} · ${d.row!.readiness_level ?? ''}` : '-' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -122,6 +132,7 @@ async function saveManual() {
                 <span class="list-meta">
                   <span v-if="c.alcohol" class="badge warn">alkohol</span>
                   <span v-if="c.sick" class="badge danger">sakit</span>
+                  <span v-if="c.injured" class="badge danger">cedera</span>
                   <span>{{ c.note }}</span>
                 </span>
               </li>

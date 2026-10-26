@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useApi } from '../lib/api';
 import StateView from '../components/StateView.vue';
+import RunContext from '../components/RunContext.vue';
 import { activityLabel, formatDay, formatTime } from '../lib/format';
 import type { ActivityDetail, LapRow } from '../types';
 
@@ -83,6 +84,8 @@ function download() {
           </div>
           <button v-if="laps?.length" class="secondary" @click="download">Unduh CSV</button>
         </div>
+
+        <RunContext :id="activity.garmin_id" :context="data?.context ?? null" :fueling="data?.fueling ?? null" />
 
         <p v-if="!laps" class="notice">{{ data?.lapsError ?? 'Lap belum tersedia.' }}</p>
         <p v-else-if="!laps.length" class="notice">Garmin tidak mengirim data lap untuk aktivitas ini.</p>

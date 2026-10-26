@@ -14,7 +14,7 @@ const error = computed(() => weights.error.value || meals.error.value || conditi
 const reload = () => Promise.all([weights.load(), meals.load(), conditions.load()]);
 
 const date = ref(today());
-const form = reactive({ kg: '', protein: null as boolean | null, rice: '', alcohol: false, sick: false, note: '' });
+const form = reactive({ kg: '', protein: null as boolean | null, rice: '', alcohol: false, sick: false, injured: false, note: '' });
 const saving = ref(false);
 const message = ref<{ text: string; error?: boolean } | null>(null);
 
@@ -33,6 +33,7 @@ function fill() {
   form.rice = meal ? String(meal.rice_portions).replace('.', ',') : '';
   form.alcohol = !!cond?.alcohol;
   form.sick = !!cond?.sick;
+  form.injured = !!cond?.injured;
   form.note = cond?.note ?? '';
 }
 
@@ -68,7 +69,7 @@ async function submit() {
     await Promise.all([
       kg != null ? api(`/weights/${d}`, { method: 'PUT', body: { kg } }) : null,
       form.protein != null ? api(`/meals/${d}`, { method: 'PUT', body: { protein_met: form.protein, rice_portions: rice } }) : null,
-      api(`/condition/${d}`, { method: 'PUT', body: { alcohol: form.alcohol, sick: form.sick, note: form.note.trim() || null } }),
+      api(`/condition/${d}`, { method: 'PUT', body: { alcohol: form.alcohol, sick: form.sick, injured: form.injured, note: form.note.trim() || null } }),
     ]);
     message.value = { text: `Catatan ${formatDay(d)} tersimpan.` };
     await reload();
@@ -91,7 +92,7 @@ const history = computed(() =>
       protein: meal ? (meal.protein_met ? 'tercapai' : 'kurang') : 'belum diisi',
       proteinClass: meal ? (meal.protein_met ? 'ok' : 'warn') : '',
       rice: meal ? `${formatNumber(meal.rice_portions)} porsi` : '—',
-      condition: cond ? [cond.alcohol && 'alkohol', cond.sick && 'sakit', cond.note].filter(Boolean).join(' · ') || '—' : '—',
+      condition: cond ? [cond.alcohol && 'alkohol', cond.sick && 'sakit', cond.injured && 'cedera', cond.note].filter(Boolean).join(' · ') || '—' : '—',
     };
   }),
 );
@@ -156,6 +157,7 @@ const weightNote = computed(() => {
             <span class="kicker">C · Kondisi</span>
             <label class="check"><input v-model="form.alcohol" type="checkbox" /> Minum alkohol</label>
             <label class="check"><input v-model="form.sick" type="checkbox" /> Sakit</label>
+            <label class="check"><input v-model="form.injured" type="checkbox" /> Cedera</label>
             <label class="field">
               Catatan
               <textarea v-model="form.note" rows="2" maxlength="1000" />
