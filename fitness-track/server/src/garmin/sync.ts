@@ -2,11 +2,13 @@ import type { Db } from '../db.ts';
 import { addDays, datesBetween, jakartaDate } from '../dates.ts';
 import { GarminSession, NeedLoginError } from './client.ts';
 import { NeedConnectError } from './token.ts';
+import { fetchContext, saveContext } from './context.ts';
 import { applyRaw, pruneRaw, saveRaw, type RawKind } from './store.ts';
 
 const FIRST_SYNC_DAYS = 90;
 const OVERLAP_DAYS = 3;
 const PAGE_SIZE = 100;
+const CONTEXT_BATCH = 10;
 
 let running = false;
 
@@ -69,8 +71,32 @@ export async function runSync(db: Db, { open = () => GarminSession.open(), pause
       await fetchAndApply('exercise_sets', String(id), `/activity-service/activity/${id}/exerciseSets`);
     }
 
+    const runs = await db.all<{ garmin_id: number; date: string; start_time: string; duration_sec: number | null; start_lat: number | null; start_lon: number | null }>(
+      `SELECT a.garmin_id, a.date, a.start_time, a.duration_sec, a.start_lat, a.start_lon FROM fit_activities a
+       WHERE a.type LIKE '%running%' AND NOT EXISTS (SELECT 1 FROM fit_activity_context c WHERE c.garmin_id = a.garmin_id)
+       ORDER BY a.start_time DESC LIMIT ?`,
+      [CONTEXT_BATCH],
+    );
+    for (const run of runs) {
+      try {
+        await pause();
+        await saveContext(db, run.garmin_id, await fetchContext(session, run));
+      } catch (error) {
+        console.error(`Konteks aktivitas ${run.garmin_id} dilewati: ${(error as Error).message}`);
+      }
+    }
+
+    const optional = async (kind: RawKind, date: string, path: string) => {
+      try {
+        await fetchAndApply(kind, date, path);
+      } catch (error) {
+        console.error(`${kind} ${date} dilewati: ${(error as Error).message}`);
+      }
+    };
     for (const date of datesBetween(start, today)) {
       await fetchAndApply('sleep', date, await session.sleepPath(date));
+      await optional('hrv', date, `/hrv-service/hrv/${date}`);
+      await optional('readiness', date, `/metrics-service/metrics/trainingreadiness/${date}`);
     }
 
     await pause();

@@ -44,7 +44,7 @@ describe('applyRaw', () => {
     await applyRaw(db, 'sleep', fixture('sleep.json'));
     await applyRaw(db, 'rhr', fixture('rhr.json'));
 
-    expect(await db.one(`SELECT * FROM fit_recovery_daily WHERE date = '2026-10-13'`)).toEqual({
+    expect(await db.one(`SELECT date, sleep_min, sleep_score, rhr, source FROM fit_recovery_daily WHERE date = '2026-10-13'`)).toEqual({
       date: '2026-10-13',
       sleep_min: 423,
       sleep_score: 78,

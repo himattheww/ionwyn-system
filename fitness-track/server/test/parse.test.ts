@@ -25,6 +25,8 @@ describe('parseActivities', () => {
       elevation_gain_m: 12,
       elevation_loss_m: 11,
       training_effect: 3.1,
+      start_lat: null,
+      start_lon: null,
     });
   });
 
@@ -66,7 +68,7 @@ describe('parseExerciseSets', () => {
 
 describe('parseSleep', () => {
   it('reads duration in minutes and score', () => {
-    expect(parseSleep(fixture('sleep.json'))).toEqual({ date: '2026-10-13', sleep_min: 423, sleep_score: 78 });
+    expect(parseSleep(fixture('sleep.json'))).toMatchObject({ date: '2026-10-13', sleep_min: 423, sleep_score: 78 });
   });
 
   it('returns null when there is no sleep', () => {

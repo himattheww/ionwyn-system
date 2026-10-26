@@ -16,6 +16,8 @@ export type Activity = {
   elevation_gain_m: number | null;
   elevation_loss_m: number | null;
   training_effect: number | null;
+  start_lat: number | null;
+  start_lon: number | null;
 };
 
 export type StrengthSet = {
@@ -27,7 +29,30 @@ export type StrengthSet = {
   duration_sec: number | null;
 };
 
-export type SleepDay = { date: string; sleep_min: number; sleep_score: number | null };
+export type SleepDay = {
+  date: string;
+  sleep_min: number;
+  sleep_score: number | null;
+  deep_min: number | null;
+  light_min: number | null;
+  rem_min: number | null;
+  awake_min: number | null;
+  sleep_respiration: number | null;
+  sleep_stress: number | null;
+};
+
+export type HrvDay = {
+  date: string;
+  hrv_last_night: number | null;
+  hrv_weekly: number | null;
+  hrv_high_5min: number | null;
+  hrv_baseline_low: number | null;
+  hrv_baseline_high: number | null;
+  hrv_low_upper: number | null;
+  hrv_status: string | null;
+};
+
+export type ReadinessDay = { date: string; readiness_score: number | null; readiness_level: string | null; acute_load: number | null };
 export type RhrDay = { date: string; rhr: number };
 
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -60,6 +85,8 @@ export function parseActivities(json: any): Activity[] {
         elevation_gain_m: num(a.elevationGain),
         elevation_loss_m: num(a.elevationLoss),
         training_effect: num(a.aerobicTrainingEffect),
+        start_lat: num(a.startLatitude),
+        start_lon: num(a.startLongitude),
       };
     });
 }
@@ -93,10 +120,46 @@ export function parseSleep(json: any): SleepDay | null {
   const dto = json?.dailySleepDTO;
   const seconds = num(dto?.sleepTimeSeconds);
   if (!dto?.calendarDate || !seconds) return null;
+  const minutes = (v: unknown) => (num(v) == null ? null : Math.round(num(v)! / 60));
   return {
     date: dto.calendarDate,
     sleep_min: Math.round(seconds / 60),
     sleep_score: num(dto.sleepScores?.overall?.value),
+    deep_min: minutes(dto.deepSleepSeconds),
+    light_min: minutes(dto.lightSleepSeconds),
+    rem_min: minutes(dto.remSleepSeconds),
+    awake_min: minutes(dto.awakeSleepSeconds),
+    sleep_respiration: num(dto.averageRespirationValue),
+    sleep_stress: num(dto.avgSleepStress),
+  };
+}
+
+export function parseHrv(json: any): HrvDay | null {
+  const h = json?.hrvSummary;
+  if (!h?.calendarDate) return null;
+  return {
+    date: h.calendarDate,
+    hrv_last_night: num(h.lastNightAvg),
+    hrv_weekly: num(h.weeklyAvg),
+    hrv_high_5min: num(h.lastNight5MinHigh),
+    hrv_baseline_low: num(h.baseline?.balancedLow),
+    hrv_baseline_high: num(h.baseline?.balancedUpper),
+    hrv_low_upper: num(h.baseline?.lowUpper),
+    hrv_status: typeof h.status === 'string' ? h.status : null,
+  };
+}
+
+export function parseReadiness(json: any): ReadinessDay | null {
+  if (!Array.isArray(json) || !json.length) return null;
+  const morning = json.find((r) => r?.inputContext === 'AFTER_WAKEUP_RESET');
+  const latest = [...json].sort((a, b) => String(b?.timestamp).localeCompare(String(a?.timestamp)))[0];
+  const r = morning ?? latest;
+  if (!r?.calendarDate) return null;
+  return {
+    date: r.calendarDate,
+    readiness_score: num(r.score),
+    readiness_level: typeof r.level === 'string' ? r.level : null,
+    acute_load: num(r.acuteLoad),
   };
 }
 

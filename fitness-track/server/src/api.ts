@@ -6,6 +6,7 @@ import { addDays, jakartaDate, weekRange } from './dates.ts';
 import { average7, groupSets, isRun, matchRunPattern, type RunPattern, type SetRow } from './stats.ts';
 import { lapRows, type ActivityTotals, type Lap } from './garmin/laps.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
+import { downsample, hrDrift, parseSeries } from './garmin/series.ts';
 import { saveLaps } from './garmin/store.ts';
 import { stravaRoutes } from './strava.ts';
 import { connection, exchangeTicket, NeedConnectError, saveTokens, TokenSession } from './garmin/token.ts';
@@ -21,7 +22,15 @@ const recoveryBody = z.object({
 const conditionBody = z.object({
   alcohol: z.boolean(),
   sick: z.boolean(),
+  injured: z.boolean().optional(),
   note: z.string().trim().max(1000).nullable(),
+});
+const fuelingBody = z.object({
+  gels: z.number().int().min(0).max(30),
+  gel_km: z.string().trim().max(200).nullable().optional(),
+  drink_ml: z.number().int().min(0).max(10000).nullable().optional(),
+  electrolytes: z.string().trim().max(200).nullable().optional(),
+  note: z.string().trim().max(1000).nullable().optional(),
 });
 const weightBody = z.object({ kg: z.number().min(20).max(300) });
 const mealBody = z.object({ protein_met: z.boolean(), rice_portions: z.number().min(0).max(20) });
@@ -120,7 +129,38 @@ export function apiRouter(db: Db) {
         lapsError = error instanceof NeedConnectError ? error.message : `Lap belum bisa diambil dari Garmin: ${(error as Error).message}`;
       }
     }
-    res.json({ activity, weightKg: weight?.kg ?? null, laps: stored ? lapRows(stored.laps, activity) : null, lapsError });
+    const [context, fueling] = await Promise.all([
+      db.one('SELECT * FROM fit_activity_context WHERE garmin_id = ?', [id]),
+      db.one('SELECT gels, gel_km, drink_ml, electrolytes, note, updated_at FROM fit_activity_fueling WHERE garmin_id = ?', [id]),
+    ]);
+    res.json({ activity, weightKg: weight?.kg ?? null, laps: stored ? lapRows(stored.laps, activity) : null, lapsError, context: context ?? null, fueling: fueling ?? null });
+  });
+
+  api.put('/activities/:id/fueling', async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const body = fuelingBody.parse(req.body);
+    const exists = await db.one('SELECT 1 FROM fit_activities WHERE garmin_id = ?', [id]);
+    if (!exists) return res.status(404).json({ error: 'Aktivitas tidak ditemukan' });
+    await db.run(
+      `INSERT INTO fit_activity_fueling (garmin_id, gels, gel_km, drink_ml, electrolytes, note, updated_at) VALUES (?, ?, ?, ?, ?, ?, now())
+       ON CONFLICT (garmin_id) DO UPDATE SET gels = excluded.gels, gel_km = excluded.gel_km, drink_ml = excluded.drink_ml,
+         electrolytes = excluded.electrolytes, note = excluded.note, updated_at = now()`,
+      [id, body.gels, body.gel_km || null, body.drink_ml ?? null, body.electrolytes || null, body.note || null],
+    );
+    res.status(204).end();
+  });
+
+  api.get('/activities/:id/series', async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const activity = await db.one('SELECT garmin_id FROM fit_activities WHERE garmin_id = ?', [id]);
+    if (!activity) return res.status(404).json({ error: 'Aktivitas tidak ditemukan' });
+    try {
+      const session = await TokenSession.open(db);
+      const series = parseSeries(await session.get(`/activity-service/activity/${id}/details?maxChartSize=4000&maxPolylineSize=0`));
+      res.json(series ? { ...downsample(series, 300), drift: hrDrift(series) } : { error: 'Garmin tidak mengirim deret per detik untuk aktivitas ini' });
+    } catch (error) {
+      res.status(502).json({ error: error instanceof NeedConnectError ? error.message : `Deret belum bisa diambil: ${(error as Error).message}` });
+    }
   });
 
   api.get('/long-runs', async (_req, res) => {
@@ -196,9 +236,10 @@ export function apiRouter(db: Db) {
     const { date } = dateParam.parse(req.params);
     const body = conditionBody.parse(req.body);
     await db.run(
-      `INSERT INTO fit_condition_daily (date, alcohol, sick, note) VALUES (?, ?, ?, ?)
-       ON CONFLICT (date) DO UPDATE SET alcohol = excluded.alcohol, sick = excluded.sick, note = excluded.note`,
-      [date, Number(body.alcohol), Number(body.sick), body.note || null],
+      `INSERT INTO fit_condition_daily (date, alcohol, sick, injured, note) VALUES (?, ?, ?, COALESCE(?::smallint, 0), ?)
+       ON CONFLICT (date) DO UPDATE SET alcohol = excluded.alcohol, sick = excluded.sick, note = excluded.note,
+         injured = COALESCE(?::smallint, fit_condition_daily.injured)`,
+      [date, Number(body.alcohol), Number(body.sick), body.injured === undefined ? null : Number(body.injured), body.note || null, body.injured === undefined ? null : Number(body.injured)],
     );
     res.status(204).end();
   });

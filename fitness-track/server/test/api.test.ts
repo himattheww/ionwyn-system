@@ -59,3 +59,17 @@ describe('API Fitness di Postgres', () => {
     expect((await get('/settings')).run_pattern['1']).toBe('easy');
   });
 });
+
+describe('kondisi dan fueling', () => {
+  it('flag cedera tetap tersimpan saat kondisi diubah tanpa menyebut cedera', async () => {
+    await put('/condition/2026-10-20', { alcohol: false, sick: false, injured: true, note: 'shin kiri nyeri' });
+    await put('/condition/2026-10-20', { alcohol: false, sick: true, note: 'flu' });
+    const { conditions } = await get('/recovery?days=365');
+    expect(conditions.find((c: { date: string }) => c.date === '2026-10-20')).toMatchObject({ injured: 1, sick: 1, note: 'flu' });
+  });
+
+  it('mencatat fueling per lari dan menampilkannya di detail', async () => {
+    expect((await put('/activities/1000000001/fueling', { gels: 2, gel_km: '8, 15', drink_ml: 500, electrolytes: '1 tablet' })).status).toBe(204);
+    expect((await put('/activities/1/fueling', { gels: 1 })).status).toBe(404);
+  });
+});

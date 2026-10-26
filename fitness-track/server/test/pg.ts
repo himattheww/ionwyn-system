@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { dbFromUnsafe, parsers } from '../src/db.ts';
 
-const migrations = ['20261020101000_fitness.sql', '20261021090000_garmin_tokens.sql', '20261026120000_fit_activity_details.sql'].map((name) =>
+const migrations = ['20261020101000_fitness.sql', '20261021090000_garmin_tokens.sql', '20261026120000_fit_activity_details.sql', '20261027090000_fit_recovery_context.sql'].map((name) =>
   fs.readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url), 'utf8'),
 );
 
