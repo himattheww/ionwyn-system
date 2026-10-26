@@ -114,6 +114,21 @@ export function registerSystemTools(server: McpServer) {
   )
 
   server.registerTool(
+    'fitness_activity_detail',
+    {
+      title: 'Lap satu lari',
+      description:
+        'Tabel lap satu aktivitas Garmin, sama seperti ekspor CSV Garmin Connect: interval dan jenis langkah workout, waktu, jarak, pace, GAP, HR, ascent, cadence, GCT, stride, vertical oscillation, power, kalori, best pace, moving time, plus baris Summary. Kecepatan dalam m/s (pace = 1000 / speed detik per km). id = garmin_id dari fitness_activities. Lap diambil dari Garmin saat diminta; kalau laps null, lihat lapsError.',
+      inputSchema: { id: z.number().int().positive() },
+      annotations: readOnly,
+    },
+    async ({ id }) => {
+      const data = await get(`/fit/api/activities/${id}`)
+      return json(data)
+    },
+  )
+
+  server.registerTool(
     'fitness_recovery',
     { title: 'Recovery', description: 'Tidur, RHR, dan catatan kondisi harian.', inputSchema: { days: z.number().int().min(7).max(365).default(30) }, annotations: readOnly },
     async ({ days }) => json(await get(`/fit/api/recovery${query({ days })}`)),

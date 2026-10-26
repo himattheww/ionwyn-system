@@ -33,6 +33,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Input manual: berat badan, makan (protein tercukupi, porsi nasi), kondisi (alkohol, sakit, catatan).
 - Ringkasan minggu: hari lari sesuai pola, total km, sesi beban, rata-rata tidur, RHR, dan berat 7 hari.
 - Grafik long run per minggu dengan garis target, riwayat beban per gerakan, halaman recovery.
+- Tabel lap per lari, sama seperti ekspor CSV Garmin Connect: interval dan jenis langkah workout (Warm Up, Run, Recovery, Cool Down), pace, GAP, HR, ascent, cadence, GCT, stride, vertical oscillation, power, W/kg, kalori, best pace, dan moving time, plus tombol **Unduh CSV**. Lap diambil dari Garmin hanya saat aktivitas itu dibuka (satu panggilan), lalu disimpan sementara. Lap yang sudah lebih dari 30 hari dihapus saat sinkron dan diambil ulang kalau dibuka lagi.
 - Laporan bulanan dibanding bulan sebelumnya.
 - Pengaturan pola lari mingguan (misalnya Senin easy, Rabu tempo, Minggu long run). Pola ini otomatis menjadi rutinitas di Jadwal.
 
@@ -341,7 +342,7 @@ Server MCP Ionwyn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel
 | --- | --- |
 | Beranda | `today_summary`, `run_integrations` |
 | Catatan Malam | `diary_tonight`, `diary_get`, `diary_month`, `diary_search`, `diary_collection`, `diary_save` |
-| Fitness | `fitness_summary`, `fitness_activities`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
+| Fitness | `fitness_summary`, `fitness_activities`, `fitness_activity_detail`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
 | Leveling | `leveling_character`, `leveling_log`, `leveling_achievements`, `wish_list`, `wish_add`, `wish_achieve` |
 | Jadwal | `schedule_list`, `schedule_add`, `schedule_complete`, `schedule_skip` |
 | Keuangan | `finance_month`, `finance_add` |
