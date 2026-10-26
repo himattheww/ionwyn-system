@@ -1,0 +1,24 @@
+.activity-title {
+  font-size: clamp(40px, 7vw, 88px);
+}
+.laps th,
+.laps td {
+  text-align: right;
+}
+.laps th:nth-child(-n + 3),
+.laps td:nth-child(-n + 3) {
+  text-align: left;
+}
+.laps th {
+  white-space: normal;
+  min-width: 64px;
+  vertical-align: bottom;
+}
+.laps tr.group td {
+  color: var(--accent);
+  font-weight: 600;
+}
+.laps tr.summary td {
+  border-top: 2px solid var(--accent);
+  font-weight: 600;
+}

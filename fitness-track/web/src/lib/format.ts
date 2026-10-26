@@ -54,8 +54,9 @@ export function formatMinutes(minutes: number | null) {
 
 export function formatPace(secPerKm: number | null) {
   if (secPerKm == null) return '-';
-  const m = Math.floor(secPerKm / 60);
-  const s = String(Math.round(secPerKm % 60)).padStart(2, '0');
+  const total = Math.round(secPerKm);
+  const m = Math.floor(total / 60);
+  const s = String(total % 60).padStart(2, '0');
   return `${m}:${s} /km`;
 }
 

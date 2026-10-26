@@ -75,7 +75,11 @@ function select(value: string) {
             <tbody>
               <tr v-for="a in list.data.value?.activities" :key="a.garmin_id">
                 <td class="dim">{{ formatDay(a.date) }} · {{ formatTime(a.start_time) }}</td>
-                <td><strong>{{ a.name ?? activityLabel(a.type) }}</strong> <span class="tag">{{ activityLabel(a.type) }}</span></td>
+                <td>
+                  <RouterLink v-if="a.type.includes('running')" :to="{ name: 'activity', params: { id: a.garmin_id } }"><strong>{{ a.name ?? activityLabel(a.type) }}</strong></RouterLink>
+                  <strong v-else>{{ a.name ?? activityLabel(a.type) }}</strong>
+                  <span class="tag">{{ activityLabel(a.type) }}</span>
+                </td>
                 <td>{{ a.distance_m ? `${formatNumber(a.distance_m / 1000, 2)} km` : '-' }}</td>
                 <td>{{ formatDuration(a.duration_sec) }}</td>
                 <td>{{ a.avg_pace_sec_per_km && a.type.includes('running') ? formatPace(a.avg_pace_sec_per_km) : '-' }}</td>

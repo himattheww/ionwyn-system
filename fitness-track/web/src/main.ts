@@ -9,6 +9,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'summary', component: SummaryPage },
     { path: '/aktivitas', name: 'activities', component: () => import('./pages/ActivitiesPage.vue') },
+    { path: '/aktivitas/:id', name: 'activity', component: () => import('./pages/ActivityPage.vue'), props: true },
     { path: '/beban', name: 'strength', component: () => import('./pages/StrengthPage.vue') },
     { path: '/beban/:name', name: 'exercise', component: () => import('./pages/ExercisePage.vue'), props: true },
     { path: '/recovery', name: 'recovery', component: () => import('./pages/RecoveryPage.vue') },
