@@ -118,7 +118,7 @@ export function registerSystemTools(server: McpServer) {
     {
       title: 'Lap satu lari',
       description:
-        'Tabel lap satu aktivitas Garmin, sama seperti ekspor CSV Garmin Connect: interval dan jenis langkah workout, waktu, jarak, pace, GAP, HR, ascent, cadence, GCT, stride, vertical oscillation, power, kalori, best pace, moving time, plus baris Summary. Kecepatan dalam m/s (pace = 1000 / speed detik per km). id = garmin_id dari fitness_activities. Lap diambil dari Garmin saat diminta; kalau laps null, lihat lapsError.',
+        'Tabel lap satu aktivitas Garmin, sama seperti ekspor CSV Garmin Connect: interval dan jenis langkah workout, waktu, jarak, pace, GAP, HR, ascent, cadence, GCT, stride, vertical oscillation, power, kalori, best pace, moving time, plus baris Summary. Kecepatan dalam m/s (pace = 1000 / speed detik per km). Juga context: cuaca dalam Celsius (temp_c, feels_like_c, dew_point_c, humidity_pct, wind_kph), AQI saat sesi (aqi dengan aqi_source station/model, aqi_station + pm25_station + station_name dari stasiun WAQI terdekat, aqi_model + pm25_model rata-rata selama lari dari Open-Meteo; hanya untuk lari sejak 26 Okt 2026), zona HR dengan batas bpm Garmin (hr_zones), RPE 1–10 dan feel 0–100 dari jam, training load, TE anaerob, label TE, sepatu. Plus fueling manual. id = garmin_id dari fitness_activities. Lap diambil dari Garmin saat diminta; kalau laps null, lihat lapsError. Kalau context null, jalankan garmin_sync.',
       inputSchema: { id: z.number().int().positive() },
       annotations: readOnly,
     },
@@ -129,8 +129,45 @@ export function registerSystemTools(server: McpServer) {
   )
 
   server.registerTool(
+    'fitness_fueling',
+    {
+      title: 'Catat fueling lari',
+      description: 'Mencatat fueling satu aktivitas: jumlah gel, di km berapa saja, minum (ml), elektrolit, catatan. Menimpa catatan fueling sebelumnya untuk aktivitas itu. id = garmin_id.',
+      inputSchema: {
+        id: z.number().int().positive(),
+        gels: z.number().int().min(0).max(30),
+        gelKm: z.string().trim().max(200).optional().describe('Contoh: "8, 15"'),
+        drinkMl: z.number().int().min(0).max(10000).optional(),
+        electrolytes: z.string().trim().max(200).optional(),
+        note: z.string().trim().max(1000).optional(),
+      },
+    },
+    async ({ id, gels, gelKm, drinkMl, electrolytes, note }) => {
+      await call('PUT', `/fit/api/activities/${id}/fueling`, { gels, gel_km: gelKm ?? null, drink_ml: drinkMl ?? null, electrolytes: electrolytes ?? null, note: note ?? null })
+      return json({ id, saved: true })
+    },
+  )
+
+  server.registerTool(
+    'fitness_activity_series',
+    {
+      title: 'Deret per detik satu lari',
+      description:
+        'Mengambil deret per detik satu aktivitas langsung dari Garmin (tidak disimpan): t (detik), km, hr, speed dan gap_speed (m/s), cadence, elev, power, diringkas maksimal 300 titik. Plus drift: HR dan pace paruh pertama vs kedua setelah 10 menit pemanasan, dan decoupling_pct (Pa:HR). Pakai hanya kalau perlu, misalnya long run.',
+      inputSchema: { id: z.number().int().positive() },
+      annotations: readOnly,
+    },
+    async ({ id }) => json(await get(`/fit/api/activities/${id}/series`)),
+  )
+
+  server.registerTool(
     'fitness_recovery',
-    { title: 'Recovery', description: 'Tidur, RHR, dan catatan kondisi harian.', inputSchema: { days: z.number().int().min(7).max(365).default(30) }, annotations: readOnly },
+    {
+      title: 'Recovery',
+      description:
+        'Data harian dari Garmin: tidur (durasi, skor, deep/light/REM/awake dalam menit, respirasi, stres saat tidur), RHR, HRV (hrv_last_night, hrv_weekly, baseline balanced hrv_baseline_low–hrv_baseline_high, hrv_low_upper, hrv_status), training readiness (skor, level, acute_load). Plus catatan kondisi harian (alcohol, sick, injured, note).',       inputSchema: { days: z.number().int().min(7).max(365).default(30) },
+      annotations: readOnly,
+    },
     async ({ days }) => json(await get(`/fit/api/recovery${query({ days })}`)),
   )
 
@@ -154,16 +191,17 @@ export function registerSystemTools(server: McpServer) {
         ricePortions: z.number().min(0).max(20).optional(),
         alcohol: z.boolean().optional(),
         sick: z.boolean().optional(),
-        note: z.string().trim().max(1000).optional().describe('Catatan kondisi'),
+        injured: z.boolean().optional().describe('Sedang cedera'),
+        note: z.string().trim().max(1000).optional().describe('Catatan kondisi atau gejala'),
       },
     },
-    async ({ date, weightKg, sleepMin, rhr, proteinMet, ricePortions, alcohol, sick, note }) => {
+    async ({ date, weightKg, sleepMin, rhr, proteinMet, ricePortions, alcohol, sick, injured, note }) => {
       const saved: string[] = []
       if (weightKg !== undefined) {
         await call('PUT', `/fit/api/weights/${date}`, { kg: weightKg })
         saved.push('berat')
       }
-      const recent = sleepMin !== undefined || rhr !== undefined || alcohol !== undefined || sick !== undefined || note !== undefined
+      const recent = sleepMin !== undefined || rhr !== undefined || alcohol !== undefined || sick !== undefined || injured !== undefined || note !== undefined
         ? await get('/fit/api/recovery?days=365')
         : null
       if (sleepMin !== undefined || rhr !== undefined) {
@@ -176,11 +214,12 @@ export function registerSystemTools(server: McpServer) {
         await call('PUT', `/fit/api/meals/${date}`, { protein_met: proteinMet ?? Boolean(current?.protein_met), rice_portions: ricePortions ?? current?.rice_portions ?? 0 })
         saved.push('makan')
       }
-      if (alcohol !== undefined || sick !== undefined || note !== undefined) {
+      if (alcohol !== undefined || sick !== undefined || injured !== undefined || note !== undefined) {
         const current = recent.conditions.find((c: { date: string }) => c.date === date)
         await call('PUT', `/fit/api/condition/${date}`, {
           alcohol: alcohol ?? Boolean(current?.alcohol),
           sick: sick ?? Boolean(current?.sick),
+          injured: injured ?? Boolean(current?.injured),
           note: note ?? current?.note ?? null,
         })
         saved.push('kondisi')
