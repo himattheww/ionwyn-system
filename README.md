@@ -296,6 +296,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
    | `LEARN_API_URL` | `https://<domain-vercel-mu>/learn` |
    | `FIT_ENABLED`, `DIARY_ENABLED`, `LEARN_ENABLED`, `SCHEDULE_ENABLED`, `FINANCE_ENABLED`, `TIMESHEET_ENABLED` | `true` |
    | `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | opsional, untuk notifikasi error (lihat [Monitoring](#monitoring)) |
+   | `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_VERIFY_TOKEN` | opsional, untuk sinkron Garmin otomatis lewat Strava (lihat [Sinkron Garmin](#sinkron-garmin)) |
 5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job. Setelah itu jalankan juga `supabase/cron/garmin-sinkron.sql` untuk sinkron Garmin jam 08.00, 12.00, 17.00, dan 20.00 WIB (cron memakai UTC: `0 1,5,10,13 * * *`).
 6. Di Supabase → Authentication → Sign In / Providers, matikan pendaftaran user baru.
 
@@ -374,10 +375,16 @@ Ada dua cara, dan keduanya menulis ke tabel yang sama:
 | --- | --- | --- |
 | Login | `npm run garmin:login`, sesi disimpan di profil browser `.garmin-profile` | Halaman **Sinkron** di Fitness, tombol **Login Garmin** di aplikasi Android. Halaman login resmi Garmin terbuka di aplikasi |
 | Mengambil data | Browser di laptop (Playwright) | Server Vercel dengan token Garmin yang disimpan di `fit_garmin_tokens` |
-| Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB |
+| Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB, plus langsung setelah ada aktivitas baru kalau webhook Strava aktif |
 | Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
 
 Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
+
+**Sinkron langsung lewat Strava.** Garmin tidak mengirim kabar saat ada aktivitas baru, tapi Strava punya webhook. Kalau Garmin sudah terhubung ke Strava, Strava dipakai sebagai penanda: aktivitas baru masuk Strava → Strava memanggil `/fit/api/strava/webhook` → Supabase menjalankan sinkron Garmin. Datanya tetap dari Garmin, Strava tidak dibaca. Webhook hanya bereaksi pada aktivitas baru dari akun Strava dan langganan yang tersimpan.
+
+1. Buat aplikasi di strava.com/settings/api. **Authorization Callback Domain** diisi domain Vercel tanpa `https://`.
+2. Isi `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, dan `STRAVA_VERIFY_TOKEN` (string acak buatanmu) di Environment Variables Vercel, lalu redeploy.
+3. Buka Fitness → Sinkron, tekan **Hubungkan Strava**, izinkan, lalu tekan **Aktifkan webhook**.
 
 ## Konfigurasi
 

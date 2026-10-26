@@ -12,7 +12,23 @@ const syncing = ref(false);
 const online = computed(() => data.value?.local === false);
 const connected = computed(() => !!data.value?.garmin?.connected);
 const inApp = navigator.userAgent.includes('IonwynApp');
+const strava = useApi<{ configured: boolean; connected: boolean; webhook: boolean }>(() => '/strava');
+const stravaBusy = ref(false);
+const stravaError = ref<string | null>(null);
 let timer: ReturnType<typeof setInterval> | undefined;
+
+async function enableWebhook() {
+  stravaBusy.value = true;
+  stravaError.value = null;
+  try {
+    await api('/strava/subscribe', { method: 'POST' });
+    await strava.load();
+  } catch (e) {
+    stravaError.value = (e as Error).message;
+  } finally {
+    stravaBusy.value = false;
+  }
+}
 
 watch(
   () => data.value?.running,
@@ -69,7 +85,7 @@ async function start() {
         <div v-if="online" class="card">
           <h2>{{ connected ? 'Garmin terhubung' : 'Hubungkan Garmin' }}</h2>
           <p class="muted">
-            Versi online mengambil data Garmin sendiri tiap 3 jam. Kalau sesi Garmin habis, hubungkan lagi lewat login Garmin di aplikasi
+            Versi online mengambil data Garmin sendiri jam 08.00, 12.00, 17.00, dan 20.00 WIB. Kalau sesi Garmin habis, hubungkan lagi lewat login Garmin di aplikasi
             Android Ionwyn.
           </p>
           <a v-if="inApp" class="btn" href="ionwyn://garmin" target="_top">{{ connected ? 'Hubungkan ulang' : 'Login Garmin' }}</a>
@@ -77,6 +93,28 @@ async function start() {
         </div>
       </template>
     </StateView>
+
+    <div v-if="online && strava.data.value" class="card">
+      <h2>Sinkron otomatis lewat Strava</h2>
+      <p class="muted">
+        Strava hanya dipakai sebagai penanda. Begitu lari baru masuk ke Strava dari Garmin, Ionwyn langsung sinkron dari Garmin. Data tetap diambil dari
+        Garmin, bukan dari Strava.
+      </p>
+      <p v-if="!strava.data.value.configured" class="muted">Isi STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, dan STRAVA_VERIFY_TOKEN di Vercel dulu.</p>
+      <template v-else>
+        <p>
+          <span class="badge" :class="strava.data.value.connected ? 'ok' : ''">{{ strava.data.value.connected ? 'Akun terhubung' : 'Akun belum terhubung' }}</span>
+          <span class="badge" :class="strava.data.value.webhook ? 'ok' : ''">{{ strava.data.value.webhook ? 'Webhook aktif' : 'Webhook belum aktif' }}</span>
+        </p>
+        <div class="inline-group">
+          <a class="btn secondary" href="/fit/api/strava/connect" target="_top">{{ strava.data.value.connected ? 'Hubungkan ulang Strava' : 'Hubungkan Strava' }}</a>
+          <button v-if="strava.data.value.connected && !strava.data.value.webhook" :disabled="stravaBusy" @click="enableWebhook">
+            {{ stravaBusy ? 'Mengaktifkan...' : 'Aktifkan webhook' }}
+          </button>
+        </div>
+        <p v-if="stravaError" class="toast toast-error">{{ stravaError }}</p>
+      </template>
+    </div>
 
     <div v-if="data?.local !== false" class="card">
       <h2>Login ulang Garmin</h2>
