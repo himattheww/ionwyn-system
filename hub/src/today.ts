@@ -68,6 +68,10 @@ async function leveling() {
 
 let timesheetCache: { at: number; today: string; day: TimesheetDay | null } | null = null
 
+export function forgetTimesheetDay() {
+  timesheetCache = null
+}
+
 async function timesheet(today: string) {
   if (!timesheetCache || timesheetCache.today !== today || Date.now() - timesheetCache.at > 30 * 60_000) {
     const body = await timesheetMonth(today)

@@ -5,7 +5,7 @@ import { integrationStatus, runIntegrations } from './integrations.ts'
 import { financeRoutes } from './finance.ts'
 import { quickRoutes } from './quick.ts'
 import { scheduleRoutes } from './schedule.ts'
-import { todaySummary } from './today.ts'
+import { forgetTimesheetDay, todaySummary } from './today.ts'
 
 async function timesheetApi(req: Request, res: Response) {
   const { url, key } = config.timesheet
@@ -23,6 +23,7 @@ async function timesheetApi(req: Request, res: Response) {
       body: JSON.stringify({ ...body, apiKey: key }),
       signal: AbortSignal.timeout(60_000)
     })
+    if (body.action !== 'month') forgetTimesheetDay()
     res.status(reply.status).type('application/json').send(await reply.text())
   } catch {
     res.json({ error: 'Apps Script tidak bisa dihubungi.' })
