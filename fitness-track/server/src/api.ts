@@ -7,6 +7,7 @@ import { average7, groupSets, isRun, matchRunPattern, type RunPattern, type SetR
 import { lapRows, type ActivityTotals, type Lap } from './garmin/laps.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
 import { saveLaps } from './garmin/store.ts';
+import { stravaRoutes } from './strava.ts';
 import { connection, exchangeTicket, NeedConnectError, saveTokens, TokenSession } from './garmin/token.ts';
 import { availableMonths, buildMonthlyReport, loadMonth, previousMonth } from './report.ts';
 
@@ -245,6 +246,8 @@ export function apiRouter(db: Db) {
     ]);
     res.json({ months, report: buildMonthlyReport(month, current, previous, pattern, today) });
   });
+
+  api.use('/strava', stravaRoutes(db));
 
   api.get('/sync', async (_req, res) => res.json(await syncStatus()));
 

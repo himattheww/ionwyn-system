@@ -3,6 +3,7 @@ import { createApp as catatanApp } from '../catatan-malam/server/src/app.ts'
 import { connect } from '../catatan-malam/server/src/db.ts'
 import { createApp as fitApp } from '../fitness-track/server/src/app.ts'
 import { openDb as fitDb } from '../fitness-track/server/src/db.ts'
+import { stravaWebhook } from '../fitness-track/server/src/strava.ts'
 import { alert } from '../hub/src/alert.ts'
 import { hubRoutes } from '../hub/src/routes.ts'
 import { createApp as learnApp } from '../learning/server/src/app.ts'
@@ -45,10 +46,13 @@ if (baseUrl && internalSecret) {
   app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'Gunakan POST.' }))
 }
 
+const fitDatabase = fitDb(databaseUrl)
+app.use('/fit/api/strava', stravaWebhook(fitDatabase, () => fitDatabase.run(`select public.ionwyn_call('/fit/api/sync')`)))
+
 app.use(requireOwner)
 app.use(hubRoutes())
 app.use('/catatan', catatanApp(connect(databaseUrl)))
-app.use('/fit', fitApp(fitDb(databaseUrl)))
+app.use('/fit', fitApp(fitDatabase))
 app.use('/leveling', levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) }).app)
 app.use('/learn', learnApp())
 app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
