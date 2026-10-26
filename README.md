@@ -58,7 +58,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Transaksi pemasukan dan pengeluaran, transaksi berulang, budget per kategori, dan target tabungan.
 - Dashboard, grafik, dan laporan bulanan yang bisa diekspor ke PDF.
 - Jatah harian tetap: alokasi Utama + Jajan dibagi jumlah hari dalam bulan. Sisa jatah hari yang sudah lewat terkumpul di **Sudah menabung bulan ini**. Kalau belanja hari ini melewati jatah, kelebihannya langsung mengurangi angka itu, dan bisa berubah menjadi **Defisit bulan ini**.
-- AI Analyst untuk membaca pola pengeluaran.
+- Untuk analisis pola pengeluaran, tanya langsung di chat Claude lewat konektor MCP (`finance_month`).
 - Bot Telegram: catat transaksi dan cek saldo dari chat (`/add`, `/list`, `/saldo`, `/goals`, `/help`). Hubungkan akun dari menu **Telegram** di aplikasi.
 
 ### Timesheet (`/timesheet/`)
@@ -405,7 +405,7 @@ Ada dua tingkat:
 | File | Isi |
 | --- | --- |
 | `fitness-track/.env` | Pengaturan Garmin (`GARMIN_BROWSER_PATH`, `GARMIN_HEADLESS`, `GARMIN_PROFILE_DIR`), `TARGET_LONG_RUN_KM` |
-| `learning/server/.env` | Supabase Learn (service role), pengaturan AI |
+| `learning/server/.env` | Supabase Learn (service role) |
 | `leveling/.env` | Sumber mana yang aktif (`*_ENABLED`), `DESKTOP_NOTIFICATION` |
 | `reminder-and-scheduling/.env` | Supabase Jadwal untuk build web |
 | `financetracker/.env` | Supabase Keuangan untuk build web |

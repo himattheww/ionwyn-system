@@ -40,7 +40,6 @@ const router = createRouter({
         { path: 'charts',       name: 'charts',       component: () => import('@/views/ChartsView.vue') },
         { path: 'goals',        name: 'goals',        component: () => import('@/views/GoalsView.vue') },
         { path: 'budget',       name: 'budget',       component: () => import('@/views/BudgetView.vue') },
-        { path: 'ai',           name: 'ai-analyst',   component: () => import('@/views/AIAnalystView.vue') },
         { path: 'profile',      name: 'profile',      component: () => import('@/views/ProfileView.vue') },
       ],
     },

@@ -15,7 +15,6 @@ const navItems = [
   { to: '/charts', label: 'Charts' },
   { to: '/goals', label: 'Goals' },
   { to: '/budget', label: 'Budget' },
-  { to: '/ai', label: 'AI' },
   { to: '/profile', label: 'Profil' },
 ]
 

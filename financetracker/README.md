@@ -1,6 +1,6 @@
 # FinTrack — Personal Finance Tracker
 
-Aplikasi manajemen keuangan pribadi dengan Vue 3, Supabase, dan AI Analyst.
+Aplikasi manajemen keuangan pribadi dengan Vue 3 dan Supabase.
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ Aplikasi manajemen keuangan pribadi dengan Vue 3, Supabase, dan AI Analyst.
 - **Styling**: Tailwind CSS
 - **State**: Pinia
 - **Backend**: Supabase (Auth + PostgreSQL + Storage)
-- **AI**: Anthropic Claude API
+- **AI**: Anthropic Claude API (hanya untuk bot Telegram membaca pesan bebas)
 - **Charts**: ApexCharts
 
 ## Setup
@@ -68,7 +68,6 @@ src/
     ├── ChartsView.vue
     ├── GoalsView.vue
     ├── BudgetView.vue
-    ├── AIAnalystView.vue
     └── ProfileView.vue
 ```
 
@@ -80,5 +79,4 @@ src/
 - [ ] Phase 4 — Transaksi
 - [ ] Phase 5 — Dashboard + Charts
 - [ ] Phase 6 — Goals & Budget
-- [ ] Phase 7 — AI Analyst
 - [ ] Phase 8 — Export PDF

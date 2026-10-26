@@ -69,7 +69,7 @@ async function confirmLink() {
 
       <template v-else-if="state === 'confirm'">
         <h2 class="title">Hubungkan Telegram?</h2>
-        <p class="desc">Kamu akan menghubungkan akun FinTrack ke <strong>@{{ tgUsername }}</strong>. Setelah terhubung, kamu bisa input transaksi dan tanya AI Analyst langsung dari Telegram.</p>
+        <p class="desc">Kamu akan menghubungkan akun FinTrack ke <strong>@{{ tgUsername }}</strong>. Setelah terhubung, kamu bisa mencatat transaksi dan cek saldo langsung dari Telegram.</p>
         <button class="btn-confirm" @click="confirmLink" :disabled="linking">
           <span v-if="linking" class="spinner-sm"></span>
           <span v-else>Ya, hubungkan</span>
