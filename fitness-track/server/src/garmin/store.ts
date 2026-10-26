@@ -84,7 +84,7 @@ export async function applyRaw(db: Db, kind: RawKind, payload: unknown) {
 
 export async function saveLaps(db: Db, garminId: number, payload: unknown) {
   await db.run(
-    `INSERT INTO fit_activity_laps (garmin_id, fetched_at, laps) VALUES (?, ?, ?)
+    `INSERT INTO fit_activity_laps (garmin_id, fetched_at, laps) VALUES (?, ?, ?::text::jsonb)
      ON CONFLICT (garmin_id) DO UPDATE SET fetched_at = excluded.fetched_at, laps = excluded.laps`,
     [garminId, new Date().toISOString(), JSON.stringify(parseLaps(payload))],
   );

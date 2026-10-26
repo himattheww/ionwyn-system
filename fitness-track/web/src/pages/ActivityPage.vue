@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useApi } from '../lib/api';
 import StateView from '../components/StateView.vue';
-import { activityLabel, formatDay, formatNumber, formatTime } from '../lib/format';
+import { activityLabel, formatDay, formatTime } from '../lib/format';
 import type { ActivityDetail, LapRow } from '../types';
 
 const props = defineProps<{ id: string }>();
@@ -14,7 +14,8 @@ const workout = computed(() => laps.value?.some((r) => r.stepType) ?? false);
 const weight = computed(() => data.value?.weightKg ?? null);
 
 const dash = '--';
-const round = (value: number | null, digits = 0) => (value == null ? dash : formatNumber(value, digits));
+const round = (value: number | null, digits = 0) =>
+  value == null ? dash : value.toLocaleString('id-ID', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 const clock = (seconds: number | null) => {
   if (seconds == null) return dash;
   const tenths = Math.round(seconds * 10) / 10;
@@ -29,12 +30,12 @@ const pace = (speed: number | null) => {
   const total = Math.round(1000 / speed);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
-const perKg = (watts: number | null) => (watts == null || !weight.value ? dash : formatNumber(watts / weight.value, 2));
+const perKg = (watts: number | null) => (watts == null || !weight.value ? dash : round(watts / weight.value, 2));
 
 const columns: { label: string; value: (r: LapRow) => string }[] = [
   { label: 'Time', value: (r) => clock(r.duration_sec) },
   { label: 'Cumulative Time', value: (r) => clock(r.cumulative_sec) },
-  { label: 'Distance km', value: (r) => formatNumber(r.distance_m / 1000, 2) },
+  { label: 'Distance km', value: (r) => round(r.distance_m / 1000, 2) },
   { label: 'Avg Pace', value: (r) => pace(r.speed) },
   { label: 'Avg GAP', value: (r) => pace(r.gap_speed) },
   { label: 'Avg HR', value: (r) => round(r.avg_hr) },

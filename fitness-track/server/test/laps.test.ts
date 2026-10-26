@@ -72,3 +72,15 @@ describe('lap Garmin', () => {
     expect(rows.at(-1)).toMatchObject({ distance_m: 2000, avg_hr: 146, ascent_m: 9, calories: 99 });
   });
 });
+
+describe('simpan lap', () => {
+  it('tersimpan sebagai array jsonb, bukan teks', async () => {
+    const { saveLaps } = await import('../src/garmin/store.ts');
+    const { testDb } = await import('./pg.ts');
+    const db = await testDb();
+    await db.run(`INSERT INTO fit_activities (garmin_id, type, start_time, date) VALUES (1, 'running', '2026-10-26T00:00:00Z', '2026-10-26')`);
+    await saveLaps(db, 1, workout);
+    const row = await db.one<{ kind: string }>('SELECT jsonb_typeof(laps) AS kind FROM fit_activity_laps WHERE garmin_id = 1');
+    expect(row?.kind).toBe('array');
+  });
+});
