@@ -381,7 +381,7 @@ Ada dua cara, dan keduanya menulis ke tabel yang sama:
 | Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB, plus langsung setelah ada aktivitas baru kalau webhook Strava aktif |
 | Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
 
-Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- <tanggal-mulai>`. Script ini memakai token Garmin yang tersimpan di database.
+Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- <tanggal-mulai>`. Data harian (tahapan tidur, respirasi, HRV, readiness) dengan `npm run garmin:backfill -- <tanggal-mulai> harian`. Script ini memakai token Garmin yang tersimpan di database.
 
 Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
 
