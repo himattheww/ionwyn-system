@@ -15,6 +15,7 @@ const router = createRouter({
     { path: '/riwayat', component: HistoryPage },
     { path: '/log', component: LogPage },
     { path: '/achievement', component: AchievementsPage },
+    { path: '/cita-cita', component: () => import('./pages/WishesPage.vue') },
     { path: '/sumber', component: SourcesPage }
   ]
 })

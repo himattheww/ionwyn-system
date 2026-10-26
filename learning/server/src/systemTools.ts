@@ -204,6 +204,39 @@ export function registerSystemTools(server: McpServer) {
   )
 
   server.registerTool(
+    'wish_list',
+    { title: 'Daftar cita-cita', description: 'Cita-cita di Leveling: yang sedang dikejar dan yang sudah tercapai, beserta ukuran dan atributnya.', annotations: readOnly },
+    async () => json(await get('/leveling/api/wishes')),
+  )
+
+  server.registerTool(
+    'wish_add',
+    {
+      title: 'Tulis cita-cita',
+      description: 'Menambah cita-cita di Leveling. Ukuran menentukan exp saat tercapai: kecil 100, sedang 300, besar 1000. Exp masuk ke atribut yang dipilih.',
+      inputSchema: {
+        title: z.string().trim().min(1).max(200),
+        why: z.string().trim().max(2000).optional(),
+        size: z.enum(['kecil', 'sedang', 'besar']),
+        attribute: z.enum(['stamina', 'intelek', 'kebijaksanaan', 'disiplin', 'kekayaan']),
+        targetDate: date.optional(),
+      },
+    },
+    async (input) => json(await call('POST', '/leveling/api/wishes', input)),
+  )
+
+  server.registerTool(
+    'wish_achieve',
+    {
+      title: 'Tandai cita-cita tercapai',
+      description: 'Menandai cita-cita tercapai pada tanggal tertentu (default hari ini) lalu menghitung ulang exp. Butuh id dari wish_list.',
+      inputSchema: { id: z.number().int().positive(), achievedOn: date.optional() },
+    },
+    async ({ id, achievedOn }) =>
+      json(await call('PATCH', `/leveling/api/wishes/${id}`, { achievedOn: achievedOn ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' }) })),
+  )
+
+  server.registerTool(
     'schedule_list',
     { title: 'Daftar jadwal', description: 'Item Jadwal dalam rentang tanggal beserta statusnya.', inputSchema: { from: date, to: date }, annotations: readOnly },
     async ({ from, to }) => json(await get(`/hub/api/schedule${query({ from, to })}`)),

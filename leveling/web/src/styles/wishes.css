@@ -1,0 +1,109 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: var(--space-7);
+  align-items: start;
+}
+.wish-form {
+  gap: var(--space-4);
+}
+.sizes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.sizes legend {
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.size {
+  display: grid;
+  gap: 2px;
+  min-height: 64px;
+  padding: var(--space-3);
+  border: 1px dashed var(--ink-3);
+  cursor: pointer;
+}
+.size input {
+  position: absolute;
+  opacity: 0;
+}
+.size strong {
+  font-family: var(--font-display);
+}
+.size span {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.size.active {
+  border: 1px solid var(--accent);
+  background: var(--accent-wash);
+}
+.size:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.wish {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px dashed var(--ink-3);
+}
+.wish.achieved {
+  border: 1px solid var(--accent);
+  background: var(--sheet);
+}
+.wish h4 {
+  font-size: 22px;
+  color: var(--ink);
+}
+.wish.achieved h4 {
+  color: var(--accent);
+}
+.wish-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.actions,
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.confirm span {
+  flex-basis: 100%;
+}
+.btn-danger {
+  background: var(--bad);
+  color: var(--paper);
+}
+.error {
+  color: var(--bad);
+}
+textarea.input {
+  min-height: 80px;
+  resize: vertical;
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

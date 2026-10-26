@@ -123,3 +123,20 @@ describe('quest mingguan', () => {
     expect(entries.filter(byRule('quest'))).toMatchObject([{ attribute: 'stamina', awarded: 100, date: '2026-10-15' }])
   })
 })
+
+describe('cita-cita', () => {
+  it('cita-cita besar memberi 1000 exp ke atribut pilihannya tanpa terkena batas harian', () => {
+    const day = '2026-10-26'
+    const wish = event('wish', 'achieved', day, 1, { title: 'Marathon pertama', size: 'besar', attribute: 'stamina' })
+    const { entries } = buildExp([run(day, 30, true), wish], rules, day)
+    expect(total(entries, byRule('cita-cita tercapai'))).toBe(1000)
+    expect(entries.find(byRule('cita-cita tercapai'))?.attribute).toBe('stamina')
+  })
+
+  it('ukuran kecil dan sedang mengikuti rules', () => {
+    const day = '2026-10-26'
+    const wish = (size: string, id: string) => event('wish', 'achieved', day, 1, { title: size, size, attribute: 'kekayaan' }, id)
+    const { entries } = buildExp([wish('kecil', 'a'), wish('sedang', 'b')], rules, day)
+    expect(entries.filter(byRule('cita-cita tercapai')).map(e => e.awarded)).toEqual([100, 300])
+  })
+})

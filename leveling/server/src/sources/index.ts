@@ -9,11 +9,13 @@ import { readLearn } from './learn.ts'
 import { readSchedule } from './schedule.ts'
 import { readStock } from './stock.ts'
 import { readTimesheet } from './timesheet.ts'
+import { readWishes } from './wishes.ts'
 
 export function createAdapters(env: Env, rules: Rules, today: string, db: Db): Adapter[] {
   return [
     { name: 'fit', label: 'Fit Tracker', enabled: env.FIT_ENABLED, read: () => readFit(db, rules) },
     { name: 'diary', label: 'Catatan Malam', enabled: env.DIARY_ENABLED, read: () => readDiary(db) },
+    { name: 'wish', label: 'Cita-cita', enabled: true, read: () => readWishes(db) },
     { name: 'learn', label: 'Learn', enabled: env.LEARN_ENABLED, read: () => readLearn(env.LEARN_API_URL, rules) },
     {
       name: 'timesheet',

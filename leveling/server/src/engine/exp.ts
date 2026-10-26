@@ -167,6 +167,12 @@ function candidatesFrom(events: SourceEvent[], rules: Rules, today: string) {
   for (const [date, items] of perDay(of('stock', 'activity'))) {
     add({ date, attribute: 'kekayaan', source: 'stock', rule: 'catatan saham', group: 'stock', eventId: items[0].id, note: `${items.length} catatan`, raw: kekayaan.stockDay })
   }
+  for (const wish of of('wish', 'achieved')) {
+    const size = wish.meta.size as keyof Rules['wish']
+    const attribute = wish.meta.attribute as Attribute
+    if (!(size in rules.wish) || !(attribute in rules.attributes)) continue
+    add({ date: wish.date, attribute, source: 'wish', rule: 'cita-cita tercapai', group: 'wish', eventId: wish.id, note: String(wish.meta.title ?? ''), raw: rules.wish[size], exempt: true })
+  }
   return list
 }
 

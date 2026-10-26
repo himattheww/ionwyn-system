@@ -49,6 +49,11 @@
     "budgetKept": 150,
     "stockDay": 15
   },
+  "wish": {
+    "kecil": 100,
+    "sedang": 300,
+    "besar": 1000
+  },
   "level": {
     "overallBase": 500,
     "overallStep": 250,

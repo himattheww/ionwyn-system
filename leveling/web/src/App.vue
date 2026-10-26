@@ -12,6 +12,7 @@ const links = [
   { to: '/riwayat', label: 'Riwayat' },
   { to: '/log', label: 'Log exp' },
   { to: '/achievement', label: 'Achievement' },
+  { to: '/cita-cita', label: 'Cita-cita' },
   { to: '/sumber', label: 'Sumber' },
 ]
 

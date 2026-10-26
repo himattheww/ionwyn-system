@@ -45,6 +45,7 @@ export const rulesSchema = z.object({
   }),
   disiplin: z.object({ scheduleItem: count, scheduleDailyCap: count, workday: count, linkedActivityTypes: z.array(z.string()).default([]) }),
   kekayaan: z.object({ financeDay: count, budgetKept: count, stockDay: count }),
+  wish: z.object({ kecil: count, sedang: count, besar: count }).default({ kecil: 100, sedang: 300, besar: 1000 }),
   level: z.object({
     overallBase: z.number().positive(),
     overallStep: count,

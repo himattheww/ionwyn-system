@@ -10,6 +10,16 @@ import { parseRules } from './rules.ts'
 import { createAdapters } from './sources/index.ts'
 import { attributeKeys, type CharacterState } from './types.ts'
 
+const wishInput = z.object({
+  title: z.string().trim().min(1).max(200),
+  why: z.string().trim().max(2000).nullish(),
+  size: z.enum(['kecil', 'sedang', 'besar']),
+  attribute: z.enum(attributeKeys),
+  targetDate: z.iso.date().nullish()
+})
+const wishPatch = wishInput.partial().extend({ achievedOn: z.iso.date().nullable().optional() })
+const wishColumns = `id, title, why, size, attribute, target_date::text as "targetDate", achieved_on::text as "achievedOn", created_at as "createdAt"`
+
 const logQuery = z.object({
   attribute: z.enum(attributeKeys).optional(),
   from: z.iso.date().optional(),
@@ -86,6 +96,54 @@ export function createApp(db: Db, env: Env, webDist?: string, notify?: (lines: s
       leveling.snapshot()
     ])
     res.json({ sources, rules: JSON.parse(leveling.rulesText()), calculatedAt: current?.calculatedAt ?? null })
+  })
+
+  app.get('/api/wishes', async (_req, res) => {
+    res.json(await db.all(`select ${wishColumns} from leveling_wishes order by achieved_on desc nulls first, created_at desc`))
+  })
+
+  app.post('/api/wishes', async (req, res) => {
+    const wish = wishInput.parse(req.body)
+    const row = await db.one(
+      `insert into leveling_wishes (title, why, size, attribute, target_date) values (?, ?, ?, ?, ?::date) returning ${wishColumns}`,
+      [wish.title, wish.why || null, wish.size, wish.attribute, wish.targetDate ?? null]
+    )
+    res.status(201).json(row)
+  })
+
+  app.patch('/api/wishes/:id', async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id)
+    const patch = wishPatch.parse(req.body)
+    const row = await db.one(
+      `update leveling_wishes set
+         title = coalesce(?, title),
+         why = case when ?::boolean then ? else why end,
+         size = coalesce(?, size),
+         attribute = coalesce(?, attribute),
+         target_date = case when ?::boolean then ?::date else target_date end,
+         achieved_on = case when ?::boolean then ?::date else achieved_on end
+       where id = ? returning ${wishColumns}`,
+      [
+        patch.title ?? null,
+        patch.why !== undefined, patch.why || null,
+        patch.size ?? null,
+        patch.attribute ?? null,
+        patch.targetDate !== undefined, patch.targetDate ?? null,
+        patch.achievedOn !== undefined, patch.achievedOn ?? null,
+        id
+      ]
+    )
+    if (!row) return res.status(404).json({ error: 'Cita-cita tidak ditemukan' })
+    if (patch.achievedOn !== undefined) await leveling.recalculateOnce()
+    res.json(row)
+  })
+
+  app.delete('/api/wishes/:id', async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id)
+    const removed = await db.one<{ achieved_on: string | null }>('delete from leveling_wishes where id = ? returning achieved_on::text', [id])
+    if (!removed) return res.status(404).json({ error: 'Cita-cita tidak ditemukan' })
+    if (removed.achieved_on) await leveling.recalculateOnce()
+    res.status(204).end()
   })
 
   app.post('/api/recalculate', async (_req, res) => {
