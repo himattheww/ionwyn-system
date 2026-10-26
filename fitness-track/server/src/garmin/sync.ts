@@ -8,7 +8,7 @@ import { applyRaw, pruneRaw, saveRaw, type RawKind } from './store.ts';
 const FIRST_SYNC_DAYS = 90;
 const OVERLAP_DAYS = 3;
 const PAGE_SIZE = 100;
-const CONTEXT_BATCH = 10;
+const RECENT_RUNS = 10;
 
 let running = false;
 
@@ -72,10 +72,12 @@ export async function runSync(db: Db, { open = () => GarminSession.open(), pause
     }
 
     const runs = await db.all<{ garmin_id: number; date: string; start_time: string; duration_sec: number | null; start_lat: number | null; start_lon: number | null }>(
-      `SELECT a.garmin_id, a.date, a.start_time, a.duration_sec, a.start_lat, a.start_lon FROM fit_activities a
-       WHERE a.type LIKE '%running%' AND NOT EXISTS (SELECT 1 FROM fit_activity_context c WHERE c.garmin_id = a.garmin_id)
-       ORDER BY a.start_time DESC LIMIT ?`,
-      [CONTEXT_BATCH],
+      `SELECT * FROM (
+         SELECT a.garmin_id, a.date, a.start_time, a.duration_sec, a.start_lat, a.start_lon FROM fit_activities a
+         WHERE a.type LIKE '%running%' ORDER BY a.start_time DESC LIMIT ?
+       ) recent WHERE NOT EXISTS (SELECT 1 FROM fit_activity_context c WHERE c.garmin_id = recent.garmin_id)
+       ORDER BY start_time DESC`,
+      [RECENT_RUNS],
     );
     for (const run of runs) {
       try {

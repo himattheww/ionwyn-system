@@ -31,7 +31,7 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 ### Fitness (`/fit/`)
 - Sinkron otomatis dari Garmin Connect: aktivitas, set latihan beban, tidur (termasuk deep/light/REM/awake, respirasi, stres saat tidur), RHR, HRV (rata-rata semalam, rata-rata 7 hari, baseline balanced, status), dan training readiness (skor, level, acute load).
 - Input manual: berat badan, makan (protein tercukupi, porsi nasi), kondisi (alkohol, sakit, cedera, catatan), dan fueling per lari (jumlah gel, km, minum, elektrolit).
-- Konteks per lari: cuaca dalam Celsius (suhu, terasa, dew point, kelembapan, angin), zona HR dengan batas bpm dari Garmin, RPE dan feel dari jam, training load, label TE, sepatu, dan AQI. AQI (mulai 26 Okt 2026) menggabungkan stasiun terdekat dari WAQI (diambil kalau sinkron terjadi paling lambat 1 jam setelah lari selesai, biasanya lewat webhook Strava) dan model Open-Meteo (PM2.5 dirata-rata per menit selama lari). Keduanya disimpan; `aqi` memakai stasiun kalau ada. Semua AQI memakai tabel EPA 2024.
+- Konteks per lari (10 lari terbaru): cuaca dalam Celsius (suhu, terasa, dew point, kelembapan, angin), zona HR dengan batas bpm dari Garmin, RPE dan feel dari jam, training load, label TE, sepatu, dan AQI. AQI (mulai 26 Okt 2026) menggabungkan stasiun terdekat dari WAQI (diambil kalau sinkron terjadi paling lambat 1 jam setelah lari selesai, biasanya lewat webhook Strava) dan model Open-Meteo (PM2.5 dirata-rata per menit selama lari). Keduanya disimpan; `aqi` memakai stasiun kalau ada. Semua AQI memakai tabel EPA 2024.
 - HR drift per lari dihitung saat diminta: paruh pertama vs kedua setelah 10 menit pemanasan, plus decoupling (Pa:HR). Deret per detiknya tidak disimpan.
 - Ringkasan minggu: hari lari sesuai pola, total km, sesi beban, rata-rata tidur, RHR, dan berat 7 hari.
 - Grafik long run per minggu dengan garis target, riwayat beban per gerakan, halaman recovery.
@@ -381,7 +381,7 @@ Ada dua cara, dan keduanya menulis ke tabel yang sama:
 | Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB, plus langsung setelah ada aktivitas baru kalau webhook Strava aktif |
 | Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
 
-Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- 2026-07-22`. Script ini memakai token Garmin yang tersimpan di database.
+Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- <tanggal-mulai>`. Script ini memakai token Garmin yang tersimpan di database.
 
 Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
 
