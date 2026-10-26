@@ -51,17 +51,21 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Karakter ala RPG: level, tier, gelar, dan lima atribut yang dihitung dari aktivitas nyata di semua aplikasi.
 - Orb three.js yang bentuknya mengikuti skor lima atribut.
 - Log exp per kejadian, riwayat harian, pencapaian, dan halaman sumber yang menunjukkan aplikasi mana yang terbaca.
+- **Cita-cita**: tulis yang ingin dicapai, pilih ukuran (kecil 100, sedang 300, besar 1000 exp) dan atributnya. Exp masuk saat ditandai tercapai dan tidak terkena batas harian.
 - Aturan exp ada di `leveling/config/rules.json`. Item jadwal yang sudah dihitung di aplikasi asalnya tidak memberi exp ganda.
 
 ### Keuangan (`/uang/`)
 - Transaksi pemasukan dan pengeluaran, transaksi berulang, budget per kategori, dan target tabungan.
 - Dashboard, grafik, dan laporan bulanan yang bisa diekspor ke PDF.
+- Jatah harian tetap: alokasi Utama + Jajan dibagi jumlah hari dalam bulan. Sisa jatah hari yang sudah lewat terkumpul di **Sudah menabung bulan ini**. Kalau belanja hari ini melewati jatah, kelebihannya langsung mengurangi angka itu, dan bisa berubah menjadi **Defisit bulan ini**.
 - AI Analyst untuk membaca pola pengeluaran.
 - Bot Telegram: catat transaksi dan cek saldo dari chat (`/add`, `/list`, `/saldo`, `/goals`, `/help`). Hubungkan akun dari menu **Telegram** di aplikasi.
 
 ### Timesheet (`/timesheet/`)
 - Absensi harian: jam masuk, jam keluar, kegiatan, serta sakit, izin, atau cuti.
 - Rekap bulanan dengan lembur, akhir pekan, dan hari libur. Datanya tersimpan di Google Sheets lewat Apps Script.
+- Jam bisa diketik langsung (keyboard angka di HP, titik dua otomatis).
+- Di aplikasi Android, notifikasi muncul 10 menit sebelum 8 jam kerja (plus istirahat) tercapai.
 - Bot Telegram: `masuk 08.00`, `keluar 17.30`, `kegiatan ...`, `izin`, `rekap`. Bisa diberi tanggal di depan, misalnya `kemarin masuk 08.00`.
 
 ### Catat cepat (`/catat/`)
@@ -338,7 +342,7 @@ Server MCP Ionwyn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel
 | Beranda | `today_summary`, `run_integrations` |
 | Catatan Malam | `diary_tonight`, `diary_get`, `diary_month`, `diary_search`, `diary_collection`, `diary_save` |
 | Fitness | `fitness_summary`, `fitness_activities`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
-| Leveling | `leveling_character`, `leveling_log`, `leveling_achievements` |
+| Leveling | `leveling_character`, `leveling_log`, `leveling_achievements`, `wish_list`, `wish_add`, `wish_achieve` |
 | Jadwal | `schedule_list`, `schedule_add`, `schedule_complete`, `schedule_skip` |
 | Keuangan | `finance_month`, `finance_add` |
 | Timesheet | `timesheet_month`, `timesheet_entry` |
