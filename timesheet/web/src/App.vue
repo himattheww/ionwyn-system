@@ -56,7 +56,6 @@ function load(date: string) {
   return run(async () => {
     const result = await fetchMonth(date)
     month.value = result.month
-    today.value = result.today
   })
 }
 
@@ -91,7 +90,6 @@ function submit(entry: Entry) {
   return run(async () => {
     const result = await sendEntry(selected.value, entry)
     month.value = result.month
-    today.value = result.today
     flash(result.message ?? 'Tersimpan ke Sheets')
   })
 }
@@ -104,7 +102,10 @@ function applySettings(next: Settings) {
 }
 
 onMounted(() => {
-  ticker = window.setInterval(() => (now.value = nowMinutes()), 30000)
+  ticker = window.setInterval(() => {
+    now.value = nowMinutes()
+    today.value = isoOf(new Date())
+  }, 30000)
   if (!showSettings.value) load(selected.value)
 })
 

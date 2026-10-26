@@ -401,7 +401,7 @@ function createMonthTab(ss, date, tz) {
 
 function createSheetStore(ss) {
   const tz = ss.getSpreadsheetTimeZone();
-  const today = todayIn(tz);
+  const today = todayIn(LOCAL_TZ);
   const tabCache = {};
 
   function tabName(date) {
@@ -528,6 +528,8 @@ function alreadyHandled(updateId) {
   return false;
 }
 
+const LOCAL_TZ = 'Asia/Jakarta';
+
 function todayIn(tz) {
   const parts = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd').split('-').map(Number);
   return { y: parts[0], m: parts[1], d: parts[2] };
@@ -535,7 +537,7 @@ function todayIn(tz) {
 
 function runCommand(text) {
   const ss = SpreadsheetApp.openById(scriptProps().getProperty('SPREADSHEET_ID'));
-  const cmd = parseCommand(text, todayIn(ss.getSpreadsheetTimeZone()));
+  const cmd = parseCommand(text, todayIn(LOCAL_TZ));
   const answer = handle(cmd, createSheetStore(ss));
   SpreadsheetApp.flush();
   return answer;
@@ -613,7 +615,7 @@ function monthPayload(date, store, today) {
 function runApi(body) {
   const ss = SpreadsheetApp.openById(scriptProps().getProperty('SPREADSHEET_ID'));
   const store = createSheetStore(ss);
-  const today = todayIn(ss.getSpreadsheetTimeZone());
+  const today = todayIn(LOCAL_TZ);
   const date = parseIsoDate(body.date);
   if (date === null) return { error: 'Tanggal tidak valid.' };
 
