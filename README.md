@@ -269,7 +269,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
 | --- | --- | --- |
 | Semua halaman | Statis di bawah `/catatan/`, `/fit/`, `/jadwal/`, dst. | `npm start` |
 | API Catatan, Fitness, Leveling, Learn, Beranda | Satu Vercel Function (`vercel/api.ts`) | Proses per aplikasi |
-| Sinkron Garmin | Otomatis tiap 3 jam dan tombol **Sinkron**, setelah login Garmin sekali dari aplikasi Android | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
+| Sinkron Garmin | Otomatis jam 08.00, 12.00, 17.00, dan 20.00 WIB, plus tombol **Sinkron**, setelah login Garmin sekali dari aplikasi Android | `cd fitness-track` lalu `npm run garmin:sync` atau tombol Sinkron di versi lokal |
 | Buat jalur Learn | Lewat chat Claude dengan konektor MCP | Sama, lewat chat Claude |
 | Integrasi H4–H8 dan hitung ulang Leveling | `pg_cron` memanggil endpoint tiap 10 dan 30 menit | Hub menjalankan sendiri |
 
@@ -296,7 +296,7 @@ Semua data ada di satu project Supabase. Versi lokal dan versi Vercel memakai da
    | `LEARN_API_URL` | `https://<domain-vercel-mu>/learn` |
    | `FIT_ENABLED`, `DIARY_ENABLED`, `LEARN_ENABLED`, `SCHEDULE_ENABLED`, `FINANCE_ENABLED`, `TIMESHEET_ENABLED` | `true` |
    | `ALERT_TELEGRAM_TOKEN`, `ALERT_TELEGRAM_CHAT_ID` | opsional, untuk notifikasi error (lihat [Monitoring](#monitoring)) |
-5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job. Setelah itu jalankan juga `supabase/cron/garmin-sinkron.sql` untuk sinkron Garmin tiap 3 jam.
+5. Setelah deploy pertama, isi `__DOMAIN__` dan `__INTERNAL_SECRET__` di `supabase/cron/jadwal-otomatis.sql`, lalu jalankan di SQL Editor. Rahasianya disimpan di Supabase Vault, bukan di teks job. Setelah itu jalankan juga `supabase/cron/garmin-sinkron.sql` untuk sinkron Garmin jam 08.00, 12.00, 17.00, dan 20.00 WIB (cron memakai UTC: `0 1,5,10,13 * * *`).
 6. Di Supabase → Authentication → Sign In / Providers, matikan pendaftaran user baru.
 
 Cek build Vercel di laptop tanpa deploy: `node scripts/build-vercel.mjs`. Hasilnya di `.vercel/output` (tidak masuk git).
@@ -374,7 +374,7 @@ Ada dua cara, dan keduanya menulis ke tabel yang sama:
 | --- | --- | --- |
 | Login | `npm run garmin:login`, sesi disimpan di profil browser `.garmin-profile` | Halaman **Sinkron** di Fitness, tombol **Login Garmin** di aplikasi Android. Halaman login resmi Garmin terbuka di aplikasi |
 | Mengambil data | Browser di laptop (Playwright) | Server Vercel dengan token Garmin yang disimpan di `fit_garmin_tokens` |
-| Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` tiap 3 jam |
+| Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB |
 | Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
 
 Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
