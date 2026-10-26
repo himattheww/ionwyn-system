@@ -384,7 +384,7 @@ Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti 
 
 1. Buat aplikasi di strava.com/settings/api. **Authorization Callback Domain** diisi domain Vercel tanpa `https://`.
 2. Isi `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, dan `STRAVA_VERIFY_TOKEN` (string acak buatanmu) di Environment Variables Vercel, lalu redeploy.
-3. Buka Fitness → Sinkron, tekan **Hubungkan Strava**, izinkan, lalu tekan **Aktifkan webhook**.
+3. Buka Fitness → Sinkron, tekan **Hubungkan Strava**, izinkan (termasuk aktivitas private, supaya lari "Only You" juga memicu sinkron), lalu tekan **Aktifkan webhook**.
 
 ## Konfigurasi
 

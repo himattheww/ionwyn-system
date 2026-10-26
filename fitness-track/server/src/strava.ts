@@ -79,8 +79,8 @@ export function stravaRoutes(db: Db) {
       client_id: clientId,
       response_type: 'code',
       redirect_uri: `${base}/fit/api/strava/callback`,
-      approval_prompt: 'auto',
-      scope: 'activity:read',
+      approval_prompt: 'force',
+      scope: 'activity:read_all',
     }).toString();
     res.redirect(url.toString());
   });
