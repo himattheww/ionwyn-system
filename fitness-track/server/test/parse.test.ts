@@ -20,6 +20,11 @@ describe('parseActivities', () => {
       avg_hr: 142,
       avg_pace_sec_per_km: 359,
       calories: 410,
+      max_hr: 165,
+      cadence_spm: 168.5,
+      elevation_gain_m: 12,
+      elevation_loss_m: 11,
+      training_effect: 3.1,
     });
   });
 

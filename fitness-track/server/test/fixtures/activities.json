@@ -10,6 +10,11 @@
     "averageSpeed": 2.787,
     "averageHR": 142.0,
     "calories": 410.0,
+    "maxHR": 165,
+    "averageRunningCadenceInStepsPerMinute": 168.5,
+    "elevationGain": 12,
+    "elevationLoss": 11,
+    "aerobicTrainingEffect": 3.1,
     "ownerDisplayName": "fake-user"
   },
   {

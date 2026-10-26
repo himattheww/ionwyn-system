@@ -4,6 +4,7 @@ import type { Db } from './db.ts';
 import { config } from './config.ts';
 import { addDays, jakartaDate, weekRange } from './dates.ts';
 import { average7, groupSets, isRun, matchRunPattern, type RunPattern, type SetRow } from './stats.ts';
+import { lapRows, type ActivityTotals, type Lap } from './garmin/laps.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
 import { connection, exchangeTicket, saveTokens, TokenSession } from './garmin/token.ts';
 import { availableMonths, buildMonthlyReport, loadMonth, previousMonth } from './report.ts';
@@ -99,6 +100,17 @@ export function apiRouter(db: Db) {
       db.all<{ type: string }>('SELECT DISTINCT type FROM fit_activities ORDER BY type'),
     ]);
     res.json({ activities, types: types.map((t) => t.type) });
+  });
+
+  api.get('/activities/:id', async (req, res) => {
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const activity = await db.one<ActivityTotals>('SELECT * FROM fit_activities WHERE garmin_id = ?', [id]);
+    if (!activity) return res.status(404).json({ error: 'Aktivitas tidak ditemukan' });
+    const [stored, weight] = await Promise.all([
+      db.one<{ fetched_at: string; laps: Lap[] }>('SELECT fetched_at, laps FROM fit_activity_laps WHERE garmin_id = ?', [id]),
+      db.one<{ kg: number }>('SELECT kg FROM fit_weights ORDER BY date DESC LIMIT 1'),
+    ]);
+    res.json({ activity, weightKg: weight?.kg ?? null, laps: stored ? lapRows(stored.laps, activity) : null });
   });
 
   api.get('/long-runs', async (_req, res) => {

@@ -11,6 +11,11 @@ export type Activity = {
   avg_hr: number | null;
   avg_pace_sec_per_km: number | null;
   calories: number | null;
+  max_hr: number | null;
+  cadence_spm: number | null;
+  elevation_gain_m: number | null;
+  elevation_loss_m: number | null;
+  training_effect: number | null;
 };
 
 export type StrengthSet = {
@@ -50,6 +55,11 @@ export function parseActivities(json: any): Activity[] {
         avg_hr: num(a.averageHR),
         avg_pace_sec_per_km: distance && speed && speed > 0 ? Math.round(1000 / speed) : null,
         calories: num(a.calories),
+        max_hr: num(a.maxHR),
+        cadence_spm: num(a.averageRunningCadenceInStepsPerMinute),
+        elevation_gain_m: num(a.elevationGain),
+        elevation_loss_m: num(a.elevationLoss),
+        training_effect: num(a.aerobicTrainingEffect),
       };
     });
 }

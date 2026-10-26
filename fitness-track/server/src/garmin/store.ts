@@ -1,4 +1,5 @@
 import type { Db } from '../db.ts';
+import { parseLaps } from './laps.ts';
 import { parseActivities, parseExerciseSets, parseRhr, parseSleep } from './parse.ts';
 
 export type RawKind = 'activities' | 'exercise_sets' | 'sleep' | 'rhr';
@@ -27,13 +28,19 @@ export async function applyRaw(db: Db, kind: RawKind, payload: unknown) {
   if (kind === 'activities') {
     for (const a of parseActivities(payload)) {
       await db.run(
-        `INSERT INTO fit_activities (garmin_id, type, name, start_time, date, duration_sec, distance_m, avg_hr, avg_pace_sec_per_km, calories)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO fit_activities (garmin_id, type, name, start_time, date, duration_sec, distance_m, avg_hr, avg_pace_sec_per_km, calories,
+           max_hr, cadence_spm, elevation_gain_m, elevation_loss_m, training_effect)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (garmin_id) DO UPDATE SET
            type = excluded.type, name = excluded.name, start_time = excluded.start_time, date = excluded.date,
            duration_sec = excluded.duration_sec, distance_m = excluded.distance_m,
-           avg_hr = excluded.avg_hr, avg_pace_sec_per_km = excluded.avg_pace_sec_per_km, calories = excluded.calories`,
-        [a.garmin_id, a.type, a.name, a.start_time, a.date, a.duration_sec, a.distance_m, a.avg_hr, a.avg_pace_sec_per_km, a.calories],
+           avg_hr = excluded.avg_hr, avg_pace_sec_per_km = excluded.avg_pace_sec_per_km, calories = excluded.calories,
+           max_hr = excluded.max_hr, cadence_spm = excluded.cadence_spm, elevation_gain_m = excluded.elevation_gain_m,
+           elevation_loss_m = excluded.elevation_loss_m, training_effect = excluded.training_effect`,
+        [
+          a.garmin_id, a.type, a.name, a.start_time, a.date, a.duration_sec, a.distance_m, a.avg_hr, a.avg_pace_sec_per_km, a.calories,
+          a.max_hr, a.cadence_spm, a.elevation_gain_m, a.elevation_loss_m, a.training_effect,
+        ],
       );
     }
   }
@@ -72,4 +79,12 @@ export async function applyRaw(db: Db, kind: RawKind, payload: unknown) {
       );
     }
   }
+}
+
+export async function saveLaps(db: Db, garminId: number, payload: unknown) {
+  await db.run(
+    `INSERT INTO fit_activity_laps (garmin_id, fetched_at, laps) VALUES (?, ?, ?)
+     ON CONFLICT (garmin_id) DO UPDATE SET fetched_at = excluded.fetched_at, laps = excluded.laps`,
+    [garminId, new Date().toISOString(), JSON.stringify(parseLaps(payload))],
+  );
 }
