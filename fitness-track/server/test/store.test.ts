@@ -53,3 +53,13 @@ describe('applyRaw', () => {
     });
   });
 });
+
+describe('pruneRaw lap', () => {
+  it('menghapus lap yang diambil lebih dari 30 hari lalu supaya diambil ulang saat dibuka', async () => {
+    const db = await testDb();
+    await applyRaw(db, 'activities', fixture('activities.json'));
+    await db.run(`INSERT INTO fit_activity_laps (garmin_id, fetched_at, laps) VALUES (1000000001, '2026-09-01T00:00:00Z', '[]')`);
+    await pruneRaw(db, new Date('2026-10-19T12:00:00Z'));
+    expect(await scalar(db, 'SELECT count(*) FROM fit_activity_laps')).toBe(0);
+  });
+});

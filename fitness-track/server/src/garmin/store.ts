@@ -20,7 +20,8 @@ export async function pruneRaw(db: Db, now = new Date()) {
   return db.transaction(async (tx) => {
     const old = await tx.run('DELETE FROM fit_garmin_raw WHERE fetched_at < ?', [cutoff]);
     const superseded = await tx.run('DELETE FROM fit_garmin_raw WHERE id NOT IN (SELECT MAX(id) FROM fit_garmin_raw GROUP BY kind, ref)');
-    return old + superseded;
+    const laps = await tx.run('DELETE FROM fit_activity_laps WHERE fetched_at < ?', [cutoff]);
+    return old + superseded + laps;
   });
 }
 

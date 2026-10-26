@@ -2,12 +2,11 @@ import type { Db } from '../db.ts';
 import { addDays, datesBetween, jakartaDate } from '../dates.ts';
 import { GarminSession, NeedLoginError } from './client.ts';
 import { NeedConnectError } from './token.ts';
-import { applyRaw, pruneRaw, saveLaps, saveRaw, type RawKind } from './store.ts';
+import { applyRaw, pruneRaw, saveRaw, type RawKind } from './store.ts';
 
 const FIRST_SYNC_DAYS = 90;
 const OVERLAP_DAYS = 3;
 const PAGE_SIZE = 100;
-const LAP_BATCH = 20;
 
 let running = false;
 
@@ -68,21 +67,6 @@ export async function runSync(db: Db, { open = () => GarminSession.open(), pause
 
     for (const id of strengthIds) {
       await fetchAndApply('exercise_sets', String(id), `/activity-service/activity/${id}/exerciseSets`);
-    }
-
-    const missing = await db.all<{ garmin_id: number }>(
-      `SELECT a.garmin_id FROM fit_activities a
-       WHERE a.type LIKE '%running%' AND NOT EXISTS (SELECT 1 FROM fit_activity_laps l WHERE l.garmin_id = a.garmin_id)
-       ORDER BY a.start_time DESC LIMIT ?`,
-      [LAP_BATCH],
-    );
-    for (const { garmin_id } of missing) {
-      try {
-        await pause();
-        await saveLaps(db, garmin_id, await session.get(`/activity-service/activity/${garmin_id}/splits`));
-      } catch (error) {
-        console.error(`Lap aktivitas ${garmin_id} dilewati: ${(error as Error).message}`);
-      }
     }
 
     for (const date of datesBetween(start, today)) {

@@ -57,6 +57,7 @@ export type ActivityDetail = {
   activity: Activity;
   weightKg: number | null;
   laps: LapRow[] | null;
+  lapsError?: string | null;
 };
 
 export type Recovery = {

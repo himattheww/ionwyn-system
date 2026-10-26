@@ -6,7 +6,8 @@ import { addDays, jakartaDate, weekRange } from './dates.ts';
 import { average7, groupSets, isRun, matchRunPattern, type RunPattern, type SetRow } from './stats.ts';
 import { lapRows, type ActivityTotals, type Lap } from './garmin/laps.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
-import { connection, exchangeTicket, saveTokens, TokenSession } from './garmin/token.ts';
+import { saveLaps } from './garmin/store.ts';
+import { connection, exchangeTicket, NeedConnectError, saveTokens, TokenSession } from './garmin/token.ts';
 import { availableMonths, buildMonthlyReport, loadMonth, previousMonth } from './report.ts';
 
 const dateParam = z.object({ date: z.iso.date() });
@@ -106,11 +107,19 @@ export function apiRouter(db: Db) {
     const id = z.coerce.number().int().positive().parse(req.params.id);
     const activity = await db.one<ActivityTotals>('SELECT * FROM fit_activities WHERE garmin_id = ?', [id]);
     if (!activity) return res.status(404).json({ error: 'Aktivitas tidak ditemukan' });
-    const [stored, weight] = await Promise.all([
-      db.one<{ fetched_at: string; laps: Lap[] }>('SELECT fetched_at, laps FROM fit_activity_laps WHERE garmin_id = ?', [id]),
-      db.one<{ kg: number }>('SELECT kg FROM fit_weights ORDER BY date DESC LIMIT 1'),
-    ]);
-    res.json({ activity, weightKg: weight?.kg ?? null, laps: stored ? lapRows(stored.laps, activity) : null });
+    const weight = await db.one<{ kg: number }>('SELECT kg FROM fit_weights ORDER BY date DESC LIMIT 1');
+    let stored = await db.one<{ laps: Lap[] }>('SELECT laps FROM fit_activity_laps WHERE garmin_id = ?', [id]);
+    let lapsError: string | null = null;
+    if (!stored) {
+      try {
+        const session = await TokenSession.open(db);
+        await saveLaps(db, id, await session.get(`/activity-service/activity/${id}/splits`));
+        stored = await db.one<{ laps: Lap[] }>('SELECT laps FROM fit_activity_laps WHERE garmin_id = ?', [id]);
+      } catch (error) {
+        lapsError = error instanceof NeedConnectError ? error.message : `Lap belum bisa diambil dari Garmin: ${(error as Error).message}`;
+      }
+    }
+    res.json({ activity, weightKg: weight?.kg ?? null, laps: stored ? lapRows(stored.laps, activity) : null, lapsError });
   });
 
   api.get('/long-runs', async (_req, res) => {

@@ -83,9 +83,7 @@ function download() {
           <button v-if="laps?.length" class="secondary" @click="download">Unduh CSV</button>
         </div>
 
-        <p v-if="!laps" class="notice">
-          Lap belum diambil dari Garmin. Lap diambil otomatis saat sinkron berikutnya, mulai dari lari terbaru.
-        </p>
+        <p v-if="!laps" class="notice">{{ data?.lapsError ?? 'Lap belum tersedia.' }}</p>
         <p v-else-if="!laps.length" class="notice">Garmin tidak mengirim data lap untuk aktivitas ini.</p>
 
         <div v-else class="card flush">
