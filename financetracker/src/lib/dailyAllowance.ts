@@ -20,7 +20,7 @@ export type Allowance = {
   todayLeft: number
   ratio: number
   level: AllowanceLevel
-  tomorrowAllowance: number
+  saved: number
   exhausted: boolean
   takenTabungan: number
   takenDanaDarurat: number
@@ -30,7 +30,9 @@ export type Allowance = {
 
 const DAILY_CATEGORIES = ['utama', 'jajan']
 
-export { formatRpRounded as formatRupiah } from './format'
+import { formatRpRounded as formatRupiah } from './format'
+
+export { formatRupiah }
 
 export function computeAllowance(budget: BudgetLike | null, txs: TxLike[], now = dayjs()): Allowance | null {
   if (!budget) return null
@@ -59,8 +61,9 @@ export function computeAllowance(budget: BudgetLike | null, txs: TxLike[], now =
 
   const daysLeft = now.daysInMonth() - now.date() + 1
   const poolLeft = pool - spentBefore - spentToday
-  const todayAllowance = Math.max(0, (pool - spentBefore) / daysLeft)
+  const todayAllowance = pool / now.daysInMonth()
   const todayLeft = todayAllowance - spentToday
+  const saved = todayAllowance * (now.date() - 1) - spentBefore + Math.min(0, todayLeft)
   const ratio = todayAllowance > 0 ? spentToday / todayAllowance : spentToday > 0 ? Infinity : 0
   const level: AllowanceLevel = ratio < 0.75 ? 'ok' : ratio <= 1 ? 'warn' : ratio <= 1.5 ? 'over' : 'far'
 
@@ -73,13 +76,17 @@ export function computeAllowance(budget: BudgetLike | null, txs: TxLike[], now =
     todayLeft,
     ratio,
     level,
-    tomorrowAllowance: daysLeft > 1 ? Math.max(0, poolLeft / (daysLeft - 1)) : 0,
+    saved,
     exhausted: poolLeft <= 0,
     takenTabungan,
     takenDanaDarurat,
     allocTabungan: Number(budget.tabungan_amount),
     allocDanaDarurat: Number(budget.dana_darurat_amount),
   }
+}
+
+export function savedText(saved: number) {
+  return saved >= 0 ? `Sudah menabung bulan ini sebesar ${formatRupiah(saved)}` : `Defisit bulan ini sebesar ${formatRupiah(-saved)}`
 }
 
 export function describeSpending(tx: TxLike, a: Allowance | null) {
@@ -100,7 +107,7 @@ export function describeSpending(tx: TxLike, a: Allowance | null) {
   if (a.level === 'over' || a.level === 'far') {
     return {
       tone: 'error' as const,
-      text: `Melewati jatah hari ini ${formatRupiah(-a.todayLeft)}. Jatah besok jadi ${formatRupiah(a.tomorrowAllowance)}.`,
+      text: `Melewati jatah hari ini ${formatRupiah(-a.todayLeft)}. ${savedText(a.saved)}.`,
     }
   }
   if (a.level === 'warn') {

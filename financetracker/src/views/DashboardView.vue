@@ -68,13 +68,6 @@ const allowanceTag = computed(() => {
   if (a.exhausted) return 'c-tag-outline'
   return { ok: 'c-tag-neutral', warn: 'c-tag-accent', over: 'c-tag-outline', far: 'c-tag-outline' }[a.level]
 })
-const tomorrowNote = computed(() => {
-  const a = allowance.value
-  if (!a) return ''
-  const diff = a.tomorrowAllowance - a.todayAllowance
-  if (Math.abs(diff) < 1) return 'sama dengan hari ini'
-  return diff < 0 ? `turun ${formatRupiah(-diff)} dari hari ini` : `naik ${formatRupiah(diff)} dari hari ini`
-})
 
 const categorySpend = computed(() => {
   const cats = ['utama', 'jajan', 'tabungan', 'dana_darurat']
@@ -146,7 +139,7 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
       <section v-if="allowance" class="allowance">
         <div class="allow-main">
           <div class="allow-head">
-            <span class="c-kicker">Bisa dipakai hari ini</span>
+            <span class="c-kicker">Sisa jatah hari ini</span>
             <span class="c-tag" :class="allowanceTag">{{ allowanceStatus }}</span>
           </div>
           <p class="allow-amount c-num" :class="`lvl-${allowance.level}`">
@@ -157,7 +150,7 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
           </div>
           <div class="allow-meta c-num">
             <span>Terpakai {{ formatRupiah(allowance.spentToday) }}</span>
-            <span>Jatah {{ formatRupiah(allowance.todayAllowance) }}</span>
+            <span>Jatah tetap {{ formatRupiah(allowance.todayAllowance) }} per hari</span>
           </div>
         </div>
 
@@ -168,9 +161,9 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
             <span class="side-label">untuk {{ allowance.daysLeft }} hari tersisa di {{ monthName }}</span>
           </div>
           <div class="side-row">
-            <span class="side-label">Jatah besok</span>
-            <span class="side-value c-num">{{ formatRupiah(allowance.tomorrowAllowance) }}</span>
-            <span class="side-label">{{ tomorrowNote }}</span>
+            <span class="side-label">{{ allowance.saved >= 0 ? 'Sudah menabung bulan ini sebesar' : 'Defisit bulan ini sebesar' }}</span>
+            <span class="side-value c-num" :class="{ deficit: allowance.saved < 0 }">{{ allowance.saved < 0 ? '− ' : '+ ' }}{{ formatRupiah(Math.abs(allowance.saved)) }}</span>
+            <span class="side-label">Sisa jatah hari yang sudah lewat. Kelebihan belanja hari ini langsung mengurangi.</span>
           </div>
           <p v-if="allowance.takenTabungan > 0" class="allow-note">
             Bulan ini kamu mengambil {{ formatRupiah(allowance.takenTabungan) }} dari tabungan (alokasi {{ formatRupiah(allowance.allocTabungan) }}).

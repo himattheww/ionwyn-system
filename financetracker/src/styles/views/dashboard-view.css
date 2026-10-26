@@ -127,3 +127,5 @@
   .tx-row { grid-template-columns: 56px 1fr auto; }
   .tx-row > :nth-child(3) { display: none; }
 }
+.side-value { color: var(--accent); }
+.side-value.deficit { color: var(--bad); }
