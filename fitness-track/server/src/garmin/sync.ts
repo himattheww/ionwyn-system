@@ -109,6 +109,9 @@ export async function runSync(db: Db, { open = () => GarminSession.open(), pause
       `${start}..${today}`,
       `/userstats-service/wellness/daily/${encodeURIComponent(profile.displayName)}?fromDate=${start}&untilDate=${today}&metricId=60`,
     );
+    for (const date of datesBetween(start, today)) {
+      await optional('calories', date, `/usersummary-service/usersummary/daily/${encodeURIComponent(profile.displayName)}?calendarDate=${date}`);
+    }
 
     await db.run('UPDATE fit_sync_status SET last_success_at = ? WHERE id = 1', [new Date().toISOString()]);
     await pruneRaw(db);

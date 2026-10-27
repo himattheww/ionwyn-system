@@ -1,8 +1,8 @@
 import type { Db } from '../db.ts';
 import { parseLaps } from './laps.ts';
-import { parseActivities, parseExerciseSets, parseHrv, parseReadiness, parseRhr, parseSleep } from './parse.ts';
+import { parseActivities, parseCalories, parseExerciseSets, parseHrv, parseReadiness, parseRhr, parseSleep } from './parse.ts';
 
-export type RawKind = 'activities' | 'exercise_sets' | 'sleep' | 'rhr' | 'hrv' | 'readiness';
+export type RawKind = 'activities' | 'exercise_sets' | 'sleep' | 'rhr' | 'hrv' | 'readiness' | 'calories';
 
 export async function saveRaw(db: Db, kind: RawKind, ref: string, payload: unknown) {
   await db.run('INSERT INTO fit_garmin_raw (kind, ref, fetched_at, payload) VALUES (?, ?, ?, ?)', [
@@ -97,6 +97,17 @@ export async function applyRaw(db: Db, kind: RawKind, payload: unknown) {
        ON CONFLICT (date) DO UPDATE SET
          readiness_score = excluded.readiness_score, readiness_level = excluded.readiness_level, acute_load = excluded.acute_load`,
       [r.date, r.readiness_score, r.readiness_level, r.acute_load],
+    );
+  }
+
+  if (kind === 'calories') {
+    const c = parseCalories(payload);
+    if (!c) return;
+    await db.run(
+      `INSERT INTO fit_recovery_daily (date, calories_total, calories_active, calories_bmr, source) VALUES (?, ?, ?, ?, 'garmin')
+       ON CONFLICT (date) DO UPDATE SET
+         calories_total = excluded.calories_total, calories_active = excluded.calories_active, calories_bmr = excluded.calories_bmr`,
+      [c.date, c.calories_total, c.calories_active, c.calories_bmr],
     );
   }
 

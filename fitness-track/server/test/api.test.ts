@@ -73,3 +73,15 @@ describe('kondisi dan fueling', () => {
     expect((await put('/activities/1/fueling', { gels: 1 })).status).toBe(404);
   });
 });
+
+describe('kalori', () => {
+  it('menghitung defisit dan sisa terhadap target dari Claude', async () => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+    expect((await put(`/intake/${today}`, { kcal: 1500, note: 'nasi, ayam' })).status).toBe(204);
+    expect((await put('/calorie-target', { kcal: 1900, note: 'defisit 500 dari TDEE rata-rata' })).status).toBe(204);
+    const { target, days } = await get('/calories?days=3');
+    expect(target).toMatchObject({ kcal: 1900, note: 'defisit 500 dari TDEE rata-rata' });
+    expect(days[0]).toMatchObject({ date: today, intake: 1500, left_to_target: 400, partial: true });
+    expect((await put('/calorie-target', { kcal: 100 })).status).toBe(400);
+  });
+});

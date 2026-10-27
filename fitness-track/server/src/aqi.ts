@@ -87,3 +87,24 @@ export async function stationReading(lat: number, lon: number, token: string) {
   const pm25 = legacyAqiToPm25(subIndex);
   return { pm25, aqi: pm25ToAqi(pm25), name: String(body.data.city?.name ?? '') || null };
 }
+
+export async function hourlyPm25(lat: number, lon: number) {
+  const url = new URL('https://air-quality-api.open-meteo.com/v1/air-quality');
+  url.search = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    hourly: 'pm2_5',
+    timezone: 'Asia/Jakarta',
+    past_days: '1',
+    forecast_days: '2',
+  }).toString();
+  const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
+  const body = (await res.json()) as { hourly?: { time: string[]; pm2_5: (number | null)[] } };
+  const hourly = body.hourly;
+  if (!hourly) return [];
+  return hourly.time.map((time, i) => {
+    const pm25 = hourly.pm2_5[i];
+    return { time, pm25, aqi: pm25 == null ? null : pm25ToAqi(pm25) };
+  });
+}

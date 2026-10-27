@@ -8,6 +8,7 @@ import { lapRows, type ActivityTotals, type Lap } from './garmin/laps.ts';
 import { isSyncRunning, runSync } from './garmin/sync.ts';
 import { downsample, hrDrift, parseSeries } from './garmin/series.ts';
 import { saveLaps } from './garmin/store.ts';
+import { hourlyPm25, stationReading } from './aqi.ts';
 import { stravaRoutes } from './strava.ts';
 import { connection, exchangeTicket, NeedConnectError, saveTokens, TokenSession } from './garmin/token.ts';
 import { availableMonths, buildMonthlyReport, loadMonth, previousMonth } from './report.ts';
@@ -25,6 +26,8 @@ const conditionBody = z.object({
   injured: z.boolean().optional(),
   note: z.string().trim().max(1000).nullable(),
 });
+const intakeBody = z.object({ kcal: z.number().int().min(0).max(10000), note: z.string().trim().max(500).nullable().optional() });
+const targetBody = z.object({ kcal: z.number().int().min(800).max(6000), note: z.string().trim().max(1000).nullable().optional() });
 const fuelingBody = z.object({
   gels: z.number().int().min(0).max(30),
   gel_km: z.string().trim().max(200).nullable().optional(),
@@ -242,6 +245,77 @@ export function apiRouter(db: Db) {
       [date, Number(body.alcohol), Number(body.sick), body.injured === undefined ? null : Number(body.injured), body.note || null, body.injured === undefined ? null : Number(body.injured)],
     );
     res.status(204).end();
+  });
+
+  api.put('/intake/:date', async (req, res) => {
+    const { date } = dateParam.parse(req.params);
+    const body = intakeBody.parse(req.body);
+    await db.run(
+      `INSERT INTO fit_intake_daily (date, kcal, note, updated_at) VALUES (?, ?, ?, now())
+       ON CONFLICT (date) DO UPDATE SET kcal = excluded.kcal, note = excluded.note, updated_at = now()`,
+      [date, body.kcal, body.note || null],
+    );
+    res.status(204).end();
+  });
+
+  api.get('/calorie-target', async (_req, res) => {
+    const row = await db.one<{ value: string }>(`SELECT value FROM fit_settings WHERE key = 'calorie_target'`);
+    res.json(row ? JSON.parse(row.value) : null);
+  });
+
+  api.put('/calorie-target', async (req, res) => {
+    const body = targetBody.parse(req.body);
+    const value = JSON.stringify({ kcal: body.kcal, note: body.note || null, updated_at: new Date().toISOString() });
+    await db.run(`INSERT INTO fit_settings (key, value) VALUES ('calorie_target', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`, [value]);
+    res.status(204).end();
+  });
+
+  api.get('/calories', async (req, res) => {
+    const days = z.coerce.number().int().min(1).max(90).catch(14).parse(req.query.days);
+    const today = jakartaDate();
+    const from = addDays(today, -(days - 1));
+    const [burned, intake, target] = await Promise.all([
+      db.all<{ date: string; calories_total: number | null; calories_active: number | null; calories_bmr: number | null }>(
+        'SELECT date, calories_total, calories_active, calories_bmr FROM fit_recovery_daily WHERE date BETWEEN ? AND ?',
+        [from, today],
+      ),
+      db.all<{ date: string; kcal: number; note: string | null }>('SELECT date, kcal, note FROM fit_intake_daily WHERE date BETWEEN ? AND ?', [from, today]),
+      db.one<{ value: string }>(`SELECT value FROM fit_settings WHERE key = 'calorie_target'`),
+    ]);
+    const burnedBy = new Map(burned.map((b) => [b.date, b]));
+    const intakeBy = new Map(intake.map((i) => [i.date, i]));
+    const goal = target ? (JSON.parse(target.value) as { kcal: number; note: string | null; updated_at: string }) : null;
+    const rows = Array.from({ length: days }, (_, i) => addDays(today, -i)).map((date) => {
+      const b = burnedBy.get(date);
+      const eaten = intakeBy.get(date);
+      const total = b?.calories_total ?? null;
+      return {
+        date,
+        burned: total,
+        active: b?.calories_active ?? null,
+        bmr: b?.calories_bmr ?? null,
+        intake: eaten?.kcal ?? null,
+        intake_note: eaten?.note ?? null,
+        deficit: total != null && eaten ? Math.round(total - eaten.kcal) : null,
+        left_to_target: goal && eaten ? goal.kcal - eaten.kcal : goal?.kcal ?? null,
+        partial: date === today,
+      };
+    });
+    res.json({ target: goal, days: rows });
+  });
+
+  api.get('/air', async (_req, res) => {
+    const last = await db.one<{ start_lat: number; start_lon: number; date: string }>(
+      'SELECT start_lat, start_lon, date FROM fit_activities WHERE start_lat IS NOT NULL ORDER BY start_time DESC LIMIT 1',
+    );
+    const lat = last?.start_lat ?? -6.2088;
+    const lon = last?.start_lon ?? 106.8456;
+    const token = process.env.WAQI_TOKEN;
+    const [hours, station] = await Promise.all([
+      hourlyPm25(lat, lon),
+      token ? stationReading(lat, lon, token).catch(() => null) : Promise.resolve(null),
+    ]);
+    res.json({ location: { lat, lon, from: last ? `lari ${last.date}` : 'Jakarta' }, hours, station });
   });
 
   api.get('/weights', async (_req, res) => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { averageOverWindow, legacyAqiToPm25, pm25ToAqi } from '../src/aqi.ts';
 import { parseShoes, parseSummary, parseWeather, parseZones } from '../src/garmin/context.ts';
-import { parseHrv, parseReadiness, parseSleep } from '../src/garmin/parse.ts';
+import { parseCalories, parseHrv, parseReadiness, parseSleep } from '../src/garmin/parse.ts';
 import { hrDrift, parseSeries } from '../src/garmin/series.ts';
 import { applyRaw } from '../src/garmin/store.ts';
 import { testDb } from './pg.ts';
@@ -92,5 +92,14 @@ describe('HR drift', () => {
     const drift = hrDrift(parseSeries({ metricDescriptors: descriptors, activityDetailMetrics: rows })!);
     expect(drift).toMatchObject({ skipped_warmup_sec: 600, first_half: { avg_hr: 150 }, second_half: { avg_hr: 165 } });
     expect(drift!.decoupling_pct).toBe(9.1);
+  });
+});
+
+describe('kalori Garmin', () => {
+  it('membaca kalori terbakar harian', () => {
+    expect(parseCalories({ calendarDate: '2026-10-25', totalKilocalories: 2185, activeKilocalories: 172, bmrKilocalories: 2013, consumedKilocalories: null })).toEqual({
+      date: '2026-10-25', calories_total: 2185, calories_active: 172, calories_bmr: 2013,
+    });
+    expect(parseCalories({ calendarDate: '2026-10-25' })).toBeNull();
   });
 });

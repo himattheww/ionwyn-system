@@ -9,11 +9,13 @@ const db = openDb();
 const session = await TokenSession.open(db);
 
 if (mode === 'harian') {
+  const profile = (await session.get('/userprofile-service/socialProfile')) as { displayName: string };
   for (const date of datesBetween(from, to)) {
     const daily: [Parameters<typeof applyRaw>[1], string][] = [
       ['sleep', await session.sleepPath(date)],
       ['hrv', `/hrv-service/hrv/${date}`],
       ['readiness', `/metrics-service/metrics/trainingreadiness/${date}`],
+      ['calories', `/usersummary-service/usersummary/daily/${encodeURIComponent(profile.displayName)}?calendarDate=${date}`],
     ];
     for (const [kind, path] of daily) {
       const payload = await session.get(path).catch((error) => console.error(`${kind} ${date}: ${(error as Error).message}`));

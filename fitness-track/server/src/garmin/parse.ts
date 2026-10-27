@@ -170,3 +170,15 @@ export function parseRhr(json: any): RhrDay[] {
     .filter((r) => r?.calendarDate && num(r.value))
     .map((r) => ({ date: r.calendarDate, rhr: Math.round(r.value) }));
 }
+
+export type CaloriesDay = { date: string; calories_total: number | null; calories_active: number | null; calories_bmr: number | null };
+
+export function parseCalories(json: any): CaloriesDay | null {
+  if (!json?.calendarDate || num(json.totalKilocalories) == null) return null;
+  return {
+    date: json.calendarDate,
+    calories_total: num(json.totalKilocalories),
+    calories_active: num(json.activeKilocalories),
+    calories_bmr: num(json.bmrKilocalories),
+  };
+}
