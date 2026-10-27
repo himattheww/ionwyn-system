@@ -161,6 +161,43 @@ export function registerSystemTools(server: McpServer) {
   )
 
   server.registerTool(
+    'fitness_calories',
+    {
+      title: 'Kalori harian',
+      description:
+        'Kalori per hari: burned (total terbakar dari Garmin = bmr + active; hari ini masih berjalan, partial=true), intake (kalori masuk yang dicatat manual), deficit (burned - intake), target makan harian yang tersimpan, dan left_to_target. Pakai untuk menghitung atau mengevaluasi target diet.',
+      inputSchema: { days: z.number().int().min(1).max(90).default(14) },
+      annotations: readOnly,
+    },
+    async ({ days }) => json(await get(`/fit/api/calories${query({ days })}`)),
+  )
+
+  server.registerTool(
+    'fitness_set_calorie_target',
+    {
+      title: 'Simpan target makan harian',
+      description:
+        'Menyimpan target kalori masuk per hari (kkal) beserta alasannya, misalnya hasil hitungan dari rata-rata kalori terbakar dikurangi defisit yang disepakati. Tampil di Fitness sebagai "Target makan". Menimpa target sebelumnya.',
+      inputSchema: { kcal: z.number().int().min(800).max(6000), note: z.string().trim().max(1000).describe('Dasar hitungan, misalnya "TDEE 14 hari 2.450 - defisit 500"') },
+    },
+    async ({ kcal, note }) => {
+      await call('PUT', '/fit/api/calorie-target', { kcal, note })
+      return json({ kcal, note, saved: true })
+    },
+  )
+
+  server.registerTool(
+    'fitness_air',
+    {
+      title: 'Udara per jam',
+      description:
+        'AQI per jam di lokasi GPS lari terakhir: pm25 dan aqi (tabel EPA 2024) dari model Open-Meteo untuk kemarin sampai besok, plus pembacaan stasiun WAQI terdekat saat ini kalau ada. Pakai untuk memilih jam lari.',
+      annotations: readOnly,
+    },
+    async () => json(await get('/fit/api/air')),
+  )
+
+  server.registerTool(
     'fitness_recovery',
     {
       title: 'Recovery',
@@ -192,11 +229,16 @@ export function registerSystemTools(server: McpServer) {
         alcohol: z.boolean().optional(),
         sick: z.boolean().optional(),
         injured: z.boolean().optional().describe('Sedang cedera'),
+        intakeKcal: z.number().int().min(0).max(10000).optional().describe('Total kalori yang dimakan hari itu'),
         note: z.string().trim().max(1000).optional().describe('Catatan kondisi atau gejala'),
       },
     },
-    async ({ date, weightKg, sleepMin, rhr, proteinMet, ricePortions, alcohol, sick, injured, note }) => {
+    async ({ date, weightKg, sleepMin, rhr, proteinMet, ricePortions, alcohol, sick, injured, note, intakeKcal }) => {
       const saved: string[] = []
+      if (intakeKcal !== undefined) {
+        await call('PUT', `/fit/api/intake/${date}`, { kcal: intakeKcal })
+        saved.push('kalori masuk')
+      }
       if (weightKg !== undefined) {
         await call('PUT', `/fit/api/weights/${date}`, { kg: weightKg })
         saved.push('berat')

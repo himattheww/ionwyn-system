@@ -32,6 +32,8 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Sinkron otomatis dari Garmin Connect: aktivitas, set latihan beban, tidur (termasuk deep/light/REM/awake, respirasi, stres saat tidur), RHR, HRV (rata-rata semalam, rata-rata 7 hari, baseline balanced, status), dan training readiness (skor, level, acute load).
 - Input manual: berat badan, makan (protein tercukupi, porsi nasi), kondisi (alkohol, sakit, cedera, catatan), dan fueling per lari (jumlah gel, km, minum, elektrolit).
 - Konteks per lari (10 lari terbaru): cuaca dalam Celsius (suhu, terasa, dew point, kelembapan, angin), zona HR dengan batas bpm dari Garmin, RPE dan feel dari jam, training load, label TE, sepatu, dan AQI. AQI (mulai 26 Okt 2026) menggabungkan stasiun terdekat dari WAQI (diambil kalau sinkron terjadi paling lambat 1 jam setelah lari selesai, biasanya lewat webhook Strava) dan model Open-Meteo (PM2.5 dirata-rata per menit selama lari). Keduanya disimpan; `aqi` memakai stasiun kalau ada. Semua AQI memakai tabel EPA 2024.
+- Kartu **Udara per jam** di Minggu ini: AQI per jam 12 jam ke belakang dan 12 jam ke depan di lokasi GPS lari terakhir, jam paling bersih berikutnya, dan pembacaan stasiun saat ini.
+- Kartu **Kalori**: kalori terbakar harian dari Garmin (BMR + aktif), kalori masuk yang diisi manual, defisit per hari, dan target makan harian. Target ditentukan lewat chat Claude (`fitness_set_calorie_target`) lalu tersimpan di sini.
 - HR drift per lari dihitung saat diminta: paruh pertama vs kedua setelah 10 menit pemanasan, plus decoupling (Pa:HR). Deret per detiknya tidak disimpan.
 - Ringkasan minggu: hari lari sesuai pola, total km, sesi beban, rata-rata tidur, RHR, dan berat 7 hari.
 - Grafik long run per minggu dengan garis target, riwayat beban per gerakan, halaman recovery.
@@ -346,7 +348,7 @@ Server MCP Ionwyn berjalan di fungsi Vercel yang sama, di alamat `<alamat-vercel
 | --- | --- |
 | Beranda | `today_summary`, `run_integrations` |
 | Catatan Malam | `diary_tonight`, `diary_get`, `diary_month`, `diary_search`, `diary_collection`, `diary_save` |
-| Fitness | `fitness_summary`, `fitness_activities`, `fitness_activity_detail`, `fitness_activity_series`, `fitness_fueling`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
+| Fitness | `fitness_summary`, `fitness_activities`, `fitness_activity_detail`, `fitness_activity_series`, `fitness_fueling`, `fitness_calories`, `fitness_set_calorie_target`, `fitness_air`, `fitness_recovery`, `fitness_report`, `fitness_log`, `garmin_sync` |
 | Leveling | `leveling_character`, `leveling_log`, `leveling_achievements`, `wish_list`, `wish_add`, `wish_achieve` |
 | Jadwal | `schedule_list`, `schedule_add`, `schedule_complete`, `schedule_skip` |
 | Keuangan | `finance_month`, `finance_add` |
@@ -381,7 +383,7 @@ Ada dua cara, dan keduanya menulis ke tabel yang sama:
 | Jalan otomatis | Saat `npm start` hidup, sekali sehari | `pg_cron` jam 08.00, 12.00, 17.00, 20.00 WIB, plus langsung setelah ada aktivitas baru kalau webhook Strava aktif |
 | Kalau sesi habis | Jalankan `npm run garmin:login` lagi | Status sinkron menampilkan "Perlu hubungkan Garmin lagi", login ulang dari aplikasi |
 
-Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- <tanggal-mulai>`. Data harian (tahapan tidur, respirasi, HRV, readiness) dengan `npm run garmin:backfill -- <tanggal-mulai> harian`. Script ini memakai token Garmin yang tersimpan di database.
+Aktivitas lama bisa dilengkapi ulang (max HR, cadence, elevasi, TE, koordinat) dengan `cd fitness-track/server` lalu `npm run garmin:backfill -- <tanggal-mulai>`. Data harian (tahapan tidur, respirasi, HRV, readiness, kalori terbakar) dengan `npm run garmin:backfill -- <tanggal-mulai> harian`. Script ini memakai token Garmin yang tersimpan di database.
 
 Cara baru tidak resmi: memakai alur login aplikasi Garmin Connect, sama seperti library `garminconnect`. Kalau Garmin mengubah alur loginnya, cara lama tetap bisa dipakai.
 
