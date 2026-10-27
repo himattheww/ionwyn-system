@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import HeartLine from '../components/HeartLine.vue';
+import AirChart from '../components/AirChart.vue';
+import CaloriesCard from '../components/CaloriesCard.vue';
 import { computed } from 'vue';
 import { useApi } from '../lib/api';
 import Sparkline from '../components/Sparkline.vue';
@@ -275,6 +277,11 @@ const reportBanner = computed(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="grid-2">
+          <AirChart />
+          <CaloriesCard />
         </div>
 
         <div v-if="recent.length" class="block">
