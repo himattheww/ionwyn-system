@@ -25,6 +25,4 @@ export const api = {
   delete: (path: string) => request<void>(path, { method: 'DELETE' }),
 }
 
-export const refreshLeveling = () => fetch('/leveling/api/recalculate', { method: 'POST' }).catch(() => undefined)
-
 export const errorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Terjadi kesalahan')

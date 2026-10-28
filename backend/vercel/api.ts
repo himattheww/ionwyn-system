@@ -5,6 +5,7 @@ import { createApp as fitApp } from '../fitness/src/app.ts'
 import { openDb as fitDb } from '../fitness/src/db.ts'
 import { stravaWebhook } from '../fitness/src/strava.ts'
 import { alert } from '../hub/src/alert.ts'
+import { runIntegrations } from '../hub/src/integrations.ts'
 import { hubRoutes } from '../hub/src/routes.ts'
 import { createApp as learnApp } from '../learn/src/app.ts'
 import { handleMcp } from '../learn/src/mcp.ts'
@@ -31,10 +32,37 @@ function restorePath(req: Request, _res: Response, next: NextFunction) {
   next()
 }
 
+const quietPaths = new Set(['/hub/api/sync', '/hub/api/integrations/run', '/leveling/api/recalculate'])
+const learnWriteTools = new Set(['complete_topic', 'log_session'])
+
+function changesData(req: Request, path: string) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) || quietPaths.has(path)) return false
+  if (path === '/mcp') return req.body?.method === 'tools/call' && learnWriteTools.has(req.body?.params?.name)
+  if (path === '/timesheet/api') return !String(req.body).includes('"month"')
+  return true
+}
+
+const fitDatabase = fitDb(databaseUrl)
+
+function syncAfterWrite(req: Request, res: Response, next: NextFunction) {
+  const path = req.path
+  const end = res.end
+  res.end = ((...args: Parameters<Response['end']>) => {
+    if (res.statusCode >= 400 || !changesData(req, path)) return end.apply(res, args)
+    fitDatabase
+      .run(`select public.ionwyn_call('/hub/api/sync')`)
+      .catch(error => console.error('Sinkron tidak terpicu:', error))
+      .finally(() => end.apply(res, args))
+    return res
+  }) as Response['end']
+  next()
+}
+
 const app = express()
 app.disable('x-powered-by')
 app.set('trust proxy', 1)
 app.use(restorePath)
+app.use(syncAfterWrite)
 app.use(authRoutes())
 
 const baseUrl = process.env.HUB_APP_BASE
@@ -46,14 +74,20 @@ if (baseUrl && internalSecret) {
   app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'Gunakan POST.' }))
 }
 
-const fitDatabase = fitDb(databaseUrl)
 app.use('/fit/api/strava', stravaWebhook(fitDatabase, () => fitDatabase.run(`select public.ionwyn_call('/fit/api/sync')`)))
 
+const leveling = levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) })
+
 app.use(requireOwner)
+app.post('/hub/api/sync', async (_req, res) => {
+  await runIntegrations()
+  await leveling.leveling.recalculateOnce()
+  res.json({ ok: true })
+})
 app.use(hubRoutes())
 app.use('/catatan', catatanApp(connect(databaseUrl)))
 app.use('/fit', fitApp(fitDatabase))
-app.use('/leveling', levelingApp(levelingDb(databaseUrl), { ...readEnv(), RULES_JSON: JSON.stringify(rules) }).app)
+app.use('/leveling', leveling.app)
 app.use('/learn', learnApp())
 app.use((_req, res) => res.status(404).json({ error: 'Endpoint tidak ditemukan.' }))
 app.use(async (error: Error & { status?: number }, req: Request, res: Response, _next: NextFunction) => {
