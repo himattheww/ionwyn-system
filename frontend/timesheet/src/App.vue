@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { fetchMonth, loadSettings, saveSettings, sendEntry, viaHub } from './lib/api'
+import { cachedMonth, fetchMonth, loadSettings, rememberMonth, saveSettings, sendEntry, viaHub } from './lib/api'
 import AppIcon from './components/AppIcon.vue'
 import DayList from './components/DayList.vue'
 import MonthSummary from './components/MonthSummary.vue'
@@ -53,9 +53,11 @@ async function run(task: () => Promise<void>) {
 }
 
 function load(date: string) {
+  month.value = cachedMonth(date)
   return run(async () => {
     const result = await fetchMonth(date)
     month.value = result.month
+    rememberMonth(date, result.month)
   })
 }
 
@@ -90,6 +92,7 @@ function submit(entry: Entry) {
   return run(async () => {
     const result = await sendEntry(selected.value, entry)
     month.value = result.month
+    rememberMonth(selected.value, result.month)
     flash(result.message ?? 'Tersimpan ke Sheets')
   })
 }

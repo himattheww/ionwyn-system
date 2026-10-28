@@ -1,4 +1,4 @@
-import type { ApiResult, Entry, Settings } from '../types'
+import type { ApiResult, Entry, MonthData, Settings } from '../types'
 
 const STORAGE_KEY = 'timesheet.settings'
 
@@ -41,6 +41,24 @@ async function call(body: Record<string, unknown>): Promise<ApiResult> {
   }
   if (data.error) throw new Error(data.error)
   return data
+}
+
+const monthKey = (date: string) => `timesheet.bulan:${date.slice(0, 7)}`
+
+export function cachedMonth(date: string): MonthData | null {
+  try {
+    return JSON.parse(localStorage.getItem(monthKey(date)) ?? 'null')
+  } catch {
+    return null
+  }
+}
+
+export function rememberMonth(date: string, month: MonthData) {
+  try {
+    localStorage.setItem(monthKey(date), JSON.stringify(month))
+  } catch {
+    return
+  }
 }
 
 export function fetchMonth(date: string): Promise<ApiResult> {
