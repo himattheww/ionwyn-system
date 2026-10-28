@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
-const require = createRequire(join(root, 'fitness-track/server/package.json'))
+const require = createRequire(join(root, 'package.json'))
 const { chromium } = require('playwright')
 
 const [before, after] = process.argv.slice(2).map(label => join(root, '.screenshots', label))

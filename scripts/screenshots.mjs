@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
-const require = createRequire(join(root, 'fitness-track/server/package.json'))
+const require = createRequire(join(root, 'package.json'))
 const { chromium } = require('playwright')
 
 const [mode = 'gateway', label = mode, ...flags] = process.argv.slice(2)
@@ -80,8 +80,8 @@ const envRef = (file, key) => {
   const line = readFileSync(join(root, file), 'utf8').split(/\r?\n/).find(l => l.startsWith(`${key}=`))
   return new URL(line.slice(key.length + 1).trim()).hostname.split('.')[0]
 }
-const scheduleRef = envRef('reminder-and-scheduling/.env', 'SUPABASE_URL')
-const financeRef = envRef('financetracker/.env', 'VITE_SUPABASE_URL')
+const scheduleRef = envRef('backend/jadwal/.env', 'SUPABASE_URL')
+const financeRef = envRef('frontend/uang/.env', 'VITE_SUPABASE_URL')
 
 async function waitForLogin() {
   const targets = ['jadwal', 'uang', 'timesheet'].map(app => `${base(app)}/`)

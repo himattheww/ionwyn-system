@@ -8,8 +8,8 @@ const url = process.env.DATABASE_URL
 if (!url) throw new Error('DATABASE_URL belum diisi di .env root')
 
 const sources = {
-  catatan: resolve(root, 'catatan-malam/data/catatan.db'),
-  fit: resolve(root, 'fitness-track/data/fitness.db')
+  catatan: resolve(root, 'backend/catatan/data/catatan.db'),
+  fit: resolve(root, 'backend/fitness/data/fitness.db')
 }
 
 const plan = [

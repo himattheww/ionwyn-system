@@ -22,10 +22,9 @@ function pipe(stream, label) {
 }
 
 function start(app, index) {
-  const child = spawn('npm', app.args, {
+  const child = spawn(process.execPath, app.args, {
     cwd: resolve(root, app.dir),
-    env: { ...process.env, ...Object.fromEntries(Object.entries(app.env).map(([k, v]) => [k, String(v)])) },
-    shell: windows
+    env: { ...process.env, ...Object.fromEntries(Object.entries(app.env).map(([k, v]) => [k, String(v)])) }
   })
   const label = prefix(app.name, index)
   pipe(child.stdout, label)

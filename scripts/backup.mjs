@@ -59,10 +59,10 @@ async function timesheet() {
 
 function envFiles() {
   const dir = join(target, 'env')
-  for (const file of ['.env', 'catatan-malam/.env', 'fitness-track/.env', 'leveling/.env', 'learning/server/.env', 'reminder-and-scheduling/.env', 'financetracker/.env']) {
+  for (const file of ['.env', 'backend/catatan/.env', 'backend/fitness/.env', 'backend/leveling/.env', 'backend/learn/.env', 'backend/jadwal/.env', 'frontend/uang/.env']) {
     const source = resolve(root, file)
     if (!existsSync(source)) continue
-    const name = file === '.env' ? 'root' : file.split('/')[0]
+    const name = file === '.env' ? 'root' : file.split('/')[1]
     mkdirSync(join(dir, name), { recursive: true })
     copyFileSync(source, join(dir, name, '.env'))
   }

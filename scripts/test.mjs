@@ -2,23 +2,35 @@ import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { root } from './apps.mjs'
 
+const bin = name => resolve(root, 'node_modules/.bin', name)
+const vitest = bin('vitest')
+const tsc = bin('tsc')
+const vueTsc = bin('vue-tsc')
+
 const steps = [
-  ['hub', '.', ['run', 'test:hub']],
-  ['hub typecheck', '.', ['run', 'typecheck']],
-  ['catatan-malam', 'catatan-malam', ['test']],
-  ['fitness-track', 'fitness-track', ['test']],
-  ['fitness-track typecheck', 'fitness-track', ['run', 'typecheck']],
-  ['leveling', 'leveling', ['test']],
-  ['leveling typecheck', 'leveling', ['run', 'typecheck']],
-  ['jadwal', 'reminder-and-scheduling', ['exec', '--', 'vitest', 'run', 'core', 'scripts', 'adapters/supabase/rows.test.ts']],
-  ['jadwal typecheck', 'reminder-and-scheduling', ['run', 'typecheck']],
-  ['learn server typecheck', 'learning/server', ['run', 'typecheck']],
-  ['learn web typecheck', 'learning/web', ['run', 'typecheck']]
+  ['hub', 'backend/hub', [vitest, 'run']],
+  ['hub typecheck', 'backend/hub', [tsc, '-p', '.']],
+  ['catatan', 'backend/catatan', [vitest, 'run']],
+  ['catatan typecheck', 'backend/catatan', [tsc, '-p', '.', '--noEmit']],
+  ['fitness', 'backend/fitness', [vitest, 'run']],
+  ['fitness typecheck', 'backend/fitness', [tsc, '-p', '.']],
+  ['leveling', 'backend/leveling', [vitest, 'run']],
+  ['leveling typecheck', 'backend/leveling', [tsc, '-p', '.']],
+  ['jadwal', 'backend/jadwal', [vitest, 'run', 'core', 'scripts', 'adapters/supabase/rows.test.ts']],
+  ['jadwal typecheck', 'backend/jadwal', [tsc, '-p', '.']],
+  ['learn typecheck', 'backend/learn', [tsc, '-p', '.']],
+  ['web catatan', 'frontend/catatan', [vueTsc, '--noEmit']],
+  ['web fitness', 'frontend/fitness', [vueTsc, '--noEmit']],
+  ['web leveling', 'frontend/leveling', [vueTsc, '-p', '.']],
+  ['web learn', 'frontend/learn', [vueTsc, '-b']],
+  ['web jadwal', 'frontend/jadwal', [tsc, '-p', '.']],
+  ['web uang', 'frontend/uang', [vueTsc, '--noEmit', '-p', 'tsconfig.app.json']],
+  ['web timesheet', 'frontend/timesheet', [vueTsc, '-b']]
 ]
 
-const results = steps.map(([name, dir, args]) => {
+const results = steps.map(([name, dir, [command, ...args]]) => {
   console.log(`\n== ${name}`)
-  const { status } = spawnSync('npm', args, { cwd: resolve(root, dir), stdio: 'inherit', shell: process.platform === 'win32' })
+  const { status } = spawnSync(command, args, { cwd: resolve(root, dir), stdio: 'inherit', shell: process.platform === 'win32' })
   return [name, status === 0]
 })
 

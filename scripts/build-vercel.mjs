@@ -18,26 +18,17 @@ rmSync(output, { recursive: true, force: true })
 mkdirSync(staticDir, { recursive: true })
 mkdirSync(functionDir, { recursive: true })
 
-cpSync(resolve(root, 'hub/web'), staticDir, { recursive: true })
+cpSync(resolve(root, 'frontend/hub'), staticDir, { recursive: true })
 cpSync(resolve(root, 'design'), join(staticDir, 'design'), { recursive: true })
 
-const dists = {
-  catatan: 'catatan-malam/web/dist',
-  fit: 'fitness-track/web/dist',
-  leveling: 'leveling/web/dist',
-  learn: 'learning/web/dist',
-  jadwal: 'reminder-and-scheduling/dist',
-  uang: 'financetracker/dist',
-  timesheet: 'timesheet/web/dist'
-}
 for (const app of builds) {
-  const dist = resolve(root, dists[app.name])
+  const dist = resolve(root, app.dir, 'dist')
   if (!existsSync(join(dist, 'index.html'))) throw new Error(`${app.name} belum di-build: ${dist}`)
   cpSync(dist, join(staticDir, app.name), { recursive: true })
 }
 
 await build({
-  entryPoints: [resolve(root, 'vercel/api.ts')],
+  entryPoints: [resolve(root, 'backend/vercel/api.ts')],
   outfile: join(functionDir, 'index.mjs'),
   bundle: true,
   platform: 'node',
