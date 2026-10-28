@@ -2,7 +2,6 @@ import { sessionState, signOut } from './session.js'
 
 const frame = document.getElementById('frame')
 const nav = document.getElementById('apps')
-const newTab = document.getElementById('newtab')
 
 const home = '/beranda/'
 const target = () => location.hash.slice(1) || home
@@ -24,7 +23,6 @@ function highlight(path) {
     if (active) link.setAttribute('aria-current', 'page')
     else link.removeAttribute('aria-current')
   }
-  newTab.href = path
   if (prefix === 'beranda' || !prefix) delete document.documentElement.dataset.suasana
   else document.documentElement.dataset.suasana = prefix
 }
