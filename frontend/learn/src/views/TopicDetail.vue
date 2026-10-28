@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import ExerciseView from '../components/ExerciseView.vue'
 import LessonView from '../components/LessonView.vue'
 import PromptCard from '../components/PromptCard.vue'
-import { api, errorMessage } from '../lib/api'
+import { api, errorMessage, refreshLeveling } from '../lib/api'
 import { statusLabel } from '../lib/labels'
 import { prompts } from '../lib/prompts'
 import { useStudyTimer } from '../lib/timer'
@@ -65,6 +65,7 @@ async function complete() {
     result.value = await api.post<CompleteResult>(`/topics/${props.id}/complete`, { durationMin: durationMin.value })
     topic.value.status = 'selesai'
     timer.reset()
+    refreshLeveling()
   } catch (err) {
     completeError.value = errorMessage(err)
   } finally {
@@ -81,6 +82,7 @@ async function logSession() {
     await api.post(`/topics/${props.id}/session`, { durationMin: durationMin.value })
     logged.value = `${durationMin.value} menit tercatat. Item belajar di Jadwal hari ini ikut selesai dalam 10 menit.`
     timer.reset()
+    refreshLeveling()
     durationEdited.value = false
     durationMin.value = 1
   } catch (err) {
