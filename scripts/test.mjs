@@ -28,7 +28,10 @@ const steps = [
   ['web timesheet', 'frontend/timesheet', [vueTsc, '-b']]
 ]
 
-const results = steps.map(([name, dir, [command, ...args]]) => {
+const typesOnly = process.argv.includes('--tipe')
+const chosen = typesOnly ? steps.filter(([, , [command]]) => command !== vitest) : steps
+
+const results = chosen.map(([name, dir, [command, ...args]]) => {
   console.log(`\n== ${name}`)
   const { status } = spawnSync(command, args, { cwd: resolve(root, dir), stdio: 'inherit', shell: process.platform === 'win32' })
   return [name, status === 0]

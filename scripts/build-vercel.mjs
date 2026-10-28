@@ -9,6 +9,9 @@ const staticDir = join(output, 'static')
 const functionDir = join(output, 'functions/api.func')
 const skipFrontend = process.argv.includes('--skip-frontend')
 
+const typecheck = spawnSync(process.execPath, [resolve(root, 'scripts/test.mjs'), '--tipe'], { stdio: 'inherit', env: process.env })
+if (typecheck.status !== 0) process.exit(typecheck.status ?? 1)
+
 if (!skipFrontend) {
   const result = spawnSync(process.execPath, [resolve(root, 'scripts/build.mjs')], { stdio: 'inherit', env: process.env })
   if (result.status !== 0) process.exit(result.status ?? 1)
