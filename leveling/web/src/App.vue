@@ -10,7 +10,6 @@ interface Toast {
 const links = [
   { to: '/', label: 'Karakter' },
   { to: '/riwayat', label: 'Riwayat' },
-  { to: '/log', label: 'Log exp' },
   { to: '/achievement', label: 'Achievement' },
   { to: '/cita-cita', label: 'Cita-cita' },
   { to: '/sumber', label: 'Sumber' },

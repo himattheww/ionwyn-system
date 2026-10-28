@@ -1,27 +1,72 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+}
+.field.date {
+  width: 170px;
+}
 .days {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
 }
 .day {
+  border-bottom: 1px solid var(--rule-soft);
+}
+.day[open] {
+  padding-bottom: var(--space-4);
+}
+summary {
   display: grid;
-  grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary::before {
+  content: '›';
+  position: absolute;
+  margin-left: -1.1em;
+  color: var(--ink-3);
+  transition: transform var(--dur) var(--ease);
+}
+.day[open] summary::before {
+  transform: rotate(90deg);
+}
+summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 .date {
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding-top: 4px;
 }
-.items {
+.sum {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.sum strong {
+  font-weight: 500;
+}
+.moments {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 .item {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-columns: 130px minmax(0, 1fr);
   gap: var(--space-3);
   align-items: baseline;
 }
@@ -43,8 +88,34 @@
 .text.major {
   font-size: 24px;
 }
+.capped {
+  color: var(--color-accent-2-700);
+}
+.none {
+  color: var(--color-neutral-500);
+}
+.note {
+  color: var(--color-neutral-700);
+  font-style: italic;
+}
+.awarded {
+  font-weight: 500;
+}
+.cap {
+  text-transform: capitalize;
+}
 @media (max-width: 640px) {
-  .day {
-    grid-template-columns: 1fr;
+  summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .sum {
+    grid-column: 2;
+  }
+  .moments {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .item {
+    grid-template-columns: 124px minmax(0, 1fr);
   }
 }
