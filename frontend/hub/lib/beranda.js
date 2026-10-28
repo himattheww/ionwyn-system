@@ -133,14 +133,43 @@ function render(data) {
   countUp()
 }
 
+const cacheKey = 'beranda:terakhir'
+const todayJakarta = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
+
+function readCache() {
+  try {
+    return JSON.parse(localStorage.getItem(cacheKey))
+  } catch {
+    return null
+  }
+}
+
+function writeCache(data) {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(data))
+  } catch {}
+}
+
 async function load() {
   const button = $('refresh')
   button.disabled = true
-  render(null)
+  const cached = readCache()
+  const fresh = cached?.today === todayJakarta() ? cached : null
+  render(fresh)
+  if (fresh) {
+    $('dateline').textContent = `${longDate(fresh.today)} · memperbarui...`
+    document.body.classList.add('still')
+  }
+  const timesheet = fetch('/hub/api/today/timesheet').then(r => r.json())
   try {
-    const data = await fetch('/hub/api/today').then(r => r.json())
+    const data = await fetch('/hub/api/today?timesheet=nanti').then(r => r.json())
+    data.cards.timesheet = fresh?.cards.timesheet
     $('dateline').textContent = `${longDate(data.today)} · diperbarui ${timeNow()}`
     render(data)
+    document.body.classList.add('still')
+    data.cards.timesheet = await timesheet.catch(() => ({ ok: false, error: 'Timesheet tidak bisa dihubungi' }))
+    renderBlocks(data.cards)
+    writeCache(data)
   } catch {
     $('dateline').innerHTML = '<span class="state-error">Hub tidak bisa dihubungi.</span>'
   } finally {

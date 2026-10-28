@@ -1,4 +1,4 @@
-const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('still')
 
 export function countUp(root = document) {
   for (const el of root.querySelectorAll('[data-count]')) {

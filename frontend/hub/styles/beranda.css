@@ -252,3 +252,7 @@
     width: 130px;
   }
 }
+
+.still .reveal {
+  animation: none;
+}

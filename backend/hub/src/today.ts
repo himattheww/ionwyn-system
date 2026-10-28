@@ -109,7 +109,11 @@ async function uang(today: string) {
   return { today: sum(spending.filter(r => r.date === today)), month: sum(spending), budget }
 }
 
-export async function todaySummary() {
+export function todayTimesheet() {
+  return card(() => timesheet(formatDate(new Date())))
+}
+
+export async function todaySummary({ withTimesheet = true } = {}) {
   const today = formatDate(new Date())
   const [jadwalCard, catatanCard, fitCard, learnCard, levelingCard, timesheetCard, uangCard] = await Promise.all([
     card(() => jadwal(today)),
@@ -117,7 +121,7 @@ export async function todaySummary() {
     card(fit),
     card(learn),
     card(leveling),
-    card(() => timesheet(today)),
+    withTimesheet ? card(() => timesheet(today)) : undefined,
     card(() => uang(today))
   ])
   return {

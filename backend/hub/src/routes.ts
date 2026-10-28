@@ -5,7 +5,7 @@ import { integrationStatus, runIntegrations } from './integrations.ts'
 import { financeRoutes } from './finance.ts'
 import { quickRoutes } from './quick.ts'
 import { scheduleRoutes } from './schedule.ts'
-import { forgetTimesheetDay, todaySummary } from './today.ts'
+import { forgetTimesheetDay, todaySummary, todayTimesheet } from './today.ts'
 
 async function timesheetApi(req: Request, res: Response) {
   const { url, key } = config.timesheet
@@ -33,7 +33,8 @@ async function timesheetApi(req: Request, res: Response) {
 export function hubRoutes() {
   const router = Router()
   router.get('/hub/api/apps', (_req, res) => res.json(apps.map(a => ({ prefix: a.prefix, label: a.label }))))
-  router.get('/hub/api/today', async (_req, res) => res.json(await todaySummary()))
+  router.get('/hub/api/today', async (req, res) => res.json(await todaySummary({ withTimesheet: req.query.timesheet !== 'nanti' })))
+  router.get('/hub/api/today/timesheet', async (_req, res) => res.json(await todayTimesheet()))
   router.get('/hub/api/integrations', async (_req, res) => res.json(await integrationStatus()))
   router.post('/hub/api/integrations/run', async (_req, res) => {
     await runIntegrations()
