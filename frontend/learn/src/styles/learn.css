@@ -487,6 +487,16 @@ ol {
   cursor: pointer;
 }
 
+.check-item input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin-top: 3px;
+  padding: 0;
+  accent-color: var(--ink);
+}
+
 .stack {
   display: grid;
   gap: var(--space-4);
