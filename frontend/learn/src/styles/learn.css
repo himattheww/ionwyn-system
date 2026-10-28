@@ -653,3 +653,8 @@ button,
 .roadmap-title {
   font: 600 var(--text-md) var(--font-display);
 }
+
+.timer {
+  align-items: center;
+  margin-bottom: var(--space-3);
+}

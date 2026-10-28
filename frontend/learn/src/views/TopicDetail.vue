@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import ExerciseView from '../components/ExerciseView.vue'
 import LessonView from '../components/LessonView.vue'
 import PromptCard from '../components/PromptCard.vue'
 import { api, errorMessage } from '../lib/api'
 import { statusLabel } from '../lib/labels'
 import { prompts } from '../lib/prompts'
+import { useStudyTimer } from '../lib/timer'
 import type { CompleteResult, TopicDetail } from '../types'
 
 const props = defineProps<{ id: string }>()
@@ -18,9 +19,23 @@ const durationMin = ref(60)
 const completing = ref(false)
 const completeError = ref('')
 const result = ref<CompleteResult | null>(null)
+const durationEdited = ref(false)
+const logging = ref(false)
+const logged = ref('')
+const timer = useStudyTimer(props.id)
 
 const done = computed(() => topic.value?.status === 'selesai' || topic.value?.status === 'sudah_bisa')
 const next = computed(() => result.value?.nextTopic ?? topic.value?.nextTopic ?? null)
+
+watch(
+  timer.minutes,
+  (minutes) => {
+    if (!durationEdited.value) durationMin.value = Math.max(1, minutes)
+  },
+  { immediate: true },
+)
+
+watch(done, (value) => value && timer.stop())
 
 const hostOf = (url: string) => {
   try {
@@ -35,7 +50,6 @@ async function load() {
   loadError.value = ''
   try {
     topic.value = await api.get<TopicDetail>(`/topics/${props.id}`)
-    durationMin.value = Math.min(600, topic.value.estSessions * 60)
   } catch (err) {
     loadError.value = errorMessage(err)
   } finally {
@@ -50,10 +64,30 @@ async function complete() {
   try {
     result.value = await api.post<CompleteResult>(`/topics/${props.id}/complete`, { durationMin: durationMin.value })
     topic.value.status = 'selesai'
+    timer.reset()
   } catch (err) {
     completeError.value = errorMessage(err)
   } finally {
     completing.value = false
+  }
+}
+
+async function logSession() {
+  completing.value = true
+  logging.value = true
+  completeError.value = ''
+  logged.value = ''
+  try {
+    await api.post(`/topics/${props.id}/session`, { durationMin: durationMin.value })
+    logged.value = `${durationMin.value} menit tercatat. Item belajar di Jadwal hari ini ikut selesai dalam 10 menit.`
+    timer.reset()
+    durationEdited.value = false
+    durationMin.value = 1
+  } catch (err) {
+    completeError.value = errorMessage(err)
+  } finally {
+    completing.value = false
+    logging.value = false
   }
 }
 
@@ -110,15 +144,26 @@ onMounted(load)
         ✓ Topik selesai.
         <template v-if="result?.trackDone">Semua topik di jalur ini sudah selesai.</template>
       </div>
-      <form v-else class="row bottom gap-3" @submit.prevent="complete">
-        <label>
-          Lama belajar (menit)
-          <input v-model.number="durationMin" type="number" min="1" max="600" required />
-        </label>
-        <button class="primary" type="submit" :disabled="completing || (!!topic.exercise && !ready)">
-          {{ completing ? 'Menyimpan...' : 'Tandai selesai' }}
-        </button>
-      </form>
+      <template v-else>
+        <div class="timer row gap-3">
+          <span class="figure">{{ timer.clock.value }}</span>
+          <span class="small muted">{{ timer.paused.value ? 'Dijeda' : 'Waktu belajar di halaman ini, berhenti saat tab tidak dibuka' }}</span>
+          <button type="button" @click="timer.paused.value = !timer.paused.value">{{ timer.paused.value ? 'Lanjut' : 'Jeda' }}</button>
+        </div>
+        <form class="row bottom gap-3" @submit.prevent="complete">
+          <label>
+            Lama belajar (menit)
+            <input v-model.number="durationMin" type="number" min="1" max="600" required @input="durationEdited = true" />
+          </label>
+          <button type="button" :disabled="completing" @click="logSession">
+            {{ logging ? 'Menyimpan...' : 'Catat sesi' }}
+          </button>
+          <button class="primary" type="submit" :disabled="completing || (!!topic.exercise && !ready)">
+            {{ completing && !logging ? 'Menyimpan...' : 'Tandai selesai' }}
+          </button>
+        </form>
+        <div v-if="logged" class="success">✓ {{ logged }}</div>
+      </template>
       <p v-if="!done && topic.exercise && !ready" class="small muted">
         {{ topic.exercise.type === 'code' && topic.exercise.language === 'javascript' ? 'Bisa ditandai selesai setelah semua tes lulus.' : 'Centang semua daftar cek dulu.' }}
       </p>
