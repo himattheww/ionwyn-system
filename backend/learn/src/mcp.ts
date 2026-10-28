@@ -2,14 +2,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { addTopics, createTrack, learningProgress, listTracks, setTrackStatus, topicDetail, trackDetail, updateTopic } from './learn.js'
+import { addTopics, completeTopic, createTrack, learningProgress, listTracks, setTrackStatus, topicDetail, trackDetail, updateTopic } from './learn.js'
 import { topicInput, topicUpdate, trackInput, trackStatuses } from './schemas.js'
 import { registerSystemTools } from './systemTools.js'
 
 const json = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] })
 
 const guide = `Ionwyn adalah sistem pribadi satu orang: Beranda, Jadwal, Catatan Malam, Fitness, Learn, Leveling, Keuangan, dan Timesheet. Tanggal memakai zona Asia/Jakarta.
-Alat yang menulis data (diary_save, fitness_log, schedule_*, finance_add, timesheet_entry, create_track, add_topics, update_topic) hanya dipakai kalau pengguna memintanya, dengan nilai dari pengguna. Konfirmasi dulu kalau ada yang ambigu.
+Alat yang menulis data (diary_save, fitness_log, schedule_*, finance_add, timesheet_entry, create_track, add_topics, update_topic, complete_topic) hanya dipakai kalau pengguna memintanya, dengan nilai dari pengguna. Konfirmasi dulu kalau ada yang ambigu.
 Ionwyn Learn menyimpan jalur belajar milik satu orang. Tiap jalur berisi topik berurutan, dan tiap topik punya penjelasan singkat, maksimal 3 sumber resmi, dan satu latihan.
 Saat membuat jalur: tanyakan dulu tujuan, level, dan waktu per minggu kalau belum jelas. Susun 5-12 topik. Penjelasan cukup 2-4 paragraf pendek.
 Jalur coding berbahasa JavaScript memakai latihan type "code" language "javascript" berupa fungsi murni dengan 3-6 tests yang hasilnya pasti benar. Bahasa lain memakai type "code" dengan checklist. Jalur bukan coding memakai type "praktik" dengan checklist.
@@ -90,6 +90,16 @@ export function createMcpServer() {
       await updateTopic(topicId, changes)
       return json(await topicDetail(topicId))
     },
+  )
+
+  server.registerTool(
+    'complete_topic',
+    {
+      title: 'Tandai topik selesai',
+      description: 'Menandai satu topik selesai dan mencatat sesi belajarnya, sama seperti tombol tandai selesai di web. Kalau semua topik selesai, jalur ikut selesai. Tanyakan durasi belajar kalau pengguna belum menyebutnya.',
+      inputSchema: { topicId: z.number().int().positive(), durationMin: z.number().int().min(1).max(600) },
+    },
+    async ({ topicId, durationMin }) => json(await completeTopic(topicId, durationMin)),
   )
 
   server.registerTool(
