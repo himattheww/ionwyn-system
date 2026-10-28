@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { completeTopic, saveCodeAttempt, topicDetail } from '../learn.js'
+import { completeTopic, logSession, saveCodeAttempt, topicDetail } from '../learn.js'
 import { codeAttemptRequest, completeRequest, idParam } from '../schemas.js'
 
 export const topics = Router()
@@ -19,4 +19,10 @@ topics.post('/:id/complete', async (req, res) => {
   const { id } = idParam.parse(req.params)
   const { durationMin } = completeRequest.parse(req.body)
   res.json(await completeTopic(id, durationMin))
+})
+
+topics.post('/:id/session', async (req, res) => {
+  const { id } = idParam.parse(req.params)
+  const { durationMin } = completeRequest.parse(req.body)
+  res.json(await logSession(id, durationMin))
 })

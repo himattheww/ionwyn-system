@@ -165,6 +165,18 @@ export async function completeTopic(id: number, durationMin: number) {
   return { trackDone: remaining.length === 0, nextTopic: await nextTopic(t.track_id, id) }
 }
 
+export async function logSession(id: number, durationMin: number) {
+  const t = unwrap(await db.from('topics').select('id, track_id, title').eq('id', id).maybeSingle())
+  unwrap(
+    await db
+      .from('learning_sessions')
+      .insert({ track_id: t.track_id, topic_id: id, occurred_at: today(), duration_min: durationMin, summary: `Belajar: ${t.title}`.slice(0, 200) })
+      .select('id')
+      .single(),
+  )
+  return { durationMin }
+}
+
 export async function setTrackStatus(id: number, status: string) {
   unwrap(await db.from('tracks').update({ status }).eq('id', id).select('id').maybeSingle())
 }
