@@ -1,30 +1,15 @@
 # Learn
 
-> Sekarang aplikasi ini bagian dari `ionwyn-system`: tampilannya di `frontend/`, servernya di `backend/`, dan semua dependency ada di satu `package.json` root. Install, build, test, dan perintah `npm run ...` dijalankan dari folder root (lihat README utama). Langkah `npm install` per folder di bawah sudah tidak berlaku.
+Jalur belajar pribadi. Jalur dibuat lewat chat Claude dengan konektor MCP, lalu dipelajari di sini: roadmap, penjelasan singkat, maksimal tiga sumber resmi, dan satu latihan per topik.
 
-Aplikasi belajar pribadi di dalam Ionwyn System. Jalur belajar dibuat lewat chat Claude dengan konektor MCP, lalu dipelajari di sini: roadmap, penjelasan singkat, sumber resmi, dan satu latihan per topik.
+| Bagian | Lokasi |
+| --- | --- |
+| Tampilan (Vue 3 + Vite) | `frontend/learn` |
+| Server (Express + Supabase) | `backend/learn/src` |
+| Konektor MCP untuk Claude | `backend/learn/src/mcp.ts` dan `systemTools.ts` |
+| Skema awal | `backend/learn/supabase/migrations` |
 
-## Struktur
+- Latihan JavaScript dijalankan di browser lewat Web Worker (`frontend/learn/src/lib/runTests.ts`). Latihan lain memakai daftar cek.
+- Saat jalur selesai, halaman jalur dan daftar jalur menampilkan prompt siap salin. Claude lalu membaca progres belajar, cita-cita, catatan malam, dan ringkasan fitness, kemudian menyarankan beberapa pilihan dari bidang berbeda.
 
-```
-learning/
-├── server/   Express + TypeScript
-│   └── src/
-│       ├── learn.ts      logika jalur dan topik, dipakai API dan konektor
-│       ├── mcp.ts        server MCP: alat untuk Claude
-│       ├── oauth.ts      OAuth untuk konektor Claude
-│       ├── routes/       API untuk web
-│       ├── schemas.ts    validasi Zod, termasuk bentuk latihan
-│       └── urlCheck.ts   membuang link sumber yang mati
-└── web/      Vue 3 + TypeScript + Vite
-```
-
-- Supabase diakses dari server memakai `service_role` key. Tabel memakai RLS tanpa policy, jadi tidak terbaca dari browser.
-- Latihan JavaScript dijalankan di browser lewat Web Worker (`web/src/lib/runTests.ts`). Latihan lain memakai daftar cek mandiri.
-- Menandai topik selesai juga mencatat sesi belajar, yang dibaca Jadwal (H6) dan Leveling.
-
-## Menjalankan
-
-Dijalankan bersama seluruh sistem dengan `npm start` dari folder `ionwyn-system`. Isi `server/.env` dengan `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY`.
-
-Cara memasang konektor di Claude ada di README utama, bagian "Konektor Claude (MCP)".
+Isi `backend/learn/.env` dengan `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` (lihat `.env.example`). Server jalan bersama seluruh sistem lewat `npm start` dari root.
