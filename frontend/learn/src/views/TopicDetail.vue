@@ -30,12 +30,12 @@ const next = computed(() => result.value?.nextTopic ?? topic.value?.nextTopic ??
 watch(
   timer.minutes,
   (minutes) => {
-    if (!durationEdited.value) durationMin.value = Math.max(1, minutes)
+    if (!durationEdited.value) durationMin.value = Math.min(600, Math.max(1, minutes))
   },
   { immediate: true },
 )
 
-watch(done, (value) => value && timer.stop())
+watch(done, (value) => value && timer.pause())
 
 const hostOf = (url: string) => {
   try {
@@ -147,8 +147,9 @@ onMounted(load)
       <template v-else>
         <div class="timer row gap-3">
           <span class="figure">{{ timer.clock.value }}</span>
-          <span class="small muted">{{ timer.paused.value ? 'Dijeda' : 'Waktu belajar di halaman ini, berhenti saat tab tidak dibuka' }}</span>
-          <button type="button" @click="timer.paused.value = !timer.paused.value">{{ timer.paused.value ? 'Lanjut' : 'Jeda' }}</button>
+          <span class="small muted">{{ timer.running.value ? 'Tetap berjalan walau halaman ditutup, termasuk saat di Claude atau editor' : 'Timer berhenti' }}</span>
+          <button v-if="timer.running.value" type="button" @click="timer.pause">Jeda</button>
+          <button v-else type="button" @click="timer.start">{{ timer.minutes.value ? 'Lanjut' : 'Mulai belajar' }}</button>
         </div>
         <form class="row bottom gap-3" @submit.prevent="complete">
           <label>

@@ -1,16 +1,21 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const read = (key: string) => {
+type Saved = { startedAt: number | null; banked: number }
+
+const read = (key: string): Saved => {
   try {
-    return Number(localStorage.getItem(key)) || 0
+    const raw = JSON.parse(localStorage.getItem(key) ?? 'null')
+    if (typeof raw === 'number') return { startedAt: null, banked: raw }
+    if (raw && typeof raw === 'object') return { startedAt: raw.startedAt ?? null, banked: raw.banked ?? 0 }
   } catch {
-    return 0
+    return { startedAt: null, banked: 0 }
   }
+  return { startedAt: null, banked: 0 }
 }
 
-const write = (key: string, seconds: number) => {
+const write = (key: string, saved: Saved) => {
   try {
-    localStorage.setItem(key, String(seconds))
+    localStorage.setItem(key, JSON.stringify(saved))
   } catch {
     return
   }
@@ -18,37 +23,47 @@ const write = (key: string, seconds: number) => {
 
 export function useStudyTimer(topicId: string) {
   const key = `learn.timer:${topicId}`
-  const seconds = ref(read(key))
-  const paused = ref(false)
-  const running = ref(true)
+  const saved = ref(read(key))
+  const now = ref(Date.now())
   let tick: number | undefined
 
-  const step = () => {
-    if (paused.value || !running.value || document.hidden) return
-    seconds.value += 1
-    write(key, seconds.value)
-  }
-
   onMounted(() => {
-    tick = window.setInterval(step, 1000)
+    tick = window.setInterval(() => (now.value = Date.now()), 1000)
   })
   onBeforeUnmount(() => window.clearInterval(tick))
 
+  const running = computed(() => saved.value.startedAt !== null)
+  const seconds = computed(() => {
+    const live = saved.value.startedAt === null ? 0 : (now.value - saved.value.startedAt) / 1000
+    return Math.max(0, Math.floor(saved.value.banked + live))
+  })
   const minutes = computed(() => Math.floor(seconds.value / 60))
   const clock = computed(() => {
-    const m = Math.floor(seconds.value / 60)
+    const h = Math.floor(seconds.value / 3600)
+    const m = Math.floor((seconds.value % 3600) / 60)
     const s = seconds.value % 60
-    return `${m}:${String(s).padStart(2, '0')}`
+    const mm = String(m).padStart(2, '0')
+    const ss = String(s).padStart(2, '0')
+    return h ? `${h}:${mm}:${ss}` : `${m}:${ss}`
   })
 
+  function save(next: Saved) {
+    saved.value = next
+    now.value = Date.now()
+    write(key, next)
+  }
+
+  function start() {
+    if (!running.value) save({ startedAt: Date.now(), banked: saved.value.banked })
+  }
+
+  function pause() {
+    if (running.value) save({ startedAt: null, banked: seconds.value })
+  }
+
   function reset() {
-    seconds.value = 0
-    write(key, 0)
+    save({ startedAt: null, banked: 0 })
   }
 
-  function stop() {
-    running.value = false
-  }
-
-  return { minutes, clock, paused, reset, stop }
+  return { minutes, clock, running, start, pause, reset }
 }
