@@ -18,7 +18,8 @@ const check = (error: { message: string } | null) => {
   if (error) throw new Error(error.message)
 }
 
-export const createPlannerClient = (url: string, anonKey: string) => createClient(url, anonKey)
+export const createPlannerClient = (url: string, anonKey: string, fetch?: typeof globalThis.fetch) =>
+  createClient(url, anonKey, fetch ? { global: { fetch } } : undefined)
 
 export const createSupabaseStore = (client: SupabaseClient): Store => ({
   async itemsBetween(from, to) {
