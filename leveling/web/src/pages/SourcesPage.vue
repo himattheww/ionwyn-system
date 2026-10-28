@@ -12,7 +12,7 @@ interface SourceRow {
   event_count: number | null
 }
 
-const { data, loading, error, reload } = useLoad(() => api<{ sources: SourceRow[]; rules: unknown; calculatedAt: string | null }>('/sources'))
+const { data, loading, error, reload } = useLoad(() => api<{ sources: SourceRow[]; calculatedAt: string | null }>('/sources'))
 const running = ref(false)
 const message = ref('')
 const failed = ref(false)
@@ -81,11 +81,6 @@ async function recalculate() {
           </tbody>
         </table>
       </div>
-      <section class="rules-block">
-        <h3>Aturan yang berlaku</h3>
-        <p class="small muted">config/rules.json · kalau hash berubah, hitung ulang berjalan tanpa notifikasi.</p>
-        <pre class="rules">{{ JSON.stringify(data.rules, null, 2) }}</pre>
-      </section>
     </template>
   </StateView>
 </template>
