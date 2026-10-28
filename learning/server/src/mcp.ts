@@ -13,7 +13,7 @@ Alat yang menulis data (diary_save, fitness_log, schedule_*, finance_add, timesh
 Ionwyn Learn menyimpan jalur belajar milik satu orang. Tiap jalur berisi topik berurutan, dan tiap topik punya penjelasan singkat, maksimal 3 sumber resmi, dan satu latihan.
 Saat membuat jalur: tanyakan dulu tujuan, level, dan waktu per minggu kalau belum jelas. Susun 5-12 topik. Penjelasan cukup 2-4 paragraf pendek.
 Jalur coding berbahasa JavaScript memakai latihan type "code" language "javascript" berupa fungsi murni dengan 3-6 tests yang hasilnya pasti benar. Bahasa lain memakai type "code" dengan checklist. Jalur bukan coding memakai type "praktik" dengan checklist.
-Untuk saran belajar berikutnya, baca learning_progress dulu.`
+Untuk saran belajar berikutnya, baca learning_progress dulu, lalu wish_list, diary_month bulan ini, dan fitness_summary untuk melihat cita-cita, minat, dan kondisi pengguna. Saran boleh di luar IT dan tidak harus lanjutan jalur yang sama, misalnya bahasa, musik, keuangan, kesehatan, atau keterampilan yang mendukung cita-cita. Beri 2-3 pilihan dari bidang berbeda, masing-masing dengan alasan yang merujuk ke data tadi, lalu tanyakan pilihan pengguna sebelum membuat jalur.`
 
 export function createMcpServer() {
   const server = new McpServer({ name: 'ionwyn', version: '1.1.0' }, { instructions: guide })

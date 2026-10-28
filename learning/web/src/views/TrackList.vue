@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import PromptCard from '../components/PromptCard.vue'
 import { api, errorMessage } from '../lib/api'
 import { formatMinutes, levelLabel, statusLabel, weekPercent } from '../lib/labels'
+import { prompts } from '../lib/prompts'
 import type { TrackSummary } from '../types'
 
 const tracks = ref<TrackSummary[]>([])
@@ -10,6 +12,7 @@ const error = ref('')
 
 const active = computed(() => tracks.value.filter((t) => t.status === 'aktif'))
 const main = computed(() => active.value[0] ?? null)
+const lastFinished = computed(() => (main.value ? null : tracks.value.find((t) => t.status === 'selesai') ?? null))
 const others = computed(() => tracks.value.filter((t) => t.id !== main.value?.id))
 const weekMinutes = computed(() => active.value.reduce((sum, t) => sum + t.minutesThisWeek, 0))
 const weekHours = computed(() => active.value.reduce((sum, t) => sum + t.hoursPerWeek, 0))
@@ -74,6 +77,12 @@ onMounted(load)
         </div>
       </div>
     </section>
+
+    <PromptCard
+      v-if="lastFinished"
+      title="Semua jalur aktif sudah selesai. Mau belajar apa berikutnya?"
+      :prompt="prompts.finished(lastFinished.goal)"
+    />
 
     <section v-if="others.length" class="section">
       <h2>{{ main ? 'Jalur lain' : 'Semua jalur' }}</h2>
