@@ -29,7 +29,8 @@ Logika inti dipakai bersama oleh tampilan dan hub, misalnya untuk integrasi yang
 | Pengingat | `remindBeforeMin` menit sebelum mulai |
 | Tanya selesai | Slot berakhir, sekali |
 | Tanya ulang | 60 menit setelah ditanya, sekali |
-| Ringkasan pagi dan malam | Sesuai pengaturan |
+| Ringkasan pagi | Sesuai pengaturan, berisi daftar jam hari ini |
+| Ringkasan malam | Sesuai pengaturan |
 
 Notifikasi di web hanya muncul saat halaman terbuka. Notifikasi saat aplikasi tertutup ditangani aplikasi Android.
 

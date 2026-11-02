@@ -85,12 +85,15 @@ export const dueNotices = (
   const anytimePending = todayItems.filter((item) => item.startTime === null && item.status === 'terencana')
 
   if (!sent.morning && minutes >= toMinutes(settings.morningSummary) && minutes < morningCutoff) {
-    const timed = todayItems.filter((item) => item.startTime !== null).length
+    const timed = todayItems
+      .filter((item) => item.startTime !== null && item.status === 'terencana')
+      .sort((a, b) => a.startTime!.localeCompare(b.startTime!))
     const backlog = unanswered(items, now).filter((item) => item.date < today).length
-    const parts = [`${timed} jadwal berjam`]
-    if (anytimePending.length > 0) parts.push(`kapan saja: ${titles(anytimePending)}`)
-    if (backlog > 0) parts.push(`${backlog} belum terjawab sebelumnya`)
-    notices.push({ key: 'morning', kind: 'morning', title: 'Jadwal hari ini', body: parts.join(' · '), itemId: null })
+    const lines = timed.map((item) => `${item.startTime!.slice(0, 5).replace(':', '.')} ${item.title}`)
+    if (anytimePending.length > 0) lines.push(`Kapan saja: ${titles(anytimePending)}`)
+    if (lines.length === 0) lines.push('Belum ada jadwal.')
+    if (backlog > 0) lines.push(`${backlog} belum terjawab sebelumnya`)
+    notices.push({ key: 'morning', kind: 'morning', title: 'Jadwal hari ini', body: lines.join('\n'), itemId: null })
   }
 
   if (!sent.evening && minutes >= toMinutes(settings.eveningSummary)) {

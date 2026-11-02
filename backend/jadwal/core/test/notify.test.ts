@@ -56,6 +56,17 @@ describe('dueNotices', () => {
     expect(kinds(items, at(13, 0), unsent)).toEqual([])
   })
 
+  it('ringkasan pagi berisi daftar jam berurutan', () => {
+    const items = [
+      makeItem({ startTime: '17:30', title: 'Lari' }),
+      makeItem({ startTime: '08:00', title: 'Kerja' }),
+      makeItem({ startTime: '09:00', title: 'Rapat', status: 'dilewati' }),
+      makeItem({ startTime: null, title: 'Baca' }),
+    ]
+    const morning = dueNotices(items, at(4, 30), defaultSettings, { morning: false, evening: true }, 0).find((n) => n.kind === 'morning')
+    expect(morning?.body).toBe('08.00 Kerja\n17.30 Lari\nKapan saja: Baca')
+  })
+
   it('ringkasan malam memuat item kapan-saja yang belum dijawab dan draf besok', () => {
     const items = [makeItem({ startTime: null, title: 'baca' })]
     const [evening] = dueNotices(items, at(20, 30), defaultSettings, { morning: true, evening: false }, 3)
