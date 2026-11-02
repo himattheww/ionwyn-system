@@ -92,14 +92,18 @@ onMounted(load)
           :key="t.id"
           :to="`/tracks/${t.id}`"
           class="card"
-          :class="{ dim: t.status !== 'aktif' }"
+          :class="{ dim: t.status === 'arsip' }"
         >
           <div class="row spread top nowrap">
             <h3 class="title-sm">{{ t.goal }}</h3>
-            <span class="badge" :class="t.status">{{ statusLabel[t.status] }}</span>
+            <span v-if="t.status === 'selesai'" class="stamp">Selesai</span>
+            <span v-else class="badge" :class="t.status">{{ statusLabel[t.status] }}</span>
           </div>
           <span class="muted small">{{ levelLabel[t.currentLevel] }} · {{ t.topicsDone }}/{{ t.topicCount }} topik selesai</span>
-          <div class="small">
+          <template v-if="t.status === 'selesai'">
+            <div v-if="t.totalMinutes" class="small">Selesai dalam {{ formatMinutes(t.totalMinutes) }}</div>
+          </template>
+          <div v-else class="small">
             Minggu ini: {{ formatMinutes(t.minutesThisWeek) }} dari {{ t.hoursPerWeek }} jam
             <div class="progress"><div :style="{ width: `${weekPercent(t.minutesThisWeek, t.hoursPerWeek)}%` }" /></div>
           </div>

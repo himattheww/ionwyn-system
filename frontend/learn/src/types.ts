@@ -15,6 +15,7 @@ export type TrackSummary = {
   topicCount: number
   topicsDone: number
   minutesThisWeek: number
+  totalMinutes: number
 }
 
 export type TrackTopic = {
@@ -39,6 +40,7 @@ export type TrackDetail = {
   status: TrackStatus
   createdAt: string
   minutesThisWeek: number
+  totalMinutes: number
   topics: TrackTopic[]
   sessions: {
     id: number

@@ -30,11 +30,19 @@ async function minutesThisWeek(trackId?: number) {
   return totals
 }
 
+async function totalMinutes(trackId?: number) {
+  let query = db.from('learning_sessions').select('track_id, duration_min')
+  if (trackId) query = query.eq('track_id', trackId)
+  const totals = new Map<number, number>()
+  for (const r of unwrap(await query)) totals.set(r.track_id, (totals.get(r.track_id) ?? 0) + r.duration_min)
+  return totals
+}
+
 export async function listTracks() {
   const rows = unwrap(
     await db.from('tracks').select('id, goal, kind, current_level, hours_per_week, status, created_at, topics(status)').order('created_at', { ascending: false }),
   )
-  const minutes = await minutesThisWeek()
+  const [minutes, totals] = await Promise.all([minutesThisWeek(), totalMinutes()])
   return rows.map((t) => ({
     id: t.id,
     goal: t.goal,
@@ -45,6 +53,7 @@ export async function listTracks() {
     topicCount: t.topics.length,
     topicsDone: t.topics.filter((x: { status: string }) => isDone(x.status)).length,
     minutesThisWeek: minutes.get(t.id) ?? 0,
+    totalMinutes: totals.get(t.id) ?? 0,
   }))
 }
 
@@ -66,7 +75,7 @@ export async function trackDetail(id: number) {
       .order('id', { ascending: false })
       .limit(100),
   )
-  const minutes = await minutesThisWeek(id)
+  const [minutes, totals] = await Promise.all([minutesThisWeek(id), totalMinutes(id)])
   return {
     id: track.id,
     goal: track.goal,
@@ -76,6 +85,7 @@ export async function trackDetail(id: number) {
     status: track.status,
     createdAt: track.created_at,
     minutesThisWeek: minutes.get(id) ?? 0,
+    totalMinutes: totals.get(id) ?? 0,
     topics: (track.topics as TopicRow[]).map((t) => ({
       id: t.id,
       order: t.order,

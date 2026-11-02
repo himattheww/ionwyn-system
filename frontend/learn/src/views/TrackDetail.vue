@@ -152,7 +152,16 @@ onMounted(load)
       </section>
 
       <aside>
-        <div class="card">
+        <div v-if="track.status === 'selesai'" class="card">
+          <span class="stamp">Selesai</span>
+          <template v-if="track.totalMinutes">
+            <span class="muted small">Selesai dalam</span>
+            <strong class="figure">{{ formatMinutes(track.totalMinutes) }}</strong>
+          </template>
+          <span class="small">{{ doneCount }} dari {{ track.topics.length }} topik selesai</span>
+        </div>
+
+        <div v-else class="card">
           <span class="kicker sage">Progres minggu ini</span>
           <div class="row nowrap gap-4 week-row">
             <div class="ring sm" :style="{ '--p': weekPercent(track.minutesThisWeek, track.hoursPerWeek) }">
