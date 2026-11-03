@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { dayKind } from '../lib/day'
+import { dayKind, WORKDAY } from '../lib/day'
 import { dayOfMonth, duration, monthName } from '../lib/format'
 import type { Count, DayRow } from '../types'
 import AppIcon from './AppIcon.vue'
@@ -8,6 +8,8 @@ import AppIcon from './AppIcon.vue'
 const props = defineProps<{ days: DayRow[]; count: Count; month: number; today: string }>()
 
 const totalWorked = computed(() => props.days.reduce((sum, day) => sum + (day.worked ?? 0), 0))
+
+const totalOvertime = computed(() => props.days.reduce((sum, day) => sum + Math.max(0, (day.worked ?? 0) - WORKDAY), 0))
 
 const lastDay = computed(() => {
   const last = props.days.filter((day) => day.date <= props.today).at(-1)
@@ -56,8 +58,8 @@ const dots = computed(() =>
       </div>
       <div>
         <AppIcon name="clock" class="ico-accent" />
-        <dt>Lebih dari 8 jam</dt>
-        <dd>{{ count.over }}</dd>
+        <dt>Total lembur</dt>
+        <dd>{{ duration(totalOvertime) }} <span class="muted">/ {{ count.over }} hari</span></dd>
       </div>
     </dl>
 
