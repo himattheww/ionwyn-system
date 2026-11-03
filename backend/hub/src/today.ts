@@ -74,7 +74,7 @@ export function forgetTimesheetDay() {
 }
 
 async function timesheet(today: string) {
-  if (!timesheetCache || timesheetCache.today !== today || Date.now() - timesheetCache.at > 30 * 60_000) {
+  if (!timesheetCache || timesheetCache.today !== today || Date.now() - timesheetCache.at > 5 * 60_000) {
     const body = await timesheetMonth(today)
     timesheetCache = { at: Date.now(), today, day: body.month.days.find(d => d.date === today) ?? null }
   }

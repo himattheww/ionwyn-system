@@ -42,7 +42,7 @@ function parseTime(s) {
 }
 
 function parseDisplayTime(s) {
-  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i.exec(String(s).trim());
+  const m = /^(\d{1,2})[:.](\d{2})(?::\d{2})?\s*(AM|PM)?$/i.exec(String(s).trim());
   if (!m) return null;
   let h = Number(m[1]);
   const marker = m[3] && m[3].toUpperCase();
@@ -144,13 +144,15 @@ function workedMinutes(row) {
 
 function rowFromDisplay(cells) {
   const hadir = String(cells[COL.HADIR - 1]).trim().toUpperCase();
-  return {
+  const row = {
     hadir: hadir === 'Y' || hadir === 'N' ? hadir : '',
     start: parseDisplayTime(cells[COL.START - 1]),
     end: parseDisplayTime(cells[COL.END - 1]),
     lunch: parseDisplayTime(cells[COL.LUNCH - 1]),
-    note: String(cells[COL.NOTE - 1])
+    note: String(cells[COL.NOTE - 1]).trim()
   };
+  if (row.hadir === '' && (row.start !== null || row.end !== null || row.note !== '')) row.hadir = 'Y';
+  return row;
 }
 
 function summarize(date, row) {
@@ -196,7 +198,7 @@ function applyEntry(cmd, store) {
 }
 
 function countMonth(days, today, holidays) {
-  const count = { workdays: 0, hadir: 0, sakit: 0, izin: 0, cuti: 0, kosong: 0, late: 0, short: 0, over: 0 };
+  const count = { workdays: 0, hadir: 0, sakit: 0, izin: 0, cuti: 0, kosong: 0, late: 0, short: 0, over: 0, overMin: 0 };
 
   days.forEach(function (day) {
     const dow = dayOfWeek(day.date);
@@ -210,7 +212,10 @@ function countMonth(days, today, holidays) {
       const worked = workedMinutes(row);
       if (worked !== null) {
         if (worked < SHORT_DAY_MIN) count.short++;
-        if (worked > OVERTIME_MIN) count.over++;
+        if (worked > OVERTIME_MIN) {
+          count.over++;
+          count.overMin += worked - OVERTIME_MIN;
+        }
       }
     } else if (row.hadir === 'N') {
       const note = row.note.toUpperCase();
@@ -235,7 +240,8 @@ function buildRekap(cmd, store) {
     'Belum diisi ' + count.kosong,
     'Masuk lewat 09.00: ' + count.late,
     'Kurang dari 8 jam: ' + count.short,
-    'Lebih dari 8 jam: ' + count.over
+    'Lebih dari 8 jam: ' + count.over,
+    'Total lembur: ' + formatTotal(count.overMin)
   ].join('\n');
 }
 
@@ -699,6 +705,63 @@ function setWebhook() {
     muteHttpExceptions: true
   });
   Logger.log(response.getContentText());
+}
+
+function normalizeRow(sheet, row, store) {
+  const ref = { sheet: sheet, row: row };
+  const current = store.read(ref);
+  if (current.hadir === 'N') return;
+  if (current.hadir === '') {
+    store.write(ref, {});
+    return;
+  }
+  const patch = { hadir: 'Y' };
+  if (current.start !== null) patch.start = current.start;
+  if (current.end !== null) patch.end = current.end;
+  if (current.start !== null || current.end !== null) patch.lunch = current.lunch === null ? DEFAULT_LUNCH_MIN : current.lunch;
+  store.write(ref, patch);
+}
+
+function notifyHub() {
+  const props = scriptProps();
+  const url = props.getProperty('HUB_SYNC_URL');
+  const secret = props.getProperty('HUB_INTERNAL_SECRET');
+  if (!url || !secret) return;
+  UrlFetchApp.fetch(url, { method: 'post', headers: { 'x-ionwyn-internal': secret }, muteHttpExceptions: true });
+}
+
+function onSheetEdit(e) {
+  const sheet = e.range.getSheet();
+  if (!/^\d{4}-\d{2}$/.test(sheet.getName())) return;
+  const first = Math.max(e.range.getRow(), FIRST_ROW);
+  const last = Math.min(e.range.getLastRow(), FIRST_ROW + tableDays(sheet) - 1);
+  if (first > last || e.range.getLastColumn() < COL.HADIR || e.range.getColumn() > COL.NOTE) return;
+  withScriptLock(function () {
+    const store = createSheetStore(sheet.getParent());
+    for (let row = first; row <= last; row++) normalizeRow(sheet, row, store);
+    SpreadsheetApp.flush();
+  });
+  notifyHub();
+}
+
+function installSheetTrigger() {
+  const ss = SpreadsheetApp.openById(scriptProps().getProperty('SPREADSHEET_ID'));
+  ScriptApp.getProjectTriggers()
+    .filter(function (trigger) { return trigger.getHandlerFunction() === 'onSheetEdit'; })
+    .forEach(function (trigger) { ScriptApp.deleteTrigger(trigger); });
+  ScriptApp.newTrigger('onSheetEdit').forSpreadsheet(ss).onEdit().create();
+}
+
+function repairSheetRows() {
+  const ss = SpreadsheetApp.openById(scriptProps().getProperty('SPREADSHEET_ID'));
+  const store = createSheetStore(ss);
+  ss.getSheets()
+    .filter(function (sheet) { return /^\d{4}-\d{2}$/.test(sheet.getName()); })
+    .forEach(function (sheet) {
+      const days = tableDays(sheet);
+      for (let row = FIRST_ROW; row < FIRST_ROW + days; row++) normalizeRow(sheet, row, store);
+    });
+  SpreadsheetApp.flush();
 }
 
 function matchesRule(rule, pattern) {
