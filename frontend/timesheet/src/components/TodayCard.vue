@@ -7,7 +7,7 @@ import AppIcon, { type IconName } from './AppIcon.vue'
 import ClockDial from './ClockDial.vue'
 
 const props = defineProps<{ date: string; row: DayRow | undefined; today: string; now: number; busy: boolean }>()
-const emit = defineEmits<{ submit: [entry: Entry]; back: [] }>()
+const emit = defineEmits<{ submit: [...entries: Entry[]]; back: [] }>()
 
 const PART_ICON: Record<string, IconName> = { Pagi: 'sunrise', Siang: 'sun', Sore: 'sunset', Malam: 'moon' }
 
@@ -23,6 +23,7 @@ const short = computed(() => end.value !== null && worked.value < WORKDAY)
 const text = ref('')
 const time = ref(nowClock())
 const manual = ref(false)
+const timeTyped = ref(false)
 const kind = ref<'masuk' | 'keluar'>('masuk')
 const confirming = ref<AbsenceKind | null>(null)
 
@@ -38,6 +39,7 @@ watch(
   () => props.date,
   () => {
     time.value = nowClock()
+    timeTyped.value = false
     manual.value = !isToday.value
     confirming.value = null
   },
@@ -102,6 +104,7 @@ function onTime(event: Event) {
   const input = event.target as HTMLInputElement
   time.value = typedTime(input.value)
   input.value = time.value
+  timeTyped.value = true
 }
 
 const timeValid = computed(() => toMinutes(time.value) !== null)
@@ -113,12 +116,18 @@ function sendPrimary() {
 
 function sendTime() {
   const value = toMinutes(time.value)
-  if (value !== null) emit('submit', { type: kind.value, time: value })
+  if (value === null) return
+  timeTyped.value = false
+  emit('submit', { type: kind.value, time: value })
 }
 
 function sendText() {
   const value = text.value.trim()
-  if (value) emit('submit', { type: 'kegiatan', text: value })
+  if (!value) return
+  const typed = timeTyped.value ? toMinutes(time.value) : null
+  timeTyped.value = false
+  if (typed === null) emit('submit', { type: 'kegiatan', text: value })
+  else emit('submit', { type: kind.value, time: typed }, { type: 'kegiatan', text: value })
 }
 
 function askAbsence(kind: AbsenceKind) {
@@ -213,7 +222,9 @@ function confirmAbsence() {
       <label class="dlabel" for="kegiatan">Kegiatan</label>
       <textarea id="kegiatan" v-model="text" class="dinput" rows="3" placeholder="Tulis kegiatan hari ini…"></textarea>
       <div class="clock-field-actions">
-        <button class="dbtn" :disabled="disabled || text.trim() === ''" @click="sendText">Simpan kegiatan</button>
+        <button class="dbtn" :disabled="disabled || text.trim() === '' || (timeTyped && !timeValid)" @click="sendText">
+          {{ timeTyped && timeValid ? 'Simpan kegiatan & jam ' + kind : 'Simpan kegiatan' }}
+        </button>
       </div>
     </div>
 

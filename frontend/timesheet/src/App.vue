@@ -88,13 +88,19 @@ function backToToday() {
   goToMonth(Number(today.value.slice(0, 4)), Number(today.value.slice(5, 7)))
 }
 
-function submit(entry: Entry) {
+function submit(...entries: Entry[]) {
   return run(async () => {
-    const result = await sendEntry(selected.value, entry)
-    month.value = result.month
-    rememberMonth(selected.value, result.month)
-    flash(result.message ?? 'Tersimpan ke Sheets')
+    for (const entry of entries) {
+      const result = await sendEntry(selected.value, entry)
+      month.value = result.month
+      rememberMonth(selected.value, result.month)
+      flash(result.message ?? 'Tersimpan ke Sheets')
+    }
   })
+}
+
+function refreshOnReturn() {
+  if (document.visibilityState === 'visible' && connected.value && !showSettings.value && !busy.value) load(selected.value)
 }
 
 function applySettings(next: Settings) {
@@ -110,9 +116,11 @@ onMounted(() => {
     today.value = isoOf(new Date())
   }, 30000)
   if (!showSettings.value) load(selected.value)
+  document.addEventListener('visibilitychange', refreshOnReturn)
 })
 
 onUnmounted(() => {
+  document.removeEventListener('visibilitychange', refreshOnReturn)
   clearInterval(ticker)
   clearTimeout(noticeTimer)
 })
