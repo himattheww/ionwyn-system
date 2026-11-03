@@ -36,12 +36,14 @@ export function duration(min: number | null): string {
 }
 
 export function toMinutes(value: string): number | null {
-  const m = /^(\d{2}):(\d{2})$/.exec(value)
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value)
   if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null
   return Number(m[1]) * 60 + Number(m[2])
 }
 
 export function typedTime(raw: string): string {
+  const parts = /^(\d{1,2})[:.](\d{0,2})/.exec(raw)
+  if (parts) return `${parts[1]}:${parts[2]}`
   const digits = raw.replace(/\D/g, '').slice(0, 4)
   return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits
 }
