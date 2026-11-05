@@ -8,12 +8,13 @@ import { cachedQuery } from '@/lib/offlineCache'
 import { onAppActive } from '@/lib/appActive'
 import { pendingItems } from '@/lib/pending'
 import { computeAllowance, formatRupiah } from '@/lib/dailyAllowance'
+import { budgetFor, cashChange, isDeposit, savingsChange, SETOR, spending } from '@/lib/ledger'
 import dayjs from 'dayjs'
 import { useExportPDF } from '@/composables/useExportPDF'
 import 'dayjs/locale/id'
 dayjs.locale('id')
 
-const { user, monthlyIncome, displayName } = useAuth()
+const { user, displayName } = useAuth()
 const { exporting, exportMonthlyReport } = useExportPDF()
 
 async function doExport() {
@@ -25,25 +26,30 @@ const selectedExportMonth = ref(dayjs().format('YYYY-MM'))
 const transactions = ref<any[]>([])
 const budget       = ref<any>(null)
 const goals        = ref<any[]>([])
+const history      = ref<any[]>([])
 const loading      = ref(true)
 
 const currentMonth = dayjs().format('YYYY-MM')
 const todayLabel   = dayjs().format('dddd, D MMMM YYYY')
 const monthName    = dayjs().format('MMMM')
+const lastMonthName = dayjs().subtract(1, 'month').format('MMMM')
 
 async function load() {
   if (!user.value) return
   const uid = user.value.id
-  const [txRes, budgetRes, goalsRes] = await Promise.all([
+  const monthStart = dayjs().startOf('month').format('YYYY-MM-DD')
+  const [txRes, budgetRes, goalsRes, historyRes] = await Promise.all([
     cachedQuery(`${uid}:dash-transactions`, supabase.from('transactions').select('*').eq('user_id', uid)
-      .gte('date', dayjs().startOf('month').format('YYYY-MM-DD'))
+      .gte('date', monthStart)
       .order('date', { ascending: false })),
-    cachedQuery(`${uid}:dash-budget`, supabase.from('budget_allocations').select('*').eq('user_id', uid).eq('month', currentMonth).single()),
+    cachedQuery(`${uid}:dash-budget`, budgetFor(uid, currentMonth)),
     cachedQuery(`${uid}:dash-goals`, supabase.from('saving_goals').select('*').eq('user_id', uid).eq('is_completed', false).limit(3)),
+    cachedQuery(`${uid}:dash-history`, supabase.from('transactions').select('type,amount,category').eq('user_id', uid).lt('date', monthStart)),
   ])
   transactions.value = txRes.data ?? []
   budget.value       = budgetRes.data
   goals.value        = goalsRes.data ?? []
+  history.value      = historyRes.data ?? []
   loading.value      = false
 }
 
@@ -51,9 +57,12 @@ onMounted(load)
 onAppActive(load)
 
 const totalIncome  = computed(() => transactions.value.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0))
-const totalExpense = computed(() => transactions.value.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0))
-const balance      = computed(() => totalIncome.value - totalExpense.value)
-const savingRate   = computed(() => monthlyIncome.value > 0 ? Math.round((balance.value / monthlyIncome.value) * 100) : 0)
+const totalExpense = computed(() => spending(transactions.value))
+const carryOver    = computed(() => cashChange(history.value))
+const balance      = computed(() => carryOver.value + cashChange(transactions.value))
+const savings      = computed(() => savingsChange(history.value) + savingsChange(transactions.value))
+const depositedNow = computed(() => transactions.value.filter(isDeposit).reduce((s, t) => s + t.amount, 0))
+const budgetInherited = computed(() => budget.value && budget.value.month !== currentMonth)
 
 const allowance = computed(() => computeAllowance(budget.value, [...transactions.value, ...pendingItems.value]))
 const allowanceStatus = computed(() => {
@@ -74,9 +83,10 @@ const categorySpend = computed(() => {
   return cats.map(cat => ({
     key: cat,
     label: { utama: 'Utama', jajan: 'Jajan', tabungan: 'Tabungan', dana_darurat: 'Dana darurat' }[cat] ?? cat,
-    hint: cat === 'utama' || cat === 'jajan' ? 'harian' : 'diambil',
-    spent:  transactions.value.filter(t => t.category === cat).reduce((s, t) => s + t.amount, 0),
+    hint: cat === 'utama' || cat === 'jajan' ? 'harian' : cat === 'tabungan' ? 'disetor' : 'diambil',
+    spent:  transactions.value.filter(t => t.category === (cat === 'tabungan' ? SETOR : cat)).reduce((s, t) => s + t.amount, 0),
     budget: budget.value?.[`${cat}_amount`] ?? 0,
+    target: cat === 'tabungan',
   }))
 })
 
@@ -125,14 +135,17 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
           <span class="summary-sub">bulan ini</span>
         </div>
         <div class="summary-item balance">
-          <span class="c-kicker">Sisa bulan ini</span>
+          <span class="c-kicker">Saldo</span>
           <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRpAbs(balance) }}</span>
-          <span class="summary-sub">{{ balance >= 0 ? 'surplus' : 'defisit' }}</span>
+          <span class="summary-sub">termasuk sisa {{ lastMonthName }} {{ carryOver < 0 ? '− ' : '' }}{{ formatRpAbs(carryOver) }}</span>
         </div>
         <div class="summary-item">
-          <span class="c-kicker">Saving rate</span>
-          <span class="summary-value c-num">{{ savingRate }}%</span>
-          <span class="summary-sub">dari pemasukan</span>
+          <span class="c-kicker">Tabungan</span>
+          <span class="summary-value c-num">{{ savings < 0 ? '− ' : '' }}{{ formatRpAbs(savings) }}</span>
+          <span class="summary-sub">
+            disetor {{ formatRpAbs(depositedNow) }}<template v-if="budget"> / target {{ formatRpAbs(budget.tabungan_amount) }}</template>
+            · <RouterLink :to="{ path: '/transactions', query: { setor: '1' } }">Setor</RouterLink>
+          </span>
         </div>
       </section>
 
@@ -188,14 +201,15 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
             <RouterLink to="/budget" class="block-link">Detail</RouterLink>
           </div>
           <p v-if="!budget" class="empty-inline">Budget belum diset. <RouterLink to="/budget">Set sekarang</RouterLink></p>
+          <p v-else-if="budgetInherited" class="empty-inline">Mengikuti budget {{ dayjs(budget.month + '-01').format('MMMM YYYY') }}.</p>
           <div v-else class="rows">
             <div v-for="cat in categorySpend" :key="cat.key" class="budget-row">
               <div class="row-top">
                 <span class="row-name">{{ cat.label }} <em class="row-hint">{{ cat.hint }}</em></span>
-                <span class="row-pct c-num" :class="{ over: cat.spent > cat.budget }">{{ pctSpent(cat) }}%</span>
+                <span class="row-pct c-num" :class="{ over: !cat.target && cat.spent > cat.budget }">{{ pctSpent(cat) }}%</span>
               </div>
               <div class="rule-track">
-                <div class="rule-fill" :class="{ over: cat.spent > cat.budget }" :style="{ width: Math.min(pctSpent(cat), 100) + '%' }"></div>
+                <div class="rule-fill" :class="{ over: !cat.target && cat.spent > cat.budget }" :style="{ width: Math.min(pctSpent(cat), 100) + '%' }"></div>
               </div>
               <span class="row-amounts c-num">{{ formatRpAbs(cat.spent) }} <span class="muted">/ {{ formatRpAbs(cat.budget) }}</span></span>
             </div>

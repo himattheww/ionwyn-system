@@ -1,8 +1,9 @@
 export const categoryLabels: Record<string, string> = {
   utama: 'Utama',
   jajan: 'Jajan',
-  tabungan: 'Tabungan',
-  dana_darurat: 'Dana darurat',
+  tabungan: 'Ambil tabungan',
+  dana_darurat: 'Ambil dana darurat',
+  setor_tabungan: 'Setor tabungan',
   gaji: 'Gaji',
   freelance: 'Freelance',
   bisnis: 'Bisnis',

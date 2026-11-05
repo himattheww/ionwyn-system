@@ -10,9 +10,12 @@ import { onAppActive } from '@/lib/appActive'
 import { computeAllowance, describeSpending } from '@/lib/dailyAllowance'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
+import { useRoute } from 'vue-router'
+import { budgetFor, SETOR, spending } from '@/lib/ledger'
 
 const { user } = useAuth()
 const { confirmDelete, toast } = useNotify()
+const route = useRoute()
 
 // ─── State ────────────────────────────────────────────────────────
 const transactions = ref<any[]>([])
@@ -46,7 +49,7 @@ const rForm = ref({
   start_date: dayjs().format('YYYY-MM-DD'),
 })
 
-const expenseCategories = ['utama', 'jajan', 'tabungan', 'dana_darurat']
+const expenseCategories = ['utama', 'jajan', SETOR, 'tabungan', 'dana_darurat']
 const incomeCategories  = ['gaji', 'freelance', 'bisnis', 'lainnya']
 const frequencyLabels: Record<string, string> = { daily: 'Harian', weekly: 'Mingguan', monthly: 'Bulanan', yearly: 'Tahunan' }
 
@@ -67,7 +70,7 @@ const filtered = computed(() =>
 )
 
 const totalIncome  = computed(() => filtered.value.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0))
-const totalExpense = computed(() => filtered.value.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0))
+const totalExpense = computed(() => spending(filtered.value))
 
 // Recurring yang jatuh tempo dalam 7 hari ke depan
 const dueSoon = computed(() =>
@@ -78,6 +81,7 @@ const dueSoon = computed(() =>
 onMounted(async () => {
   await Promise.all([fetchTransactions(), fetchRecurrings()])
   await processOverdueRecurrings()
+  if (route.query.setor) openForm(SETOR)
 })
 
 onAppActive(() => Promise.all([fetchTransactions(), fetchRecurrings()]))
@@ -134,8 +138,8 @@ function calcNextDue(from: string, frequency: string) {
 }
 
 // ─── Transaction CRUD ─────────────────────────────────────────────
-function openForm() {
-  form.value = { type: 'expense', amount: '', category: 'jajan', note: '', date: dayjs().format('YYYY-MM-DD') }
+function openForm(category = 'jajan') {
+  form.value = { type: 'expense', amount: '', category, note: '', date: dayjs().format('YYYY-MM-DD') }
   error.value = ''
   showForm.value = true
 }
@@ -169,8 +173,7 @@ async function saveTransaction() {
   await fetchTransactions()
   saving.value = false
 
-  const { data: budget } = await supabase.from('budget_allocations').select('*')
-    .eq('user_id', user.value!.id).eq('month', dayjs().format('YYYY-MM')).maybeSingle()
+  const { data: budget } = await budgetFor(user.value!.id, dayjs().format('YYYY-MM'))
   const allowance = computeAllowance(budget, [...transactions.value, ...pendingItems.value])
   const note = describeSpending(payload, allowance)
   if (note) toast[note.tone](`Tersimpan. ${note.text}`)
@@ -264,7 +267,7 @@ function daysUntilClass(date: string) {
         <p class="page-sub">Kelola pemasukan dan pengeluaranmu</p>
       </div>
       <div class="header-actions">
-        <button v-if="tab === 'transactions'" class="btn-add" @click="openForm">
+        <button v-if="tab === 'transactions'" class="btn-add" @click="openForm()">
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
           Tambah transaksi
         </button>

@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import jsPDF from 'jspdf'
 import { categoryLabel } from '@/lib/categories'
+import { budgetFor } from '@/lib/ledger'
 import { formatRpAbs } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import dayjs from 'dayjs'
@@ -22,8 +23,7 @@ export function useExportPDF() {
         supabase.from('transactions').select('*').eq('user_id', userId)
           .gte('date', startDate).lte('date', endDate)
           .order('date', { ascending: true }),
-        supabase.from('budget_allocations').select('*').eq('user_id', userId)
-          .eq('month', month).single(),
+        budgetFor(userId, month),
         supabase.from('saving_goals').select('*').eq('user_id', userId)
           .order('created_at', { ascending: true }),
       ])

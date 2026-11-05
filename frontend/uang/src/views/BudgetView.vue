@@ -7,6 +7,7 @@ import { cachedQuery } from '@/lib/offlineCache'
 import { onAppActive } from '@/lib/appActive'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
+import { budgetFor, SETOR } from '@/lib/ledger'
 
 const { user, monthlyIncome, updateProfile } = useAuth()
 const { toast } = useNotify()
@@ -31,11 +32,13 @@ const isValid    = computed(() => totalPct.value === 100 && danaDaruratPct.value
 function amounts(pct: number) { return Math.round((pct / 100) * incomeEdit.value) }
 
 const categories = computed(() => [
-  { key: 'utama',       label: 'Utama',       color: '#378ADD', budget: budget.value?.utama_amount ?? 0 },
-  { key: 'jajan',       label: 'Jajan',       color: '#EF9F27', budget: budget.value?.jajan_amount ?? 0 },
-  { key: 'tabungan',    label: 'Tabungan',    color: '#1D9E75', budget: budget.value?.tabungan_amount ?? 0 },
-  { key: 'dana_darurat',label: 'Dana Darurat',color: '#D85A30', budget: budget.value?.dana_darurat_amount ?? 0 },
+  { key: 'utama',       label: 'Utama',       color: '#378ADD', budget: budget.value?.utama_amount ?? 0, target: false },
+  { key: 'jajan',       label: 'Jajan',       color: '#EF9F27', budget: budget.value?.jajan_amount ?? 0, target: false },
+  { key: SETOR,         label: 'Tabungan',    color: '#1D9E75', budget: budget.value?.tabungan_amount ?? 0, target: true },
+  { key: 'dana_darurat',label: 'Dana Darurat',color: '#D85A30', budget: budget.value?.dana_darurat_amount ?? 0, target: false },
 ])
+
+const inherited = computed(() => budget.value && budget.value.month !== currentMonth)
 
 const spendMap = computed(() => {
   const m: Record<string, number> = {}
@@ -47,7 +50,7 @@ async function load() {
   if (!user.value) return
   const uid = user.value.id
   const [budgetRes, txRes] = await Promise.all([
-    cachedQuery(`${uid}:budget`, supabase.from('budget_allocations').select('*').eq('user_id', uid).eq('month', currentMonth).single()),
+    cachedQuery(`${uid}:budget`, budgetFor(uid, currentMonth)),
     cachedQuery(`${uid}:budget-transactions`, supabase.from('transactions').select('*').eq('user_id', uid).gte('date', dayjs().startOf('month').format('YYYY-MM-DD'))),
   ])
   budget.value = budgetRes.data
@@ -78,7 +81,7 @@ async function saveBudget() {
   }
   const { error: dbErr } = await supabase.from('budget_allocations').upsert(payload, { onConflict: 'user_id,month' })
   if (dbErr) { error.value = dbErr.message; saving.value = false; toast.error('Gagal menyimpan budget'); return }
-  budget.value = { ...budget.value, ...payload }
+  budget.value = { ...budget.value, ...payload, month: currentMonth }
   editMode.value = false; saving.value = false
   toast.success('Budget disimpan')
 }
@@ -92,7 +95,7 @@ const pct = cappedPercent
     <div class="page-header">
       <div>
         <h1 class="page-title">Budget</h1>
-        <p class="page-sub">Alokasi {{ dayjs().format('MMMM YYYY') }}</p>
+        <p class="page-sub">Alokasi {{ dayjs().format('MMMM YYYY') }}<template v-if="inherited"> · mengikuti budget {{ dayjs(budget.month + '-01').format('MMMM YYYY') }}</template></p>
       </div>
       <button class="btn-edit" @click="editMode = !editMode">{{ editMode ? 'Batal' : 'Edit budget' }}</button>
     </div>
@@ -135,17 +138,20 @@ const pct = cappedPercent
           <div v-for="cat in categories" :key="cat.key" class="budget-card">
             <div class="bcard-header">
               <div class="bcard-name"><span class="bcard-dot" :style="{ background: cat.color }"></span>{{ cat.label }}</div>
-              <span class="bcard-pct" :class="{ over: (spendMap[cat.key] ?? 0) > cat.budget }">
+              <span class="bcard-pct" :class="{ over: !cat.target && (spendMap[cat.key] ?? 0) > cat.budget }">
                 {{ pct(spendMap[cat.key] ?? 0, cat.budget) }}%
               </span>
             </div>
-            <div class="progress-bar"><div class="progress-fill" :style="{ width: pct(spendMap[cat.key] ?? 0, cat.budget) + '%', background: (spendMap[cat.key] ?? 0) > cat.budget ? '#E24B4A' : cat.color }"></div></div>
+            <div class="progress-bar"><div class="progress-fill" :style="{ width: pct(spendMap[cat.key] ?? 0, cat.budget) + '%', background: !cat.target && (spendMap[cat.key] ?? 0) > cat.budget ? '#E24B4A' : cat.color }"></div></div>
             <div class="bcard-amounts">
               <span class="spent">{{ formatRp(spendMap[cat.key] ?? 0) }}</span>
               <span class="of">dari</span>
               <span class="bud">{{ formatRp(cat.budget) }}</span>
             </div>
-            <div class="remaining" :class="{ over: (spendMap[cat.key] ?? 0) > cat.budget }">
+            <div v-if="cat.target" class="remaining">
+              {{ (spendMap[cat.key] ?? 0) >= cat.budget ? 'Target bulan ini tercapai' : 'Belum disetor: ' + formatRp(cat.budget - (spendMap[cat.key] ?? 0)) }}
+            </div>
+            <div v-else class="remaining" :class="{ over: (spendMap[cat.key] ?? 0) > cat.budget }">
               {{ (spendMap[cat.key] ?? 0) > cat.budget ? 'Melebihi budget!' : 'Sisa: ' + formatRp(cat.budget - (spendMap[cat.key] ?? 0)) }}
             </div>
           </div>
