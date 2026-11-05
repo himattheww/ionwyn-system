@@ -7,7 +7,7 @@ import { cachedQuery } from '@/lib/offlineCache'
 import { onAppActive } from '@/lib/appActive'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
-import { budgetFor, SETOR } from '@/lib/ledger'
+import { budgetFor, SETOR, SETOR_DARURAT } from '@/lib/ledger'
 
 const { user, monthlyIncome, updateProfile } = useAuth()
 const { toast } = useNotify()
@@ -34,8 +34,8 @@ function amounts(pct: number) { return Math.round((pct / 100) * incomeEdit.value
 const categories = computed(() => [
   { key: 'utama',       label: 'Utama',       color: '#378ADD', budget: budget.value?.utama_amount ?? 0, target: false },
   { key: 'jajan',       label: 'Jajan',       color: '#EF9F27', budget: budget.value?.jajan_amount ?? 0, target: false },
-  { key: SETOR,         label: 'Tabungan',    color: '#1D9E75', budget: budget.value?.tabungan_amount ?? 0, target: true },
-  { key: 'dana_darurat',label: 'Dana Darurat',color: '#D85A30', budget: budget.value?.dana_darurat_amount ?? 0, target: false },
+  { key: SETOR,         label: 'Tabungan',    color: '#1D9E75', budget: (budget.value?.tabungan_amount ?? 0) - (budget.value?.dana_darurat_amount ?? 0), target: true },
+  { key: SETOR_DARURAT, label: 'Dana Darurat',color: '#D85A30', budget: budget.value?.dana_darurat_amount ?? 0, target: true },
 ])
 
 const inherited = computed(() => budget.value && budget.value.month !== currentMonth)

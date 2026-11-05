@@ -11,7 +11,7 @@ import { computeAllowance, describeSpending } from '@/lib/dailyAllowance'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
 import { useRoute } from 'vue-router'
-import { budgetFor, SETOR, spending } from '@/lib/ledger'
+import { budgetFor, SETOR, SETOR_DARURAT, spending } from '@/lib/ledger'
 
 const { user } = useAuth()
 const { confirmDelete, toast } = useNotify()
@@ -49,7 +49,7 @@ const rForm = ref({
   start_date: dayjs().format('YYYY-MM-DD'),
 })
 
-const expenseCategories = ['utama', 'jajan', SETOR, 'tabungan', 'dana_darurat']
+const expenseCategories = ['utama', 'jajan', SETOR, SETOR_DARURAT, 'tabungan', 'dana_darurat']
 const incomeCategories  = ['gaji', 'freelance', 'bisnis', 'lainnya']
 const frequencyLabels: Record<string, string> = { daily: 'Harian', weekly: 'Mingguan', monthly: 'Bulanan', yearly: 'Tahunan' }
 
@@ -81,7 +81,7 @@ const dueSoon = computed(() =>
 onMounted(async () => {
   await Promise.all([fetchTransactions(), fetchRecurrings()])
   await processOverdueRecurrings()
-  if (route.query.setor) openForm(SETOR)
+  if (route.query.setor) openForm(route.query.setor === 'darurat' ? SETOR_DARURAT : SETOR)
 })
 
 onAppActive(() => Promise.all([fetchTransactions(), fetchRecurrings()]))

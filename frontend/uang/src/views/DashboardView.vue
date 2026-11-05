@@ -8,7 +8,7 @@ import { cachedQuery } from '@/lib/offlineCache'
 import { onAppActive } from '@/lib/appActive'
 import { pendingItems } from '@/lib/pending'
 import { computeAllowance, formatRupiah } from '@/lib/dailyAllowance'
-import { budgetFor, cashChange, isDeposit, savingsChange, SETOR, spending } from '@/lib/ledger'
+import { budgetFor, cashChange, potChange, SETOR, SETOR_DARURAT, spending } from '@/lib/ledger'
 import dayjs from 'dayjs'
 import { useExportPDF } from '@/composables/useExportPDF'
 import 'dayjs/locale/id'
@@ -60,8 +60,14 @@ const totalIncome  = computed(() => transactions.value.filter(t => t.type === 'i
 const totalExpense = computed(() => spending(transactions.value))
 const carryOver    = computed(() => cashChange(history.value))
 const balance      = computed(() => carryOver.value + cashChange(transactions.value))
-const savings      = computed(() => savingsChange(history.value) + savingsChange(transactions.value))
-const depositedNow = computed(() => transactions.value.filter(isDeposit).reduce((s, t) => s + t.amount, 0))
+const allTx        = computed(() => [...history.value, ...transactions.value])
+const savings      = computed(() => potChange(allTx.value, SETOR))
+const emergency    = computed(() => potChange(allTx.value, SETOR_DARURAT))
+const totalMoney   = computed(() => balance.value + savings.value + emergency.value)
+const deposited    = (category: string) => transactions.value.filter(t => t.type === 'expense' && t.category === category).reduce((s, t) => s + t.amount, 0)
+const savingsTarget   = computed(() => budget.value ? budget.value.tabungan_amount - budget.value.dana_darurat_amount : 0)
+const emergencyTarget = computed(() => budget.value?.dana_darurat_amount ?? 0)
+const signed = (n: number) => (n < 0 ? '− ' : '') + formatRpAbs(n)
 const budgetInherited = computed(() => budget.value && budget.value.month !== currentMonth)
 
 const allowance = computed(() => computeAllowance(budget.value, [...transactions.value, ...pendingItems.value]))
@@ -83,10 +89,10 @@ const categorySpend = computed(() => {
   return cats.map(cat => ({
     key: cat,
     label: { utama: 'Utama', jajan: 'Jajan', tabungan: 'Tabungan', dana_darurat: 'Dana darurat' }[cat] ?? cat,
-    hint: cat === 'utama' || cat === 'jajan' ? 'harian' : cat === 'tabungan' ? 'disetor' : 'diambil',
-    spent:  transactions.value.filter(t => t.category === (cat === 'tabungan' ? SETOR : cat)).reduce((s, t) => s + t.amount, 0),
-    budget: budget.value?.[`${cat}_amount`] ?? 0,
-    target: cat === 'tabungan',
+    hint: cat === 'utama' || cat === 'jajan' ? 'harian' : 'disetor',
+    spent:  deposited(cat === 'tabungan' ? SETOR : cat === 'dana_darurat' ? SETOR_DARURAT : cat),
+    budget: cat === 'tabungan' ? savingsTarget.value : budget.value?.[`${cat}_amount`] ?? 0,
+    target: cat === 'tabungan' || cat === 'dana_darurat',
   }))
 })
 
@@ -134,18 +140,31 @@ const pctSpent = (cat: any) => percentOf(cat.spent, cat.budget)
           <span class="summary-value c-num expense">− {{ formatRpAbs(totalExpense) }}</span>
           <span class="summary-sub">bulan ini</span>
         </div>
-        <div class="summary-item balance">
+        <div class="summary-item">
           <span class="c-kicker">Saldo</span>
-          <span class="summary-value c-num">{{ balance < 0 ? '− ' : '' }}{{ formatRpAbs(balance) }}</span>
-          <span class="summary-sub">termasuk sisa {{ lastMonthName }} {{ carryOver < 0 ? '− ' : '' }}{{ formatRpAbs(carryOver) }}</span>
+          <span class="summary-value c-num">{{ signed(balance) }}</span>
+          <span class="summary-sub">termasuk sisa {{ lastMonthName }} {{ signed(carryOver) }}</span>
         </div>
         <div class="summary-item">
           <span class="c-kicker">Tabungan</span>
-          <span class="summary-value c-num">{{ savings < 0 ? '− ' : '' }}{{ formatRpAbs(savings) }}</span>
+          <span class="summary-value c-num">{{ signed(savings) }}</span>
           <span class="summary-sub">
-            disetor {{ formatRpAbs(depositedNow) }}<template v-if="budget"> / target {{ formatRpAbs(budget.tabungan_amount) }}</template>
-            · <RouterLink :to="{ path: '/transactions', query: { setor: '1' } }">Setor</RouterLink>
+            disetor {{ formatRpAbs(deposited(SETOR)) }}<template v-if="budget"> / target {{ formatRpAbs(savingsTarget) }}</template>
+            · <RouterLink :to="{ path: '/transactions', query: { setor: 'tabungan' } }">Setor</RouterLink>
           </span>
+        </div>
+        <div class="summary-item">
+          <span class="c-kicker">Dana darurat</span>
+          <span class="summary-value c-num">{{ signed(emergency) }}</span>
+          <span class="summary-sub">
+            disetor {{ formatRpAbs(deposited(SETOR_DARURAT)) }}<template v-if="budget"> / target {{ formatRpAbs(emergencyTarget) }}</template>
+            · <RouterLink :to="{ path: '/transactions', query: { setor: 'darurat' } }">Setor</RouterLink>
+          </span>
+        </div>
+        <div class="summary-item balance">
+          <span class="c-kicker">Total uang</span>
+          <span class="summary-value c-num">{{ signed(totalMoney) }}</span>
+          <span class="summary-sub">saldo + tabungan + dana darurat</span>
         </div>
       </section>
 
