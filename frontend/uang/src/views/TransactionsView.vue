@@ -56,7 +56,7 @@ const categoriesByKind: Record<Kind, string[]> = {
 }
 const kindLabels: Record<Kind, string> = { expense: 'Pengeluaran', income: 'Pemasukan', savings: 'Tabungan' }
 const kinds = Object.keys(kindLabels) as Kind[]
-const dbType = (kind: Kind) => (kind === 'income' ? 'income' : 'expense')
+const dbType = (kind: Kind): 'income' | 'expense' => (kind === 'income' ? 'income' : 'expense')
 const frequencyLabels: Record<string, string> = { daily: 'Harian', weekly: 'Mingguan', monthly: 'Bulanan', yearly: 'Tahunan' }
 
 const categoryOptions = computed(() => categoriesByKind[form.value.type])
