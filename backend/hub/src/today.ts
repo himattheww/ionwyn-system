@@ -102,7 +102,7 @@ async function uang(today: string) {
       `${url}/rest/v1/transactions?select=date,type,amount,category&type=eq.expense&date=gte.${month}-01&date=lte.${today}`,
       { headers }
     ),
-    getJson<{ utama_amount: number; jajan_amount: number }[]>(`${url}/rest/v1/budget_allocations?select=utama_amount,jajan_amount&month=eq.${month}`, { headers })
+    getJson<{ utama_amount: number; jajan_amount: number }[]>(`${url}/rest/v1/budget_allocations?select=utama_amount,jajan_amount&month=lte.${month}&order=month.desc&limit=1`, { headers })
   ])
   const spending = rows.filter(r => r.category === 'utama' || r.category === 'jajan')
   const sum = (list: typeof rows) => list.reduce((total, r) => total + Number(r.amount), 0)

@@ -11,7 +11,7 @@ export function financeEvents(transactions: Row[], budgets: Row[], today: string
     const date = toDate(row.date)
     if (!date) continue
     events.push({ id: `finance:tx:${row.id}`, source: 'finance', type: 'transaction', date, value: 1, meta: { kind: row.type } })
-    if (row.type === 'expense') {
+    if (row.type === 'expense' && row.category !== 'setor_tabungan') {
       const month = date.slice(0, 7)
       expenseByMonth.set(month, (expenseByMonth.get(month) ?? 0) + Number(row.amount))
     }
@@ -30,7 +30,7 @@ export function financeEvents(transactions: Row[], budgets: Row[], today: string
 }
 
 export async function readFinance(config: SupabaseConfig, today: string) {
-  const transactions = await supabaseRows(config, 'transactions', 'select=id,date,type,amount&order=date')
+  const transactions = await supabaseRows(config, 'transactions', 'select=id,date,type,amount,category&order=date')
   const budgets = await supabaseRows(config, 'budget_allocations', 'select=month,utama_amount,jajan_amount&order=month')
   return financeEvents(transactions, budgets, today)
 }

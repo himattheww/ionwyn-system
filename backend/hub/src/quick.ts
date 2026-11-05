@@ -2,7 +2,7 @@ import express, { Router } from 'express'
 import { db } from './db.ts'
 
 const categories: Record<string, string[]> = {
-  expense: ['utama', 'jajan', 'tabungan', 'dana_darurat', 'lainnya'],
+  expense: ['utama', 'jajan', 'setor_tabungan', 'tabungan', 'dana_darurat', 'lainnya'],
   income: ['gaji', 'freelance', 'bisnis', 'lainnya'],
 }
 const jakartaToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
