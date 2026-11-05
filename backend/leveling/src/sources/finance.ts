@@ -11,7 +11,7 @@ export function financeEvents(transactions: Row[], budgets: Row[], today: string
     const date = toDate(row.date)
     if (!date) continue
     events.push({ id: `finance:tx:${row.id}`, source: 'finance', type: 'transaction', date, value: 1, meta: { kind: row.type } })
-    if (row.type === 'expense' && row.category !== 'setor_tabungan') {
+    if (row.type === 'expense' && !String(row.category ?? '').startsWith('setor_')) {
       const month = date.slice(0, 7)
       expenseByMonth.set(month, (expenseByMonth.get(month) ?? 0) + Number(row.amount))
     }

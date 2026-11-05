@@ -21,10 +21,11 @@ export function financeRoutes() {
         from public.budget_allocations
         where user_id = ${owner} and month <= ${month}
         order by month desc limit 1`,
-      db()<{ cash: number; savings: number }[]>`
+      db()<{ cash: number; savings: number; emergency: number }[]>`
         select
           coalesce(sum(case when type = 'income' then amount when category in ('tabungan', 'dana_darurat') then 0 else -amount end), 0)::float8 as cash,
-          coalesce(sum(case when type = 'income' then 0 when category = 'setor_tabungan' then amount when category in ('tabungan', 'dana_darurat') then -amount else 0 end), 0)::float8 as savings
+          coalesce(sum(case when type = 'income' then 0 when category = 'setor_tabungan' then amount when category = 'tabungan' then -amount else 0 end), 0)::float8 as savings,
+          coalesce(sum(case when type = 'income' then 0 when category = 'setor_dana_darurat' then amount when category = 'dana_darurat' then -amount else 0 end), 0)::float8 as emergency
         from public.transactions
         where user_id = ${owner} and date < ${from}::date + interval '1 month'`,
     ])
@@ -40,10 +41,12 @@ export function financeRoutes() {
     res.json({
       month,
       income: sum('income'),
-      expense: sum('expense') - transactions.filter(t => t.category === 'setor_tabungan').reduce((total, t) => total + t.amount, 0),
+      expense: sum('expense') - transactions.filter(t => t.category.startsWith('setor_')).reduce((total, t) => total + t.amount, 0),
       carryOver: before.cash - cash,
       balance: before.cash,
       savings: before.savings,
+      emergency: before.emergency,
+      total: before.cash + before.savings + before.emergency,
       budget: budgets[0] ?? null,
       byCategory: [...byCategory.values()],
       transactions
