@@ -11,7 +11,7 @@ import { computeAllowance, describeSpending } from '@/lib/dailyAllowance'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
 import { useRoute } from 'vue-router'
-import { budgetFor, SETOR, SETOR_DARURAT, spending } from '@/lib/ledger'
+import { budgetFor, kindOf, SAVINGS_CATEGORIES, SETOR, SETOR_DARURAT, spending, type Kind } from '@/lib/ledger'
 
 const { user } = useAuth()
 const { confirmDelete, toast } = useNotify()
@@ -27,12 +27,12 @@ const showRecurringForm = ref(false)
 const saving       = ref(false)
 const error        = ref('')
 
-const filterType  = ref<'all' | 'income' | 'expense'>('all')
+const filterType  = ref<'all' | Kind>('all')
 const filterMonth = ref(dayjs().format('YYYY-MM'))
 
 // ─── Transaction form ─────────────────────────────────────────────
 const form = ref({
-  type: 'expense' as 'income' | 'expense',
+  type: 'expense' as Kind,
   amount: '',
   category: 'jajan',
   note: '',
@@ -42,19 +42,25 @@ const form = ref({
 // ─── Recurring form ───────────────────────────────────────────────
 const rForm = ref({
   name: '',
-  type: 'expense' as 'income' | 'expense',
+  type: 'expense' as Kind,
   amount: '',
   category: 'utama',
   frequency: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
   start_date: dayjs().format('YYYY-MM-DD'),
 })
 
-const expenseCategories = ['utama', 'jajan', SETOR, SETOR_DARURAT, 'tabungan', 'dana_darurat']
-const incomeCategories  = ['gaji', 'freelance', 'bisnis', 'lainnya']
+const categoriesByKind: Record<Kind, string[]> = {
+  expense: ['utama', 'jajan'],
+  income: ['gaji', 'freelance', 'bisnis', 'lainnya'],
+  savings: SAVINGS_CATEGORIES,
+}
+const kindLabels: Record<Kind, string> = { expense: 'Pengeluaran', income: 'Pemasukan', savings: 'Tabungan' }
+const kinds = Object.keys(kindLabels) as Kind[]
+const dbType = (kind: Kind) => (kind === 'income' ? 'income' : 'expense')
 const frequencyLabels: Record<string, string> = { daily: 'Harian', weekly: 'Mingguan', monthly: 'Bulanan', yearly: 'Tahunan' }
 
-const categoryOptions = computed(() => form.value.type === 'expense' ? expenseCategories : incomeCategories)
-const rCategoryOptions = computed(() => rForm.value.type === 'expense' ? expenseCategories : incomeCategories)
+const categoryOptions = computed(() => categoriesByKind[form.value.type])
+const rCategoryOptions = computed(() => categoriesByKind[rForm.value.type])
 
 const allTransactions = computed(() =>
   [...pendingItems.value.map(p => ({ ...p, pending: true })), ...transactions.value]
@@ -63,7 +69,7 @@ const allTransactions = computed(() =>
 
 const filtered = computed(() =>
   allTransactions.value.filter(t => {
-    const matchType  = filterType.value === 'all' || t.type === filterType.value
+    const matchType  = filterType.value === 'all' || kindOf(t) === filterType.value
     const matchMonth = t.date.startsWith(filterMonth.value)
     return matchType && matchMonth
   })
@@ -139,13 +145,13 @@ function calcNextDue(from: string, frequency: string) {
 
 // ─── Transaction CRUD ─────────────────────────────────────────────
 function openForm(category = 'jajan') {
-  form.value = { type: 'expense', amount: '', category, note: '', date: dayjs().format('YYYY-MM-DD') }
+  form.value = { type: SAVINGS_CATEGORIES.includes(category) ? 'savings' : 'expense', amount: '', category, note: '', date: dayjs().format('YYYY-MM-DD') }
   error.value = ''
   showForm.value = true
 }
 
 function onTypeChange() {
-  form.value.category = form.value.type === 'expense' ? 'jajan' : 'gaji'
+  form.value.category = { expense: 'jajan', income: 'gaji', savings: SETOR }[form.value.type]
 }
 
 async function saveTransaction() {
@@ -154,7 +160,7 @@ async function saveTransaction() {
   const payload = {
     id: crypto.randomUUID(),
     user_id: user.value!.id,
-    type: form.value.type,
+    type: dbType(form.value.type),
     amount: Number(form.value.amount),
     category: form.value.category,
     note: form.value.note || null,
@@ -203,7 +209,7 @@ function openRecurringForm() {
 }
 
 function onRTypeChange() {
-  rForm.value.category = rForm.value.type === 'expense' ? 'utama' : 'gaji'
+  rForm.value.category = { expense: 'utama', income: 'gaji', savings: SETOR }[rForm.value.type]
 }
 
 async function saveRecurring() {
@@ -212,7 +218,7 @@ async function saveRecurring() {
   const { error: dbErr } = await supabase.from('recurring_transactions').insert({
     user_id: user.value!.id,
     name: rForm.value.name,
-    type: rForm.value.type,
+    type: dbType(rForm.value.type),
     amount: Number(rForm.value.amount),
     category: rForm.value.category,
     frequency: rForm.value.frequency,
@@ -305,8 +311,8 @@ function daysUntilClass(date: string) {
       <div class="filters">
         <input type="month" v-model="filterMonth" class="filter-input" />
         <div class="filter-tabs">
-          <button v-for="t in ['all','income','expense']" :key="t" class="filter-tab" :class="{ active: filterType === t }" @click="filterType = t as any">
-            {{ t === 'all' ? 'Semua' : t === 'income' ? 'Pemasukan' : 'Pengeluaran' }}
+          <button v-for="t in ['all', ...kinds]" :key="t" class="filter-tab" :class="{ active: filterType === t }" @click="filterType = t as any">
+            {{ t === 'all' ? 'Semua' : kindLabels[t as Kind] }}
           </button>
         </div>
       </div>
@@ -390,8 +396,7 @@ function daysUntilClass(date: string) {
           <button class="modal-close" @click="showForm = false"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="type-tabs">
-          <button :class="['type-tab', { active: form.type === 'expense' }]" @click="form.type = 'expense'; onTypeChange()">Pengeluaran</button>
-          <button :class="['type-tab', { active: form.type === 'income' }]" @click="form.type = 'income'; onTypeChange()">Pemasukan</button>
+          <button v-for="k in kinds" :key="k" :class="['type-tab', { active: form.type === k }]" @click="form.type = k; onTypeChange()">{{ kindLabels[k] }}</button>
         </div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="form.amount" placeholder="0" min="0" /></div></div>
         <div class="form-field"><label>Kategori</label><select v-model="form.category"><option v-for="c in categoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option></select></div>
@@ -413,8 +418,7 @@ function daysUntilClass(date: string) {
           <button class="modal-close" @click="showRecurringForm = false"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="type-tabs">
-          <button :class="['type-tab', { active: rForm.type === 'expense' }]" @click="rForm.type = 'expense'; onRTypeChange()">Pengeluaran</button>
-          <button :class="['type-tab', { active: rForm.type === 'income' }]" @click="rForm.type = 'income'; onRTypeChange()">Pemasukan</button>
+          <button v-for="k in kinds" :key="k" :class="['type-tab', { active: rForm.type === k }]" @click="rForm.type = k; onRTypeChange()">{{ kindLabels[k] }}</button>
         </div>
         <div class="form-field"><label>Nama tagihan</label><input type="text" v-model="rForm.name" placeholder="Misal: Spotify, Kos, Cicilan HP..." /></div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="rForm.amount" placeholder="0" min="0" /></div></div>

@@ -8,7 +8,11 @@ const POTS = { [SETOR]: 'tabungan', [SETOR_DARURAT]: 'dana_darurat' } as const
 const FROM_POTS = Object.values(POTS) as string[]
 
 export const isDeposit = (t: Tx) => t.type === 'expense' && t.category in POTS
-const isWithdrawal = (t: Tx) => t.type === 'expense' && FROM_POTS.includes(t.category)
+export const isWithdrawal = (t: Tx) => t.type === 'expense' && FROM_POTS.includes(t.category)
+
+export const SAVINGS_CATEGORIES = [SETOR, SETOR_DARURAT, ...FROM_POTS]
+export type Kind = 'expense' | 'income' | 'savings'
+export const kindOf = (t: Tx): Kind => (t.type === 'income' ? 'income' : isDeposit(t) || isWithdrawal(t) ? 'savings' : 'expense')
 
 export const spending = (txs: Tx[]) => txs.filter(t => t.type === 'expense' && !isDeposit(t)).reduce((s, t) => s + Number(t.amount), 0)
 
