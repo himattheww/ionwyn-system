@@ -113,3 +113,10 @@
 
   .modal { padding: 20px; max-height: 85vh; }
 }
+.tx-icon { color: #E24B4A; background: #FCEBEB; }
+.tx-icon.icon-income { color: var(--color-accent-700); background: var(--color-accent-100); }
+.tx-icon.icon-transfer { color: var(--color-text-secondary); background: var(--color-background-secondary); }
+.tx-amount.transfer { color: var(--color-text-secondary); }
+.filters { flex-wrap: wrap; }
+.check-field { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; color: var(--color-text-primary); cursor: pointer; }
+.check-field input { width: 16px; height: 16px; accent-color: var(--color-accent-700); }

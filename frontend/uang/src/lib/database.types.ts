@@ -5,7 +5,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type Currency = 'IDR' | 'USD' | 'SGD' | 'EUR' | 'MYR'
 
-export type TransactionType = 'income' | 'expense'
+export type TransactionType = 'income' | 'expense' | 'transfer'
 
 export type ExpenseCategory = 'utama' | 'jajan' | 'tabungan' | 'dana_darurat'
 
@@ -45,6 +45,11 @@ export type Transaction = {
   note: string | null
   date: string                  // ISO date: '2025-06-01'
   recurring_id: string | null   // null = transaksi biasa
+  account_id: string | null
+  to_account_id: string | null
+  budget_item_id: string | null
+  debt_id: string | null
+  unplanned: boolean
   created_at: string
 }
 
@@ -60,6 +65,49 @@ export type RecurringTransaction = {
   start_date: string
   next_due_date: string
   is_active: boolean
+  account_id: string | null
+  budget_item_id: string | null
+  debt_id: string | null
+  created_at: string
+}
+
+export type Account = {
+  id: string
+  user_id: string
+  name: string
+  kind: 'biasa' | 'tabungan'
+  opening_balance: number
+  opening_date: string
+  sort: number
+  archived: boolean
+  created_at: string
+}
+
+export type BudgetItemKind = 'tetap' | 'harian' | 'cadangan' | 'tabungan'
+
+export type BudgetItem = {
+  id: string
+  user_id: string
+  name: string
+  amount: number
+  kind: BudgetItemKind
+  account_id: string | null
+  debt_id: string | null
+  sort: number
+  archived: boolean
+  created_at: string
+}
+
+export type Debt = {
+  id: string
+  user_id: string
+  name: string
+  kind: 'cicilan' | 'utang'
+  total: number
+  paid_before: number
+  monthly: number | null
+  note: string | null
+  archived: boolean
   created_at: string
 }
 
@@ -108,15 +156,21 @@ export type MonthlyReport = {
 type TelegramTokenInsert = Pick<TelegramLinkToken, 'token' | 'chat_id'> &
   Partial<Omit<TelegramLinkToken, 'token' | 'chat_id'>>
 type ProfileInsert = Pick<Profile, 'id'> & Partial<Omit<Profile, 'id'>>
-type TransactionInsert = Omit<Transaction, 'id' | 'created_at' | 'recurring_id' | 'category'> & {
+type TransactionLinks = 'account_id' | 'to_account_id' | 'budget_item_id' | 'debt_id' | 'unplanned'
+type TransactionInsert = Omit<Transaction, 'id' | 'created_at' | 'recurring_id' | 'category' | TransactionLinks> &
+  Partial<Pick<Transaction, TransactionLinks>> & {
   id?: string
   category: string
   recurring_id?: string | null
 }
-type RecurringInsert = Omit<RecurringTransaction, 'id' | 'created_at' | 'category' | 'is_active'> & {
+type RecurringLinks = 'account_id' | 'budget_item_id' | 'debt_id'
+type RecurringInsert = Omit<RecurringTransaction, 'id' | 'created_at' | 'category' | 'is_active' | RecurringLinks> &
+  Partial<Pick<RecurringTransaction, RecurringLinks>> & {
   category: string
   is_active?: boolean
 }
+type OwnedInsert<T extends { id: string; user_id: string; created_at: string }, Required extends keyof T> =
+  Pick<T, 'user_id' | Required> & Partial<Omit<T, 'user_id' | 'created_at' | Required>>
 type BudgetInsert = Pick<BudgetAllocation, 'user_id' | 'month'> &
   Partial<Omit<BudgetAllocation, 'id' | 'user_id' | 'month' | 'created_at' | 'updated_at'>>
 type GoalInsert = Pick<SavingGoal, 'user_id' | 'name' | 'target_amount'> &
@@ -150,6 +204,24 @@ export type Database = {
         Row: BudgetAllocation
         Insert: BudgetInsert
         Update: Partial<Omit<BudgetAllocation, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      accounts: {
+        Row: Account
+        Insert: OwnedInsert<Account, 'name'>
+        Update: Partial<Omit<Account, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      budget_items: {
+        Row: BudgetItem
+        Insert: OwnedInsert<BudgetItem, 'name' | 'kind'>
+        Update: Partial<Omit<BudgetItem, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      debts: {
+        Row: Debt
+        Insert: OwnedInsert<Debt, 'name' | 'total'>
+        Update: Partial<Omit<Debt, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
       saving_goals: {

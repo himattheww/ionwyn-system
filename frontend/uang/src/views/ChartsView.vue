@@ -65,10 +65,11 @@ const barOptions = computed<{ series: any; options: ApexOptions }>(() => {
     series: [
       { name: 'Pemasukan', data: [sum(prev, 'income'), sum(cur, 'income')] },
       { name: 'Pengeluaran', data: [sum(prev, 'expense'), sum(cur, 'expense')] },
+      { name: 'Dadakan', data: [sum(prev.filter(t => t.unplanned), 'expense'), sum(cur.filter(t => t.unplanned), 'expense')] },
     ],
     options: {
       chart: { type: 'bar', background: 'transparent', toolbar: { show: false } },
-      colors: ['#b68235', '#E24B4A'],
+      colors: ['#b68235', '#E24B4A', '#888780'],
       xaxis: { categories: [dayjs(compareMonth.value).format('MMM YYYY'), dayjs(selectedMonth.value).format('MMM YYYY')] },
       yaxis: { labels: { formatter: (v: number) => 'Rp ' + (v/1000).toFixed(0) + 'K' } },
       plotOptions: { bar: { columnWidth: '50%', borderRadius: 4 } },

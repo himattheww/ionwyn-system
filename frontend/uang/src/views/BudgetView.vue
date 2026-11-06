@@ -1,164 +1,167 @@
 <script setup lang="ts">
-import { cappedPercent, formatRp } from '@/lib/format'
-import { ref, computed, onMounted } from 'vue'
-import { useAuth } from '@/composables/useAuth'
-import { supabase } from '@/lib/supabase'
-import { cachedQuery } from '@/lib/offlineCache'
-import { onAppActive } from '@/lib/appActive'
-import { useNotify } from '@/composables/useNotify'
+import { computed, onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
-import { budgetFor, SETOR, SETOR_DARURAT } from '@/lib/ledger'
+import { useAuth } from '@/composables/useAuth'
+import { useNotify } from '@/composables/useNotify'
+import { onAppActive } from '@/lib/appActive'
+import { formatRpAbs, percentOf } from '@/lib/format'
+import { activeAccounts, emptyLedger, inMonth, itemUsed, ITEM_KINDS, loadLedger } from '@/lib/ledger'
+import { supabase } from '@/lib/supabase'
+import type { BudgetItemKind } from '@/lib/database.types'
+
+type Row = { id?: string; name: string; amount: number; kind: BudgetItemKind; account_id: string | null; debt_id: string | null }
 
 const { user, monthlyIncome, updateProfile } = useAuth()
-const { toast } = useNotify()
-const budget = ref<any>(null)
-const transactions = ref<any[]>([])
+const { confirmDelete, toast } = useNotify()
+
+const ledger  = ref(emptyLedger())
+const rows    = ref<Row[]>([])
+const income  = ref(0)
 const loading = ref(true)
-const saving = ref(false)
-const editMode = ref(false)
-const error = ref('')
+const saving  = ref(false)
+const dirty   = ref(false)
 
-const currentMonth = dayjs().format('YYYY-MM')
-
-const utamaPct       = ref(50)
-const jajanPct       = ref(30)
-const tabunganPct    = ref(20)
-const danaDaruratPct = ref(10)
-const incomeEdit     = ref(0)
-
-const totalPct   = computed(() => utamaPct.value + jajanPct.value + tabunganPct.value)
-const isValid    = computed(() => totalPct.value === 100 && danaDaruratPct.value <= tabunganPct.value)
-
-function amounts(pct: number) { return Math.round((pct / 100) * incomeEdit.value) }
-
-const categories = computed(() => [
-  { key: 'utama',       label: 'Utama',       color: '#378ADD', budget: budget.value?.utama_amount ?? 0, target: false },
-  { key: 'jajan',       label: 'Jajan',       color: '#EF9F27', budget: budget.value?.jajan_amount ?? 0, target: false },
-  { key: SETOR,         label: 'Tabungan',    color: '#1D9E75', budget: (budget.value?.tabungan_amount ?? 0) - (budget.value?.dana_darurat_amount ?? 0), target: true },
-  { key: SETOR_DARURAT, label: 'Dana Darurat',color: '#D85A30', budget: budget.value?.dana_darurat_amount ?? 0, target: true },
-])
-
-const inherited = computed(() => budget.value && budget.value.month !== currentMonth)
-
-const spendMap = computed(() => {
-  const m: Record<string, number> = {}
-  transactions.value.forEach(t => { m[t.category] = (m[t.category] ?? 0) + t.amount })
-  return m
-})
+const kinds = Object.keys(ITEM_KINDS) as BudgetItemKind[]
+const month = dayjs().format('YYYY-MM')
 
 async function load() {
-  if (!user.value) return
-  const uid = user.value.id
-  const [budgetRes, txRes] = await Promise.all([
-    cachedQuery(`${uid}:budget`, budgetFor(uid, currentMonth)),
-    cachedQuery(`${uid}:budget-transactions`, supabase.from('transactions').select('*').eq('user_id', uid).gte('date', dayjs().startOf('month').format('YYYY-MM-DD'))),
-  ])
-  budget.value = budgetRes.data
-  transactions.value = txRes.data ?? []
-  if (budget.value) {
-    utamaPct.value = budget.value.utama_pct
-    jajanPct.value = budget.value.jajan_pct
-    tabunganPct.value = budget.value.tabungan_pct
-    danaDaruratPct.value = budget.value.dana_darurat_pct
-  }
-  incomeEdit.value = monthlyIncome.value
+  if (!user.value || dirty.value) return
+  ledger.value = await loadLedger(user.value.id)
+  rows.value = ledger.value.items.map(i => ({ id: i.id, name: i.name, amount: Number(i.amount), kind: i.kind, account_id: i.account_id, debt_id: i.debt_id }))
+  income.value = monthlyIncome.value
   loading.value = false
 }
 
 onMounted(load)
 onAppActive(load)
 
-async function saveBudget() {
-  if (!isValid.value) { error.value = 'Total harus 100% dan dana darurat ≤ tabungan'; return }
-  saving.value = true; error.value = ''
-  await updateProfile({ monthly_income: incomeEdit.value })
-  const payload = {
-    user_id: user.value!.id, month: currentMonth,
-    utama_pct: utamaPct.value, jajan_pct: jajanPct.value,
-    tabungan_pct: tabunganPct.value, dana_darurat_pct: danaDaruratPct.value,
-    utama_amount: amounts(utamaPct.value), jajan_amount: amounts(jajanPct.value),
-    tabungan_amount: amounts(tabunganPct.value), dana_darurat_amount: amounts(danaDaruratPct.value),
-  }
-  const { error: dbErr } = await supabase.from('budget_allocations').upsert(payload, { onConflict: 'user_id,month' })
-  if (dbErr) { error.value = dbErr.message; saving.value = false; toast.error('Gagal menyimpan budget'); return }
-  budget.value = { ...budget.value, ...payload, month: currentMonth }
-  editMode.value = false; saving.value = false
-  toast.success('Budget disimpan')
+const accounts  = computed(() => activeAccounts(ledger.value))
+const monthTxs  = computed(() => inMonth(ledger.value.txs, month))
+const usedOf    = (row: Row) => {
+  const item = ledger.value.items.find(i => i.id === row.id)
+  return item ? itemUsed(item, monthTxs.value) : 0
+}
+const spendTotal = computed(() => rows.value.filter(r => r.kind !== 'tabungan').reduce((s, r) => s + Number(r.amount || 0), 0))
+const saveTotal  = computed(() => rows.value.filter(r => r.kind === 'tabungan').reduce((s, r) => s + Number(r.amount || 0), 0))
+const leftover   = computed(() => income.value - spendTotal.value - saveTotal.value)
+
+function addRow() {
+  rows.value.push({ name: '', amount: 0, kind: 'cadangan', account_id: accounts.value[0]?.id ?? null, debt_id: null })
+  dirty.value = true
 }
 
-function resetDefault() { utamaPct.value = 50; jajanPct.value = 30; tabunganPct.value = 20; danaDaruratPct.value = 10 }
-const pct = cappedPercent
+async function removeRow(index: number) {
+  const row = rows.value[index]
+  if (row.id && !(await confirmDelete(`Hapus pos ${row.name}?`, 'Transaksi yang sudah tercatat di pos ini tetap ada.'))) return
+  if (row.id) {
+    const { error } = await supabase.from('budget_items').update({ archived: true }).eq('id', row.id)
+    if (error) { toast.error('Gagal menghapus: ' + error.message); return }
+  }
+  rows.value.splice(index, 1)
+  toast.success('Pos dihapus')
+}
+
+async function saveAll() {
+  if (rows.value.some(r => !r.name.trim())) { toast.error('Semua pos harus punya nama'); return }
+  saving.value = true
+  const uid = user.value!.id
+  const payload = rows.value.map((r, sort) => ({
+    ...(r.id ? { id: r.id } : {}),
+    user_id: uid,
+    name: r.name.trim(),
+    amount: Number(r.amount || 0),
+    kind: r.kind,
+    account_id: r.account_id,
+    debt_id: r.debt_id,
+    sort,
+  }))
+  const updates = payload.filter(p => 'id' in p)
+  const inserts = payload.filter(p => !('id' in p))
+  const results = await Promise.all([
+    updates.length ? supabase.from('budget_items').upsert(updates as any) : Promise.resolve({ error: null }),
+    inserts.length ? supabase.from('budget_items').insert(inserts) : Promise.resolve({ error: null }),
+    income.value !== monthlyIncome.value ? updateProfile({ monthly_income: income.value }) : Promise.resolve(),
+  ])
+  saving.value = false
+  const failed = results.find(r => r && 'error' in r && r.error) as { error: { message: string } } | undefined
+  if (failed) { toast.error('Gagal menyimpan: ' + failed.error.message); return }
+  dirty.value = false
+  toast.success('Pos budget disimpan')
+  await load()
+}
 </script>
 
 <template>
   <div class="page">
-    <div class="page-header">
-      <div>
+    <header class="page-header">
+      <div class="title-block">
+        <span class="c-kicker kicker-accent">Rencana bulanan · berlaku tiap bulan sampai diubah</span>
         <h1 class="page-title">Budget</h1>
-        <p class="page-sub">Alokasi {{ dayjs().format('MMMM YYYY') }}<template v-if="inherited"> · mengikuti budget {{ dayjs(budget.month + '-01').format('MMMM YYYY') }}</template></p>
       </div>
-      <button class="btn-edit" @click="editMode = !editMode">{{ editMode ? 'Batal' : 'Edit budget' }}</button>
-    </div>
+      <div class="header-actions">
+        <button class="c-btn c-btn-secondary" @click="addRow">Tambah pos</button>
+        <button class="c-btn c-btn-primary" :disabled="saving || !dirty" @click="saveAll">{{ saving ? 'Menyimpan…' : 'Simpan' }}</button>
+      </div>
+    </header>
 
-    <div v-if="loading" class="empty-state">Memuat...</div>
+    <div v-if="loading" class="loading-wrap"><div class="loading-spinner"></div><p>Memuat data…</p></div>
+
     <template v-else>
-      <!-- Edit mode -->
-      <div v-if="editMode" class="edit-card">
-        <div class="edit-header">
-          <h2 class="section-title">Edit alokasi</h2>
-          <button class="btn-reset" @click="resetDefault">Reset 50/30/20</button>
+      <section class="summary">
+        <div class="summary-item">
+          <span class="c-kicker">Gaji bulanan</span>
+          <input v-model.number="income" type="number" class="c-input" aria-label="Gaji bulanan" @input="dirty = true" />
+          <span class="summary-sub">dipakai wizard hari gajian</span>
         </div>
-
-        <div class="form-field">
-          <label>Income bulanan</label>
-          <div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model.number="incomeEdit" /></div>
+        <div class="summary-item">
+          <span class="c-kicker">Kebutuhan</span>
+          <span class="summary-value c-num">{{ formatRpAbs(spendTotal) }}</span>
+          <span class="summary-sub">{{ percentOf(spendTotal, income) }}% dari gaji</span>
         </div>
-
-        <div class="total-bar" :class="{ valid: totalPct === 100, invalid: totalPct !== 100 }">
-          <span>Total alokasi</span><span>{{ totalPct }}% / 100%</span>
+        <div class="summary-item">
+          <span class="c-kicker">Tabungan</span>
+          <span class="summary-value c-num">{{ formatRpAbs(saveTotal) }}</span>
+          <span class="summary-sub">{{ percentOf(saveTotal, income) }}% dari gaji</span>
         </div>
-
-        <div class="alloc-rows">
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-utama"></span><span>Utama</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="utamaPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(utamaPct)) }}</span></div></div>
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-jajan"></span><span>Jajan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="jajanPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(jajanPct)) }}</span></div></div>
-          <div class="alloc-row"><div class="alloc-info"><span class="alloc-dot swatch-tabungan"></span><span>Tabungan</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="tabunganPct" min="0" max="100" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(tabunganPct)) }}</span></div></div>
-          <div class="alloc-row sub"><div class="alloc-info"><span class="alloc-dot swatch-darurat"></span><span>↳ Dana Darurat</span></div><div class="alloc-inputs"><div class="pct-wrap"><input type="number" v-model.number="danaDaruratPct" min="0" :max="tabunganPct" /><span>%</span></div><span class="rp-val">{{ formatRp(amounts(danaDaruratPct)) }}</span></div></div>
+        <div class="summary-item balance">
+          <span class="c-kicker">Belum dialokasikan</span>
+          <span class="summary-value c-num">{{ leftover < 0 ? '− ' : '' }}{{ formatRpAbs(leftover) }}</span>
+          <span class="summary-sub">{{ leftover < 0 ? 'rencana melebihi gaji' : 'sisa gaji di luar pos' }}</span>
         </div>
+      </section>
 
-        <div v-if="error" class="error-msg">{{ error }}</div>
-        <button class="btn-save" @click="saveBudget" :disabled="saving || !isValid">
-          <span v-if="saving" class="spinner"></span><span v-else>Simpan perubahan</span>
-        </button>
-      </div>
+      <p class="note-text">
+        Harian = dibagi rata per hari dan jadi jatah harian. Tetap = dibayar sekali sebulan. Cadangan = amplop bulanan yang dipakai bila perlu.
+        Tabungan = ditransfer ke rekening tabungan saat gajian.
+      </p>
 
-      <!-- View mode -->
-      <div v-else>
-        <div v-if="!budget" class="empty-state">Budget bulan ini belum diset. <button class="link-btn" @click="editMode = true">Set sekarang</button></div>
-        <div v-else class="budget-grid">
-          <div v-for="cat in categories" :key="cat.key" class="budget-card">
-            <div class="bcard-header">
-              <div class="bcard-name"><span class="bcard-dot" :style="{ background: cat.color }"></span>{{ cat.label }}</div>
-              <span class="bcard-pct" :class="{ over: !cat.target && (spendMap[cat.key] ?? 0) > cat.budget }">
-                {{ pct(spendMap[cat.key] ?? 0, cat.budget) }}%
-              </span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" :style="{ width: pct(spendMap[cat.key] ?? 0, cat.budget) + '%', background: !cat.target && (spendMap[cat.key] ?? 0) > cat.budget ? '#E24B4A' : cat.color }"></div></div>
-            <div class="bcard-amounts">
-              <span class="spent">{{ formatRp(spendMap[cat.key] ?? 0) }}</span>
-              <span class="of">dari</span>
-              <span class="bud">{{ formatRp(cat.budget) }}</span>
-            </div>
-            <div v-if="cat.target" class="remaining">
-              {{ (spendMap[cat.key] ?? 0) >= cat.budget ? 'Target bulan ini tercapai' : 'Belum disetor: ' + formatRp(cat.budget - (spendMap[cat.key] ?? 0)) }}
-            </div>
-            <div v-else class="remaining" :class="{ over: (spendMap[cat.key] ?? 0) > cat.budget }">
-              {{ (spendMap[cat.key] ?? 0) > cat.budget ? 'Melebihi budget!' : 'Sisa: ' + formatRp(cat.budget - (spendMap[cat.key] ?? 0)) }}
-            </div>
+      <section class="table">
+        <div class="table-row head"><span>Pos</span><span>Nominal</span><span>Jenis</span><span>Rekening</span><span></span></div>
+        <div v-for="(row, index) in rows" :key="row.id ?? 'new' + index" class="table-row">
+          <div class="field">
+            <input v-model="row.name" class="c-input" maxlength="40" placeholder="Nama pos" @input="dirty = true" />
+            <span v-if="row.id" class="c-num">terpakai {{ formatRpAbs(usedOf(row)) }} bulan ini</span>
+            <select v-if="ledger.debts.length" v-model="row.debt_id" class="c-input" aria-label="Terhubung ke cicilan" @change="dirty = true">
+              <option :value="null">Bukan cicilan</option>
+              <option v-for="d in ledger.debts" :key="d.id" :value="d.id">Cicilan: {{ d.name }}</option>
+            </select>
           </div>
+          <input v-model.number="row.amount" type="number" class="c-input" aria-label="Nominal" @input="dirty = true" />
+          <select v-model="row.kind" class="c-input" aria-label="Jenis" @change="dirty = true">
+            <option v-for="k in kinds" :key="k" :value="k">{{ ITEM_KINDS[k] }}</option>
+          </select>
+          <select v-model="row.account_id" class="c-input" aria-label="Rekening" @change="dirty = true">
+            <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
+          </select>
+          <button class="c-btn c-btn-ghost" :aria-label="'Hapus pos ' + row.name" @click="removeRow(index)">Hapus</button>
         </div>
-      </div>
+        <div class="table-row foot">
+          <span>Total</span><span class="c-num">{{ formatRpAbs(spendTotal + saveTotal) }}</span><span></span><span></span><span></span>
+        </div>
+      </section>
     </template>
   </div>
 </template>
 
-<style scoped src="../styles/views/budget-view.css"></style>
+<style scoped src="../styles/views/dashboard-view.css"></style>
+<style scoped src="../styles/views/ledger-view.css"></style>

@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import jsPDF from 'jspdf'
 import { categoryLabel } from '@/lib/categories'
-import { budgetFor } from '@/lib/ledger'
+import { itemUsed, ITEM_KINDS, type Tx } from '@/lib/ledger'
 import { formatRpAbs } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import dayjs from 'dayjs'
@@ -23,13 +23,13 @@ export function useExportPDF() {
         supabase.from('transactions').select('*').eq('user_id', userId)
           .gte('date', startDate).lte('date', endDate)
           .order('date', { ascending: true }),
-        budgetFor(userId, month),
+        supabase.from('budget_items').select('*').eq('user_id', userId).eq('archived', false).order('sort'),
         supabase.from('saving_goals').select('*').eq('user_id', userId)
           .order('created_at', { ascending: true }),
       ])
 
       const transactions = txRes.data ?? []
-      const budget       = budgetRes.data
+      const items        = budgetRes.data ?? []
       const goals        = goalsRes.data ?? []
 
       // ── Kalkulasi ─────────────────────────────────────────────────
@@ -37,10 +37,6 @@ export function useExportPDF() {
       const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
       const balance      = totalIncome - totalExpense
 
-      const catSpend: Record<string, number> = {}
-      transactions.filter(t => t.type === 'expense').forEach(t => {
-        catSpend[t.category] = (catSpend[t.category] ?? 0) + t.amount
-      })
 
       // ── Setup PDF ─────────────────────────────────────────────────
       const doc    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -114,43 +110,42 @@ export function useExportPDF() {
       y += 26
 
       // ── BUDGET vs AKTUAL ──────────────────────────────────────────
-      if (budget) {
+      if (items.length > 0) {
         setColor(DARK)
         doc.setFontSize(10); doc.setFont('helvetica', 'bold')
-        doc.text('Alokasi vs Pengeluaran Aktual', margin, y)
+        doc.text('Pos Budget vs Aktual', margin, y)
         y += 6
 
-        const cats = [
-          { key: 'utama',       label: 'Utama',        color: [55, 138, 221] as [number,number,number] },
-          { key: 'jajan',       label: 'Jajan',        color: [239, 159, 39] as [number,number,number] },
-          { key: 'tabungan',    label: 'Tabungan',     color: GREEN },
-          { key: 'dana_darurat',label: 'Dana Darurat', color: [216, 90, 48]  as [number,number,number] },
-        ]
+        const cats = items.map(item => ({
+          label: `${item.name} (${ITEM_KINDS[item.kind].toLowerCase()})`,
+          color: item.kind === 'tabungan' ? GREEN : [55, 138, 221] as [number,number,number],
+          budgeted: Number(item.amount),
+          spent: itemUsed(item, transactions as Tx[]),
+        }))
 
         cats.forEach(cat => {
-          const budgeted = (budget as Record<string, any>)[`${cat.key}_amount`] ?? 0
-          const spent    = catSpend[cat.key] ?? 0
+          const { budgeted, spent } = cat
           const pct      = budgeted > 0 ? Math.min(100, (spent / budgeted) * 100) : 0
           const barW     = 60
 
           // Label
           setColor(DARK)
           doc.setFontSize(8); doc.setFont('helvetica', 'bold')
-          doc.text(cat.label, margin, y + 4)
+          doc.text(cat.label.slice(0, 30), margin, y + 4)
 
           // Bar background
           setFill(LIGHT_GRAY); setDraw(LIGHT_GRAY)
-          doc.roundedRect(margin + 28, y, barW, 5, 1, 1, 'FD')
+          doc.roundedRect(margin + 48, y, barW, 5, 1, 1, 'FD')
           // Bar fill
           if (pct > 0) {
             setFill(spent > budgeted ? RED : cat.color)
-            doc.roundedRect(margin + 28, y, barW * (pct / 100), 5, 1, 1, 'F')
+            doc.roundedRect(margin + 48, y, barW * (pct / 100), 5, 1, 1, 'F')
           }
 
           // Amounts
           setColor(GRAY)
           doc.setFontSize(7); doc.setFont('helvetica', 'normal')
-          doc.text(`${formatRpAbs(spent)} / ${formatRpAbs(budgeted)}`, margin + 92, y + 4)
+          doc.text(`${formatRpAbs(spent)} / ${formatRpAbs(budgeted)}`, margin + 112, y + 4)
 
           // Pct
           setColor(spent > budgeted ? RED : DARK)

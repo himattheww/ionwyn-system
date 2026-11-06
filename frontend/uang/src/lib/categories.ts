@@ -5,6 +5,8 @@ export const categoryLabels: Record<string, string> = {
   dana_darurat: 'Ambil dana darurat',
   setor_tabungan: 'Setor tabungan',
   setor_dana_darurat: 'Setor dana darurat',
+  transfer: 'Transfer',
+  penyesuaian: 'Penyesuaian saldo',
   gaji: 'Gaji',
   freelance: 'Freelance',
   bisnis: 'Bisnis',

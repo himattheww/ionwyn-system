@@ -60,9 +60,12 @@ Rangkuman hari ini dari semua aplikasi dalam satu halaman: jadwal hari ini, stat
 - Aturan exp ada di `backend/leveling/config/rules.json`. Item jadwal yang sudah dihitung di aplikasi asalnya tidak memberi exp ganda.
 
 ### Keuangan (`/uang/`)
-- Transaksi pemasukan dan pengeluaran, transaksi berulang, budget per kategori, dan target tabungan.
-- Dashboard, grafik, dan laporan bulanan yang bisa diekspor ke PDF.
-- Jatah harian tetap: alokasi Utama + Jajan dibagi jumlah hari dalam bulan. Sisa jatah hari yang sudah lewat terkumpul di **Sudah menabung bulan ini**. Kalau belanja hari ini melewati jatah, kelebihannya langsung mengurangi angka itu, dan bisa berubah menjadi **Defisit bulan ini**.
+- Rekening dengan saldo awal masing-masing. Pemasukan dan pengeluaran dicatat di rekening tertentu, perpindahan uang dicatat sebagai transfer.
+- Pencocokan saldo per rekening: isi saldo di bank, aplikasi menunjukkan selisihnya dan bisa mencatat penyesuaian.
+- Budget per pos (tetap, harian, cadangan, tabungan) yang berlaku tiap bulan sampai diubah, plus wizard **Hari gajian** yang menyusun transfer per rekening.
+- Penanda pengeluaran dadakan, cicilan dan utang dengan sisa dan perkiraan lunas, serta target dana darurat 3–6× kebutuhan bulanan.
+- Dashboard, grafik, transaksi berulang, saving goals, dan laporan bulanan yang bisa diekspor ke PDF.
+- Jatah harian tetap: total pos berjenis Harian dibagi jumlah hari dalam bulan. Sisa jatah hari yang sudah lewat terkumpul di **Sudah menabung bulan ini**. Kalau belanja hari ini melewati jatah, kelebihannya langsung mengurangi angka itu, dan bisa berubah menjadi **Defisit bulan ini**.
 - Untuk analisis pola pengeluaran, tanya langsung di chat Claude lewat konektor MCP (`finance_month`).
 - Bot Telegram: catat transaksi dan cek saldo dari chat (`/add`, `/list`, `/saldo`, `/goals`, `/help`). Hubungkan akun dari menu **Telegram** di aplikasi.
 

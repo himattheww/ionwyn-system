@@ -129,3 +129,7 @@
 }
 .side-value { color: var(--accent); }
 .side-value.deficit { color: var(--bad); }
+.rule-mark { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 2px; background: var(--ink); }
+.block-head.sub { margin-top: var(--space-4); }
+.block-title.small { font-size: 20px; }
+.tx-amount.transfer { color: var(--color-neutral-700); }

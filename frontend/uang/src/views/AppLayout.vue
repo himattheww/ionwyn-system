@@ -12,9 +12,11 @@ const { logout } = useAuth()
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/transactions', label: 'Transaksi' },
+  { to: '/accounts', label: 'Rekening' },
+  { to: '/budget', label: 'Budget' },
+  { to: '/debts', label: 'Utang' },
   { to: '/charts', label: 'Charts' },
   { to: '/goals', label: 'Goals' },
-  { to: '/budget', label: 'Budget' },
   { to: '/profile', label: 'Profil' },
 ]
 

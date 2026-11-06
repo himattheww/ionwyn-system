@@ -2,107 +2,124 @@
 import { formatRp } from '@/lib/format'
 import { categoryLabel } from '@/lib/categories'
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { supabase } from '@/lib/supabase'
 import { cachedQuery, isOffline } from '@/lib/offlineCache'
-import { pendingItems, addPending, removePending } from '@/lib/pending'
+import { pendingItems, addPending, removePending, type PendingTx } from '@/lib/pending'
 import { onAppActive } from '@/lib/appActive'
 import { computeAllowance, describeSpending } from '@/lib/dailyAllowance'
+import { accountName, accountOf, activeAccounts, dailyPool, defaultAccountId, emptyLedger, isDaily, loadLedger, type Tx } from '@/lib/ledger'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
-import { useRoute } from 'vue-router'
-import { budgetFor, kindOf, SAVINGS_CATEGORIES, SETOR, SETOR_DARURAT, spending, type Kind } from '@/lib/ledger'
+
+type Kind = 'expense' | 'income' | 'transfer'
 
 const { user } = useAuth()
 const { confirmDelete, toast } = useNotify()
 const route = useRoute()
 
-// ─── State ────────────────────────────────────────────────────────
-const transactions = ref<any[]>([])
-const recurrings   = ref<any[]>([])
-const loading      = ref(true)
-const tab          = ref<'transactions' | 'recurring'>('transactions')
-const showForm     = ref(false)
+const ledger      = ref(emptyLedger())
+const recurrings  = ref<any[]>([])
+const loading     = ref(true)
+const tab         = ref<'transactions' | 'recurring'>('transactions')
+const showForm    = ref(false)
 const showRecurringForm = ref(false)
-const saving       = ref(false)
-const error        = ref('')
+const saving      = ref(false)
+const error       = ref('')
 
-const filterType  = ref<'all' | Kind>('all')
-const filterMonth = ref(dayjs().format('YYYY-MM'))
+const filterType    = ref<'all' | Kind | 'unplanned'>('all')
+const filterMonth   = ref(dayjs().format('YYYY-MM'))
+const filterAccount = ref('all')
 
-// ─── Transaction form ─────────────────────────────────────────────
-const form = ref({
-  type: 'expense' as Kind,
-  amount: '',
-  category: 'jajan',
-  note: '',
-  date: dayjs().format('YYYY-MM-DD'),
-})
-
-// ─── Recurring form ───────────────────────────────────────────────
-const rForm = ref({
-  name: '',
-  type: 'expense' as Kind,
-  amount: '',
-  category: 'utama',
-  frequency: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
-  start_date: dayjs().format('YYYY-MM-DD'),
-})
-
-const categoriesByKind: Record<Kind, string[]> = {
-  expense: ['utama', 'jajan'],
-  income: ['gaji', 'freelance', 'bisnis', 'lainnya'],
-  savings: SAVINGS_CATEGORIES,
-}
-const kindLabels: Record<Kind, string> = { expense: 'Pengeluaran', income: 'Pemasukan', savings: 'Tabungan' }
+const kindLabels: Record<Kind, string> = { expense: 'Pengeluaran', income: 'Pemasukan', transfer: 'Transfer' }
 const kinds = Object.keys(kindLabels) as Kind[]
-const dbType = (kind: Kind): 'income' | 'expense' => (kind === 'income' ? 'income' : 'expense')
+const incomeCategories = ['gaji', 'freelance', 'bisnis', 'lainnya']
 const frequencyLabels: Record<string, string> = { daily: 'Harian', weekly: 'Mingguan', monthly: 'Bulanan', yearly: 'Tahunan' }
 
-const categoryOptions = computed(() => categoriesByKind[form.value.type])
-const rCategoryOptions = computed(() => categoriesByKind[rForm.value.type])
+const today = () => dayjs().format('YYYY-MM-DD')
 
-const allTransactions = computed(() =>
-  [...pendingItems.value.map(p => ({ ...p, pending: true })), ...transactions.value]
-    .sort((a, b) => b.date.localeCompare(a.date))
+const blankForm = () => ({
+  type: 'expense' as Kind,
+  amount: '',
+  itemId: ledger.value.items.find(i => i.kind === 'harian')?.id ?? '',
+  category: 'gaji',
+  accountId: defaultAccountId(ledger.value) ?? '',
+  toAccountId: '',
+  debtId: '',
+  unplanned: false,
+  note: '',
+  date: today(),
+})
+const form = ref(blankForm())
+
+const blankRecurring = () => ({
+  name: '',
+  type: 'expense' as 'expense' | 'income',
+  amount: '',
+  itemId: '',
+  category: 'gaji',
+  accountId: defaultAccountId(ledger.value) ?? '',
+  frequency: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
+  start_date: today(),
+})
+const rForm = ref(blankRecurring())
+
+const accounts     = computed(() => activeAccounts(ledger.value))
+const spendItems   = computed(() => ledger.value.items.filter(i => i.kind !== 'tabungan'))
+const itemById     = (id: string) => ledger.value.items.find(i => i.id === id)
+
+watch(() => form.value.itemId, id => {
+  const item = itemById(id)
+  if (item?.account_id) form.value.accountId = item.account_id
+  form.value.debtId = item?.debt_id ?? ''
+  if (item) form.value.unplanned = item.name.toLowerCase().includes('dadakan')
+})
+
+watch(() => rForm.value.itemId, id => {
+  const item = itemById(id)
+  if (item?.account_id) rForm.value.accountId = item.account_id
+})
+
+const allTransactions = computed<Tx[]>(() =>
+  [...(pendingItems.value as Tx[]).map(p => ({ ...p, pending: true })), ...ledger.value.txs]
+    .sort((a, b) => b.date.localeCompare(a.date)),
 )
 
 const filtered = computed(() =>
   allTransactions.value.filter(t => {
-    const matchType  = filterType.value === 'all' || kindOf(t) === filterType.value
-    const matchMonth = t.date.startsWith(filterMonth.value)
-    return matchType && matchMonth
-  })
+    const matchType = filterType.value === 'all' || (filterType.value === 'unplanned' ? t.type === 'expense' && t.unplanned : t.type === filterType.value)
+    const matchAccount = filterAccount.value === 'all' || accountOf(t, ledger.value) === filterAccount.value || t.to_account_id === filterAccount.value
+    return matchType && matchAccount && t.date.startsWith(filterMonth.value)
+  }),
 )
 
-const totalIncome  = computed(() => filtered.value.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0))
-const totalExpense = computed(() => spending(filtered.value))
+const sumType = (type: string) => filtered.value.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0)
+const totalIncome  = computed(() => sumType('income'))
+const totalExpense = computed(() => sumType('expense'))
 
-// Recurring yang jatuh tempo dalam 7 hari ke depan
-const dueSoon = computed(() =>
-  recurrings.value.filter(r => r.is_active && dayjs(r.next_due_date).diff(dayjs(), 'day') <= 7)
-)
+const dueSoon = computed(() => recurrings.value.filter(r => r.is_active && dayjs(r.next_due_date).diff(dayjs(), 'day') <= 7))
 
-// ─── Lifecycle ────────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([fetchTransactions(), fetchRecurrings()])
+  await Promise.all([fetchLedger(), fetchRecurrings()])
   await processOverdueRecurrings()
-  if (route.query.setor) openForm(route.query.setor === 'darurat' ? SETOR_DARURAT : SETOR)
+  if (route.query.setor) openForm('transfer', { toAccountId: accounts.value.find(a => a.kind === 'tabungan')?.id ?? '' })
+  if (typeof route.query.bayar === 'string') {
+    const debtId = route.query.bayar
+    const item = ledger.value.items.find(i => i.debt_id === debtId)
+    openForm('expense', { itemId: item?.id ?? '', debtId })
+  }
 })
 
-onAppActive(() => Promise.all([fetchTransactions(), fetchRecurrings()]))
+onAppActive(() => Promise.all([fetchLedger(), fetchRecurrings()]))
 
 watch(() => pendingItems.value.length, (now, before) => {
-  if (now < before) fetchTransactions()
+  if (now < before) fetchLedger()
 })
 
-async function fetchTransactions() {
+async function fetchLedger() {
   if (!user.value) return
-  loading.value = true
-  const { data } = await cachedQuery(`${user.value.id}:transactions`,
-    supabase.from('transactions').select('*')
-      .eq('user_id', user.value.id).order('date', { ascending: false }))
-  transactions.value = data ?? []
+  ledger.value = await loadLedger(user.value.id)
   loading.value = false
 }
 
@@ -114,12 +131,10 @@ async function fetchRecurrings() {
   recurrings.value = data ?? []
 }
 
-// Auto-generate transaksi untuk recurring yang sudah lewat due date
 async function processOverdueRecurrings() {
   if (!user.value || isOffline.value) return
   const overdue = recurrings.value.filter(r => r.is_active && dayjs(r.next_due_date).isBefore(dayjs(), 'day'))
   for (const r of overdue) {
-    // Insert transaksi
     await supabase.from('transactions').insert({
       user_id: user.value.id,
       type: r.type,
@@ -128,14 +143,13 @@ async function processOverdueRecurrings() {
       note: r.name,
       date: r.next_due_date,
       recurring_id: r.id,
+      account_id: r.account_id ?? defaultAccountId(ledger.value),
+      budget_item_id: r.budget_item_id,
+      debt_id: r.debt_id,
     })
-    // Hitung next due date
-    const next = calcNextDue(r.next_due_date, r.frequency)
-    await supabase.from('recurring_transactions').update({ next_due_date: next }).eq('id', r.id)
+    await supabase.from('recurring_transactions').update({ next_due_date: calcNextDue(r.next_due_date, r.frequency) }).eq('id', r.id)
   }
-  if (overdue.length > 0) {
-    await Promise.all([fetchTransactions(), fetchRecurrings()])
-  }
+  if (overdue.length > 0) await Promise.all([fetchLedger(), fetchRecurrings()])
 }
 
 function calcNextDue(from: string, frequency: string) {
@@ -143,29 +157,42 @@ function calcNextDue(from: string, frequency: string) {
   return dayjs(from).add(1, map[frequency]).format('YYYY-MM-DD')
 }
 
-// ─── Transaction CRUD ─────────────────────────────────────────────
-function openForm(category = 'jajan') {
-  form.value = { type: SAVINGS_CATEGORIES.includes(category) ? 'savings' : 'expense', amount: '', category, note: '', date: dayjs().format('YYYY-MM-DD') }
+function openForm(type: Kind = 'expense', preset: Partial<ReturnType<typeof blankForm>> = {}) {
+  form.value = { ...blankForm(), type }
+  Object.assign(form.value, preset)
   error.value = ''
   showForm.value = true
 }
 
-function onTypeChange() {
-  form.value.category = { expense: 'jajan', income: 'gaji', savings: SETOR }[form.value.type]
+function buildPayload(): PendingTx {
+  const f = form.value
+  const base = {
+    id: crypto.randomUUID(),
+    user_id: user.value!.id,
+    amount: Number(f.amount),
+    note: f.note || null,
+    date: f.date,
+    account_id: f.accountId || defaultAccountId(ledger.value),
+  }
+  if (f.type === 'transfer') return { ...base, type: 'transfer' as const, category: 'transfer', to_account_id: f.toAccountId }
+  if (f.type === 'income') return { ...base, type: 'income' as const, category: f.category }
+  const item = itemById(f.itemId)
+  return {
+    ...base,
+    type: 'expense' as const,
+    category: item?.name ?? 'lainnya',
+    budget_item_id: item?.id ?? null,
+    debt_id: f.debtId || null,
+    unplanned: f.unplanned,
+  }
 }
 
 async function saveTransaction() {
-  if (!form.value.amount || Number(form.value.amount) <= 0) { error.value = 'Masukkan jumlah yang valid'; return }
+  const f = form.value
+  if (!f.amount || Number(f.amount) <= 0) { error.value = 'Masukkan jumlah yang valid'; return }
+  if (f.type === 'transfer' && (!f.toAccountId || f.toAccountId === f.accountId)) { error.value = 'Pilih rekening tujuan yang berbeda'; return }
   saving.value = true; error.value = ''
-  const payload = {
-    id: crypto.randomUUID(),
-    user_id: user.value!.id,
-    type: dbType(form.value.type),
-    amount: Number(form.value.amount),
-    category: form.value.category,
-    note: form.value.note || null,
-    date: form.value.date,
-  }
+  const payload = buildPayload()
   const { error: dbErr, status } = await supabase.from('transactions').insert(payload)
   if (dbErr && status === 0) {
     addPending(payload)
@@ -176,19 +203,20 @@ async function saveTransaction() {
   }
   if (dbErr) { error.value = dbErr.message; saving.value = false; return }
   showForm.value = false
-  await fetchTransactions()
+  await fetchLedger()
   saving.value = false
 
-  const { data: budget } = await budgetFor(user.value!.id, dayjs().format('YYYY-MM'))
-  const allowance = computeAllowance(budget, [...transactions.value, ...pendingItems.value])
-  const note = describeSpending(payload, allowance)
+  const items = ledger.value.items
+  if (!isDaily(payload, items)) { toast.success('Transaksi disimpan'); return }
+  const allowance = computeAllowance(dailyPool(items), [...ledger.value.txs, ...(pendingItems.value as Tx[])], t => isDaily(t, items))
+  const note = describeSpending(allowance)
   if (note) toast[note.tone](`Tersimpan. ${note.text}`)
   else toast.success('Transaksi disimpan')
 }
 
 async function deleteTransaction(id: string) {
   const tx = allTransactions.value.find(t => t.id === id)
-  const detail = tx ? `${categoryLabel(tx.category)} · ${formatRp(tx.amount)}${tx.note ? ` · ${tx.note}` : ''}` : undefined
+  const detail = tx ? `${txLabel(tx)} · ${formatRp(tx.amount)}${tx.note ? ` · ${tx.note}` : ''}` : undefined
   if (!(await confirmDelete('Hapus transaksi ini?', detail))) return
   if (tx?.pending) {
     removePending(id)
@@ -197,34 +225,39 @@ async function deleteTransaction(id: string) {
   }
   const { error: dbErr } = await supabase.from('transactions').delete().eq('id', id)
   if (dbErr) { toast.error('Gagal menghapus: ' + dbErr.message); return }
-  transactions.value = transactions.value.filter(t => t.id !== id)
+  ledger.value = { ...ledger.value, txs: ledger.value.txs.filter(t => t.id !== id) }
   toast.success('Transaksi dihapus')
 }
 
-// ─── Recurring CRUD ───────────────────────────────────────────────
+function txLabel(t: Tx) {
+  if (t.type === 'transfer') return `${accountName(ledger.value, accountOf(t, ledger.value))} → ${accountName(ledger.value, t.to_account_id)}`
+  return categoryLabel(t.category)
+}
+
 function openRecurringForm() {
-  rForm.value = { name: '', type: 'expense', amount: '', category: 'utama', frequency: 'monthly', start_date: dayjs().format('YYYY-MM-DD') }
+  rForm.value = blankRecurring()
   error.value = ''
   showRecurringForm.value = true
 }
 
-function onRTypeChange() {
-  rForm.value.category = { expense: 'utama', income: 'gaji', savings: SETOR }[rForm.value.type]
-}
-
 async function saveRecurring() {
-  if (!rForm.value.name || !rForm.value.amount) { error.value = 'Nama dan jumlah wajib diisi'; return }
+  const r = rForm.value
+  if (!r.name || !r.amount) { error.value = 'Nama dan jumlah wajib diisi'; return }
   saving.value = true; error.value = ''
+  const item = r.type === 'expense' ? itemById(r.itemId) : undefined
   const { error: dbErr } = await supabase.from('recurring_transactions').insert({
     user_id: user.value!.id,
-    name: rForm.value.name,
-    type: dbType(rForm.value.type),
-    amount: Number(rForm.value.amount),
-    category: rForm.value.category,
-    frequency: rForm.value.frequency,
-    start_date: rForm.value.start_date,
-    next_due_date: rForm.value.start_date,
+    name: r.name,
+    type: r.type,
+    amount: Number(r.amount),
+    category: r.type === 'income' ? r.category : item?.name ?? 'lainnya',
+    frequency: r.frequency,
+    start_date: r.start_date,
+    next_due_date: r.start_date,
     is_active: true,
+    account_id: r.accountId || defaultAccountId(ledger.value),
+    budget_item_id: item?.id ?? null,
+    debt_id: item?.debt_id ?? null,
   })
   if (dbErr) { error.value = dbErr.message; saving.value = false; return }
   showRecurringForm.value = false
@@ -250,7 +283,6 @@ async function deleteRecurring(id: string) {
   toast.success('Tagihan berulang dihapus')
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────
 function daysUntil(date: string) {
   const diff = dayjs(date).diff(dayjs(), 'day')
   if (diff < 0) return 'Terlewat'
@@ -270,7 +302,7 @@ function daysUntilClass(date: string) {
     <div class="page-header">
       <div>
         <h1 class="page-title">Transaksi</h1>
-        <p class="page-sub">Kelola pemasukan dan pengeluaranmu</p>
+        <p class="page-sub">Kelola pemasukan, pengeluaran, dan transfer antar rekening</p>
       </div>
       <div class="header-actions">
         <button v-if="tab === 'transactions'" class="btn-add" @click="openForm()">
@@ -284,14 +316,12 @@ function daysUntilClass(date: string) {
       </div>
     </div>
 
-    <!-- Due soon alert -->
     <div v-if="dueSoon.length > 0" class="due-alert">
       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       <span>{{ dueSoon.length }} tagihan jatuh tempo dalam 7 hari ke depan</span>
       <button class="due-see" @click="tab = 'recurring'">Lihat →</button>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn" :class="{ active: tab === 'transactions' }" @click="tab = 'transactions'">Transaksi</button>
       <button class="tab-btn" :class="{ active: tab === 'recurring' }" @click="tab = 'recurring'">
@@ -300,7 +330,6 @@ function daysUntilClass(date: string) {
       </button>
     </div>
 
-    <!-- ── TRANSACTIONS TAB ── -->
     <template v-if="tab === 'transactions'">
       <div class="summary-row">
         <div class="summary-card income"><p class="summary-label">Pemasukan</p><p class="summary-val">{{ formatRp(totalIncome) }}</p></div>
@@ -310,9 +339,13 @@ function daysUntilClass(date: string) {
 
       <div class="filters">
         <input type="month" v-model="filterMonth" class="filter-input" />
+        <select v-model="filterAccount" class="filter-input" aria-label="Rekening">
+          <option value="all">Semua rekening</option>
+          <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
+        </select>
         <div class="filter-tabs">
-          <button v-for="t in ['all', ...kinds]" :key="t" class="filter-tab" :class="{ active: filterType === t }" @click="filterType = t as any">
-            {{ t === 'all' ? 'Semua' : kindLabels[t as Kind] }}
+          <button v-for="t in ['all', ...kinds, 'unplanned']" :key="t" class="filter-tab" :class="{ active: filterType === t }" @click="filterType = t as any">
+            {{ t === 'all' ? 'Semua' : t === 'unplanned' ? 'Dadakan' : kindLabels[t as Kind] }}
           </button>
         </div>
       </div>
@@ -322,17 +355,25 @@ function daysUntilClass(date: string) {
         <div v-else-if="filtered.length === 0" class="empty-state">Tidak ada transaksi di periode ini.</div>
         <div v-else>
           <div v-for="tx in filtered" :key="tx.id" class="tx-row">
-            <div class="tx-icon" :style="{ background: tx.type === 'income' ? 'var(--color-accent-100)' : '#FCEBEB' }">
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" :style="{ stroke: tx.type === 'income' ? 'var(--color-accent-700)' : '#E24B4A' }" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" :d="tx.type === 'income' ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'"/>
+            <div class="tx-icon" :class="'icon-' + tx.type">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path v-if="tx.type === 'transfer'" stroke-linecap="round" stroke-linejoin="round" d="M7 7h13m0 0l-4-4m4 4l-4 4M17 17H4m0 0l4 4m-4-4l4-4"/>
+                <path v-else stroke-linecap="round" stroke-linejoin="round" :d="tx.type === 'income' ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'"/>
               </svg>
             </div>
             <div class="tx-info">
-              <p class="tx-cat">{{ categoryLabel(tx.category) }}<span v-if="tx.recurring_id" class="recurring-tag">Berulang</span><span v-if="tx.pending" class="pending-tag">Pending</span></p>
-              <p class="tx-meta">{{ dayjs(tx.date).format('DD MMM YYYY') }}<span v-if="tx.note"> · {{ tx.note }}</span></p>
+              <p class="tx-cat">
+                {{ txLabel(tx) }}
+                <span v-if="tx.unplanned" class="pending-tag">Dadakan</span>
+                <span v-if="tx.recurring_id" class="recurring-tag">Berulang</span>
+                <span v-if="tx.pending" class="pending-tag">Pending</span>
+              </p>
+              <p class="tx-meta">
+                {{ dayjs(tx.date).format('DD MMM YYYY') }}<span v-if="tx.type !== 'transfer'"> · {{ accountName(ledger, accountOf(tx, ledger)) }}</span><span v-if="tx.note"> · {{ tx.note }}</span>
+              </p>
             </div>
-            <div class="tx-amount" :class="tx.type === 'income' ? 'income' : 'expense'">
-              {{ tx.type === 'income' ? '+' : '−' }} {{ formatRp(tx.amount) }}
+            <div class="tx-amount" :class="tx.type">
+              {{ tx.type === 'income' ? '+' : tx.type === 'transfer' ? '' : '−' }} {{ formatRp(tx.amount) }}
             </div>
             <button class="tx-delete" @click="deleteTransaction(tx.id)" aria-label="Hapus">
               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -342,7 +383,6 @@ function daysUntilClass(date: string) {
       </div>
     </template>
 
-    <!-- ── RECURRING TAB ── -->
     <template v-if="tab === 'recurring'">
       <div v-if="recurrings.length === 0" class="empty-big">
         <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="var(--color-border-secondary)" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -360,7 +400,7 @@ function daysUntilClass(date: string) {
             </div>
             <div>
               <p class="rc-name">{{ r.name }}</p>
-              <p class="rc-meta">{{ categoryLabel(r.category) }} · {{ frequencyLabels[r.frequency] }}</p>
+              <p class="rc-meta">{{ categoryLabel(r.category) }} · {{ frequencyLabels[r.frequency] }} · {{ accountName(ledger, r.account_id ?? defaultAccountId(ledger)) }}</p>
             </div>
           </div>
 
@@ -388,7 +428,6 @@ function daysUntilClass(date: string) {
       </div>
     </template>
 
-    <!-- ── TRANSACTION FORM MODAL ── -->
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
       <div class="modal">
         <div class="modal-header">
@@ -396,10 +435,48 @@ function daysUntilClass(date: string) {
           <button class="modal-close" @click="showForm = false"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="type-tabs">
-          <button v-for="k in kinds" :key="k" :class="['type-tab', { active: form.type === k }]" @click="form.type = k; onTypeChange()">{{ kindLabels[k] }}</button>
+          <button v-for="k in kinds" :key="k" :class="['type-tab', { active: form.type === k }]" @click="form.type = k">{{ kindLabels[k] }}</button>
         </div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="form.amount" placeholder="0" min="0" /></div></div>
-        <div class="form-field"><label>Kategori</label><select v-model="form.category"><option v-for="c in categoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option></select></div>
+
+        <template v-if="form.type === 'expense'">
+          <div class="form-field">
+            <label>Pos</label>
+            <select v-model="form.itemId">
+              <option v-for="i in spendItems" :key="i.id" :value="i.id">{{ i.name }}</option>
+              <option value="">Lainnya (di luar pos)</option>
+            </select>
+          </div>
+          <div v-if="ledger.debts.length" class="form-field">
+            <label>Bayar cicilan/utang</label>
+            <select v-model="form.debtId">
+              <option value="">Tidak</option>
+              <option v-for="d in ledger.debts" :key="d.id" :value="d.id">{{ d.name }}</option>
+            </select>
+          </div>
+        </template>
+        <div v-else-if="form.type === 'income'" class="form-field">
+          <label>Kategori</label>
+          <select v-model="form.category"><option v-for="c in incomeCategories" :key="c" :value="c">{{ categoryLabel(c) }}</option></select>
+        </div>
+
+        <div class="form-field">
+          <label>{{ form.type === 'transfer' ? 'Dari rekening' : 'Rekening' }}</label>
+          <select v-model="form.accountId"><option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option></select>
+        </div>
+        <div v-if="form.type === 'transfer'" class="form-field">
+          <label>Ke rekening</label>
+          <select v-model="form.toAccountId">
+            <option value="" disabled>Pilih rekening</option>
+            <option v-for="a in accounts" :key="a.id" :value="a.id" :disabled="a.id === form.accountId">{{ a.name }}</option>
+          </select>
+        </div>
+
+        <label v-if="form.type === 'expense'" class="check-field">
+          <input type="checkbox" v-model="form.unplanned" />
+          <span>Dadakan (tidak terencana)</span>
+        </label>
+
         <div class="form-field"><label>Tanggal</label><input type="date" v-model="form.date" /></div>
         <div class="form-field"><label>Catatan (opsional)</label><input type="text" v-model="form.note" placeholder="Misal: makan siang, belanja bulanan..." /></div>
         <div v-if="error" class="error-msg">{{ error }}</div>
@@ -410,7 +487,6 @@ function daysUntilClass(date: string) {
       </div>
     </div>
 
-    <!-- ── RECURRING FORM MODAL ── -->
     <div v-if="showRecurringForm" class="modal-overlay" @click.self="showRecurringForm = false">
       <div class="modal">
         <div class="modal-header">
@@ -418,11 +494,26 @@ function daysUntilClass(date: string) {
           <button class="modal-close" @click="showRecurringForm = false"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
         <div class="type-tabs">
-          <button v-for="k in kinds" :key="k" :class="['type-tab', { active: rForm.type === k }]" @click="rForm.type = k; onRTypeChange()">{{ kindLabels[k] }}</button>
+          <button :class="['type-tab', { active: rForm.type === 'expense' }]" @click="rForm.type = 'expense'">Pengeluaran</button>
+          <button :class="['type-tab', { active: rForm.type === 'income' }]" @click="rForm.type = 'income'">Pemasukan</button>
         </div>
         <div class="form-field"><label>Nama tagihan</label><input type="text" v-model="rForm.name" placeholder="Misal: Spotify, Kos, Cicilan HP..." /></div>
         <div class="form-field"><label>Jumlah</label><div class="input-prefix-wrap"><span class="input-prefix">Rp</span><input type="number" v-model="rForm.amount" placeholder="0" min="0" /></div></div>
-        <div class="form-field"><label>Kategori</label><select v-model="rForm.category"><option v-for="c in rCategoryOptions" :key="c" :value="c">{{ categoryLabel(c) }}</option></select></div>
+        <div v-if="rForm.type === 'expense'" class="form-field">
+          <label>Pos</label>
+          <select v-model="rForm.itemId">
+            <option v-for="i in spendItems" :key="i.id" :value="i.id">{{ i.name }}</option>
+            <option value="">Lainnya (di luar pos)</option>
+          </select>
+        </div>
+        <div v-else class="form-field">
+          <label>Kategori</label>
+          <select v-model="rForm.category"><option v-for="c in incomeCategories" :key="c" :value="c">{{ categoryLabel(c) }}</option></select>
+        </div>
+        <div class="form-field">
+          <label>Rekening</label>
+          <select v-model="rForm.accountId"><option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option></select>
+        </div>
         <div class="form-field"><label>Frekuensi</label>
           <select v-model="rForm.frequency">
             <option v-for="(label, key) in frequencyLabels" :key="key" :value="key">{{ label }}</option>
