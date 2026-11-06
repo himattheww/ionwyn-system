@@ -65,9 +65,10 @@ export function financeRoutes() {
         where d.user_id = ${user} and not d.archived
         order by d.created_at`,
     ])
-    const sum = (type: string) => transactions.filter(t => t.type === type).reduce((total, t) => total + t.amount, 0)
+    const counted = transactions.filter(t => t.category !== 'penyesuaian')
+    const sum = (type: string) => counted.filter(t => t.type === type).reduce((total, t) => total + t.amount, 0)
     const byCategory = new Map<string, { type: string; category: string; total: number }>()
-    for (const t of transactions.filter(t => t.type !== 'transfer')) {
+    for (const t of counted.filter(t => t.type !== 'transfer')) {
       const key = `${t.type}:${t.category}`
       const entry = byCategory.get(key) ?? { type: t.type, category: t.category, total: 0 }
       entry.total += t.amount

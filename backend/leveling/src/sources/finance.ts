@@ -9,7 +9,7 @@ export function financeEvents(transactions: Row[], budgets: Row[], today: string
   const expenseByMonth = new Map<string, number>()
   for (const row of transactions) {
     const date = toDate(row.date)
-    if (!date || row.type === 'transfer') continue
+    if (!date || row.type === 'transfer' || row.category === 'penyesuaian') continue
     events.push({ id: `finance:tx:${row.id}`, source: 'finance', type: 'transaction', date, value: 1, meta: { kind: row.type } })
     if (row.type === 'expense' && !String(row.category ?? '').startsWith('setor_')) {
       const month = date.slice(0, 7)

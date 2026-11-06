@@ -99,7 +99,7 @@ async function uang(today: string) {
   const month = today.slice(0, 7)
   const [rows, budgets] = await Promise.all([
     getJson<{ date: string; type: string; amount: number; category: string }[]>(
-      `${url}/rest/v1/transactions?select=date,type,amount,category&type=eq.expense&date=gte.${month}-01&date=lte.${today}`,
+      `${url}/rest/v1/transactions?select=date,type,amount,category&type=eq.expense&category=neq.penyesuaian&date=gte.${month}-01&date=lte.${today}`,
       { headers }
     ),
     getJson<{ amount: number; kind: string }[]>(`${url}/rest/v1/budget_items?select=amount,kind&archived=eq.false`, { headers })
