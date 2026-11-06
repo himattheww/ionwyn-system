@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { cachedQuery } from '@/lib/offlineCache'
 import { onAppActive } from '@/lib/appActive'
 import dayjs from 'dayjs'
+import { isAdjustment, sumOf } from '@/lib/ledger'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 
@@ -38,7 +39,7 @@ function txForMonth(month: string) {
 
 // Pie chart — kategori pengeluaran bulan ini
 const pieOptions = computed<{ series: any; options: ApexOptions }>(() => {
-  const tx = txForMonth(selectedMonth.value).filter(t => t.type === 'expense')
+  const tx = txForMonth(selectedMonth.value).filter(t => t.type === 'expense' && !isAdjustment(t))
   const cats: Record<string, number> = {}
   tx.forEach(t => { cats[t.category] = (cats[t.category] ?? 0) + t.amount })
   const labels = Object.keys(cats).map(c => ({ utama:'Utama',jajan:'Jajan',tabungan:'Tabungan',dana_darurat:'Dana Darurat',lainnya:'Lainnya' }[c] ?? c))
@@ -60,7 +61,7 @@ const pieOptions = computed<{ series: any; options: ApexOptions }>(() => {
 const barOptions = computed<{ series: any; options: ApexOptions }>(() => {
   const cur  = txForMonth(selectedMonth.value)
   const prev = txForMonth(compareMonth.value)
-  const sum = (arr: any[], type: string) => arr.filter(t => t.type === type).reduce((s, t) => s + t.amount, 0)
+  const sum = (arr: any[], type: 'income' | 'expense') => sumOf(arr, type)
   return {
     series: [
       { name: 'Pemasukan', data: [sum(prev, 'income'), sum(cur, 'income')] },

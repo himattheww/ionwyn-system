@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useNotify } from '@/composables/useNotify'
 import { onAppActive } from '@/lib/appActive'
 import { formatRpAbs } from '@/lib/format'
-import { activeAccounts, balanceOf, emptyLedger, loadLedger, monthlyNeed, savingsMoney, totalMoney } from '@/lib/ledger'
+import { activeAccounts, ADJUSTMENT, balanceOf, emptyLedger, loadLedger, monthlyNeed, savingsMoney, totalMoney } from '@/lib/ledger'
 import { supabase } from '@/lib/supabase'
 import type { Account } from '@/lib/database.types'
 
@@ -16,7 +16,7 @@ const ledger  = ref(emptyLedger())
 const loading = ref(true)
 const busy    = ref(false)
 const editing = ref<string | null>(null)
-const draft   = reactive({ name: '', kind: 'biasa' as Account['kind'], opening_balance: 0, opening_date: '' })
+const draft   = reactive({ name: '', kind: 'biasa' as Account['kind'] })
 const bank    = reactive<Record<string, number | ''>>({})
 const fresh   = reactive({ name: '', kind: 'biasa' as Account['kind'], opening_balance: 0, opening_date: dayjs().format('YYYY-MM-DD') })
 
@@ -39,7 +39,7 @@ const diffOf = (a: { id: string; balance: number }) => (bank[a.id] === '' || ban
 
 function startEdit(a: Account) {
   editing.value = a.id
-  Object.assign(draft, { name: a.name, kind: a.kind, opening_balance: Number(a.opening_balance), opening_date: a.opening_date })
+  Object.assign(draft, { name: a.name, kind: a.kind })
 }
 
 async function run(task: () => PromiseLike<{ error: { message: string } | null }>, done: string) {
@@ -81,12 +81,12 @@ async function adjust(a: { id: string; name: string; balance: number }) {
       user_id: user.value!.id,
       type: diff > 0 ? 'income' : 'expense',
       amount: Math.abs(diff),
-      category: 'penyesuaian',
-      note: `Penyesuaian saldo ${a.name} sesuai bank`,
+      category: ADJUSTMENT,
+      note: `Disamakan dengan saldo bank ${a.name}`,
       date: dayjs().format('YYYY-MM-DD'),
       account_id: a.id,
     }),
-    'Saldo disesuaikan dengan bank',
+    'Saldo disamakan dengan bank',
   )
   if (ok) bank[a.id] = ''
 }
@@ -129,7 +129,6 @@ async function adjust(a: { id: string; name: string; balance: number }) {
             <span class="c-tag" :class="a.kind === 'tabungan' ? 'c-tag-accent' : 'c-tag-neutral'">{{ a.kind }}</span>
           </div>
           <span class="card-value c-num" :class="{ bad: a.balance < 0 }">{{ signed(a.balance) }}</span>
-          <p class="card-meta">Saldo awal {{ formatRpAbs(a.opening_balance) }} per {{ dayjs(a.opening_date).format('D MMM YYYY') }}</p>
 
           <template v-if="editing === a.id">
             <div class="fields">
@@ -137,31 +136,27 @@ async function adjust(a: { id: string; name: string; balance: number }) {
               <label class="field">Jenis
                 <select v-model="draft.kind" class="c-input"><option value="biasa">Biasa</option><option value="tabungan">Tabungan</option></select>
               </label>
-              <label class="field">Saldo awal<input v-model.number="draft.opening_balance" type="number" class="c-input" /></label>
-              <label class="field">Per tanggal<input v-model="draft.opening_date" type="date" class="c-input" /></label>
             </div>
-            <p class="note-text">Transaksi sebelum tanggal saldo awal tidak dihitung lagi di rekening ini.</p>
             <div class="card-actions">
               <button class="c-btn c-btn-primary" :disabled="busy" @click="saveEdit(a.id)">Simpan</button>
               <button class="c-btn c-btn-ghost" @click="editing = null">Batal</button>
             </div>
           </template>
           <div v-else class="card-actions">
-            <button class="c-btn c-btn-secondary" @click="startEdit(a)">Ubah / saldo awal</button>
+            <button class="c-btn c-btn-secondary" @click="startEdit(a)">Ubah nama</button>
             <button class="c-btn c-btn-ghost" @click="archive(a)">Arsipkan</button>
           </div>
 
           <div class="recon">
-            <label class="field">Saldo di bank sekarang<input v-model="bank[a.id]" type="number" class="c-input" placeholder="Cek aplikasi bank, lalu isi di sini" /></label>
+            <label class="field">Saldo di bank sekarang<input v-model="bank[a.id]" type="number" class="c-input" placeholder="Lihat aplikasi bank, isi di sini" /></label>
             <div v-if="diffOf(a) !== null" class="recon-lines">
-              <span>Seharusnya</span><span class="c-num">{{ signed(a.balance) }}</span>
+              <span>Menurut catatan</span><span class="c-num">{{ signed(a.balance) }}</span>
               <span>Di bank</span><span class="c-num">{{ signed(Number(bank[a.id])) }}</span>
               <span>Selisih</span>
               <span class="c-num" :class="diffOf(a) === 0 ? 'diff-ok' : 'diff-bad'">{{ diffOf(a) === 0 ? 'Cocok' : signed(diffOf(a)!) }}</span>
             </div>
-            <button v-if="diffOf(a)" class="c-btn c-btn-secondary" :disabled="busy" @click="adjust(a)">
-              Sesuaikan: catat {{ diffOf(a)! > 0 ? 'pemasukan' : 'pengeluaran' }} {{ formatRpAbs(diffOf(a)!) }}
-            </button>
+            <button v-if="diffOf(a)" class="c-btn c-btn-primary" :disabled="busy" @click="adjust(a)">Samakan dengan bank</button>
+            <p v-if="diffOf(a)" class="note-text">Selisihnya dicatat sebagai penyesuaian saldo, tidak dihitung sebagai pemasukan atau pengeluaran.</p>
           </div>
         </article>
 
@@ -172,8 +167,7 @@ async function adjust(a: { id: string; name: string; balance: number }) {
             <label class="field">Jenis
               <select v-model="fresh.kind" class="c-input"><option value="biasa">Biasa</option><option value="tabungan">Tabungan</option></select>
             </label>
-            <label class="field">Saldo awal<input v-model.number="fresh.opening_balance" type="number" class="c-input" /></label>
-            <label class="field">Per tanggal<input v-model="fresh.opening_date" type="date" class="c-input" /></label>
+            <label class="field">Saldo sekarang<input v-model.number="fresh.opening_balance" type="number" class="c-input" /></label>
           </div>
           <div class="card-actions"><button class="c-btn c-btn-primary" :disabled="busy" @click="addAccount">Tambah rekening</button></div>
         </article>

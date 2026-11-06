@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import jsPDF from 'jspdf'
 import { categoryLabel } from '@/lib/categories'
-import { itemUsed, ITEM_KINDS, type Tx } from '@/lib/ledger'
+import { itemUsed, ITEM_KINDS, sumOf, type Tx } from '@/lib/ledger'
 import { formatRpAbs } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import dayjs from 'dayjs'
@@ -33,8 +33,8 @@ export function useExportPDF() {
       const goals        = goalsRes.data ?? []
 
       // ── Kalkulasi ─────────────────────────────────────────────────
-      const totalIncome  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-      const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+      const totalIncome  = sumOf(transactions, 'income')
+      const totalExpense = sumOf(transactions, 'expense')
       const balance      = totalIncome - totalExpense
 
 

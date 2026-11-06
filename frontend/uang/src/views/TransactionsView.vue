@@ -9,7 +9,7 @@ import { cachedQuery, isOffline } from '@/lib/offlineCache'
 import { pendingItems, addPending, removePending, type PendingTx } from '@/lib/pending'
 import { onAppActive } from '@/lib/appActive'
 import { computeAllowance, describeSpending } from '@/lib/dailyAllowance'
-import { accountName, accountOf, activeAccounts, dailyPool, defaultAccountId, emptyLedger, isDaily, loadLedger, type Tx } from '@/lib/ledger'
+import { accountName, accountOf, activeAccounts, dailyPool, defaultAccountId, emptyLedger, isDaily, loadLedger, sumOf, type Tx } from '@/lib/ledger'
 import { useNotify } from '@/composables/useNotify'
 import dayjs from 'dayjs'
 
@@ -94,9 +94,8 @@ const filtered = computed(() =>
   }),
 )
 
-const sumType = (type: string) => filtered.value.filter(t => t.type === type).reduce((s, t) => s + Number(t.amount), 0)
-const totalIncome  = computed(() => sumType('income'))
-const totalExpense = computed(() => sumType('expense'))
+const totalIncome  = computed(() => sumOf(filtered.value, 'income'))
+const totalExpense = computed(() => sumOf(filtered.value, 'expense'))
 
 const dueSoon = computed(() => recurrings.value.filter(r => r.is_active && dayjs(r.next_due_date).diff(dayjs(), 'day') <= 7))
 

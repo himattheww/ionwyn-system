@@ -60,7 +60,12 @@ export const savingsMoney = (l: Ledger) => activeAccounts(l).filter(a => a.kind 
 
 export const inMonth = (txs: Tx[], month: string) => txs.filter(t => t.date.startsWith(month))
 
-export const sumOf = (txs: Tx[], type: Tx['type']) => txs.filter(t => t.type === type).reduce((sum, t) => sum + Number(t.amount), 0)
+export const ADJUSTMENT = 'penyesuaian'
+
+export const isAdjustment = (t: { category: string }) => t.category === ADJUSTMENT
+
+export const sumOf = (txs: { type: string; amount: number; category: string }[], type: Tx['type']) =>
+  txs.filter(t => t.type === type && !isAdjustment(t)).reduce((sum, t) => sum + Number(t.amount), 0)
 
 export const unplanned = (txs: Tx[]) => txs.filter(t => t.type === 'expense' && t.unplanned)
 
