@@ -370,7 +370,7 @@ export function registerSystemTools(server: McpServer) {
 
   server.registerTool(
     'finance_month',
-    { title: 'Keuangan sebulan', description: 'Pemasukan, pengeluaran, saldo (balance, termasuk sisa bulan lalu di carryOver), total tabungan (savings), total dana darurat (emergency), total semua uang (total), budget (mengikuti bulan terakhir yang diset), total per kategori, dan daftar transaksi beserta id.', inputSchema: { month }, annotations: readOnly },
+    { title: 'Keuangan sebulan', description: 'Keuangan satu bulan: pemasukan, pengeluaran, total dadakan (unplanned), saldo tiap rekening dan total uang (saldo sekarang), target dana darurat (3x dan 6x kebutuhan bulanan), pos budget beserta yang terpakai bulan itu, cicilan/utang beserta sisanya, total per kategori, dan daftar transaksi beserta id.', inputSchema: { month }, annotations: readOnly },
     async ({ month }) => json(await get(`/hub/api/finance${query({ month })}`)),
   )
 
@@ -378,11 +378,15 @@ export function registerSystemTools(server: McpServer) {
     'finance_add',
     {
       title: 'Catat transaksi',
-      description: 'Mencatat transaksi hari ini. Pengeluaran: utama, jajan, lainnya, setor_tabungan dan setor_dana_darurat (menyisihkan uang), tabungan dan dana_darurat (belanja yang diambil dari tabungan atau dana darurat). Pemasukan: gaji, freelance, bisnis, lainnya.',
+      description: 'Mencatat transaksi hari ini. expense butuh pos (nama pos budget dari finance_month, atau lainnya) dan boleh ditandai unplanned bila dadakan. income butuh category: gaji, freelance, bisnis, lainnya. transfer butuh to (rekening tujuan). account opsional, default rekening pos atau rekening pertama.',
       inputSchema: {
-        type: z.enum(['expense', 'income']).default('expense'),
+        type: z.enum(['expense', 'income', 'transfer']).default('expense'),
         amount: z.number().int().positive().max(1_000_000_000).describe('Nominal rupiah tanpa titik'),
-        category: z.string().min(1).max(40),
+        pos: z.string().trim().min(1).max(40).optional().describe('Nama pos budget untuk expense'),
+        category: z.string().trim().min(1).max(40).optional().describe('Kategori income'),
+        account: z.string().trim().min(1).max(40).optional().describe('Nama rekening sumber'),
+        to: z.string().trim().min(1).max(40).optional().describe('Nama rekening tujuan untuk transfer'),
+        unplanned: z.boolean().optional().describe('true bila pengeluaran dadakan'),
         note: z.string().trim().max(200).optional(),
       },
     },

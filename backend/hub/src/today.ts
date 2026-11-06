@@ -102,12 +102,11 @@ async function uang(today: string) {
       `${url}/rest/v1/transactions?select=date,type,amount,category&type=eq.expense&date=gte.${month}-01&date=lte.${today}`,
       { headers }
     ),
-    getJson<{ utama_amount: number; jajan_amount: number }[]>(`${url}/rest/v1/budget_allocations?select=utama_amount,jajan_amount&month=lte.${month}&order=month.desc&limit=1`, { headers })
+    getJson<{ amount: number; kind: string }[]>(`${url}/rest/v1/budget_items?select=amount,kind&archived=eq.false`, { headers })
   ])
-  const spending = rows.filter(r => r.category === 'utama' || r.category === 'jajan')
-  const sum = (list: typeof rows) => list.reduce((total, r) => total + Number(r.amount), 0)
-  const budget = budgets[0] ? Number(budgets[0].utama_amount) + Number(budgets[0].jajan_amount) : null
-  return { today: sum(spending.filter(r => r.date === today)), month: sum(spending), budget }
+  const sum = (list: { amount: number }[]) => list.reduce((total, r) => total + Number(r.amount), 0)
+  const need = sum(budgets.filter(b => b.kind !== 'tabungan'))
+  return { today: sum(rows.filter(r => r.date === today)), month: sum(rows), budget: need > 0 ? need : null }
 }
 
 export function todayTimesheet() {

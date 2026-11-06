@@ -79,7 +79,7 @@ function renderBlocks(cards) {
       return `<div class="track"><div class="pair"><span>Level ${d.level} · ${esc(d.tier)}</span><span class="num">${d.levelExp} / ${d.levelNeed}</span></div>${meter(d.levelExp, d.levelNeed)}</div>`
     }),
     block('06', 'Keuangan', 'uang', cards?.uang, d => {
-      if (!d.budget) return `<div class="pair"><span>Bulan ini</span><span class="num">${rupiah(d.month)}</span></div><p class="note">Belum ada alokasi budget bulan ini.</p>`
+      if (!d.budget) return `<div class="pair"><span>Bulan ini</span><span class="num">${rupiah(d.month)}</span></div><p class="note">Belum ada pos budget.</p>`
       return `<div class="track"><div class="pair"><span>Bulan ini</span><span class="num">${rupiah(d.month)} / ${rupiah(d.budget)}</span></div>${meter(d.month, d.budget)}</div>`
     }),
     block('07', 'Absensi', 'timesheet', cards?.timesheet, d => {

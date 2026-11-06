@@ -23,7 +23,9 @@ describe('quick expense', () => {
     [{ amount: 0, category: 'utama' }],
     [{ amount: 1.5, category: 'utama' }],
     [{ amount: '5000', category: 'utama' }],
-    [{ amount: 5000, category: 'gaji' }]
+    [{ amount: 5000, type: 'income', category: 'utama' }],
+    [{ amount: 5000, type: 'transfer' }],
+    [{ amount: 5000 }]
   ])('rejects %j', async body => {
     expect((await post(body)).status).toBe(400)
   })

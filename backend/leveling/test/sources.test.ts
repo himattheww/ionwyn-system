@@ -131,4 +131,14 @@ describe('adapter Timesheet, Scheduling, dan Keuangan', () => {
     expect(events.filter(e => e.type === 'budget_kept')).toMatchObject([{ date: '2026-09-30' }])
     expect(financeEvents(transactions, [], '2026-10-19').some(e => e.type === 'budget_kept')).toBe(false)
   })
+
+  it('pos budget tetap dipakai untuk bulan tanpa alokasi, transfer tidak dihitung', () => {
+    const transactions = [
+      { id: 1, date: '2026-09-10', type: 'expense', amount: 500 },
+      { id: 2, date: '2026-09-12', type: 'transfer', amount: 9000 }
+    ]
+    const events = financeEvents(transactions, [], '2026-10-19', 600)
+    expect(events.filter(e => e.type === 'budget_kept')).toMatchObject([{ date: '2026-09-30', meta: { limit: 600 } }])
+    expect(events.filter(e => e.type === 'transaction')).toHaveLength(1)
+  })
 })
