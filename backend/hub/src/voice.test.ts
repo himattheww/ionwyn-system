@@ -55,6 +55,11 @@ describe('parseCommand', () => {
     expect(body('pindahkan 200 ribu ke rek AI')).toMatchObject({ account: 'Utama', to: 'AI' })
     expect(parseCommand('Transfer 500.000.000 ke rekening utama', ctx)).toMatch(/Transfer ke Utama dari rekening mana/)
     expect(body('bensin 20 ribu pakai rekening AI')).toMatchObject({ account: 'AI' })
+    expect(body('transfer 430 ribu ke rekening artificial intelligence')).toMatchObject({ to: 'AI' })
+    expect(body('transfer 430 ribu ke langganan')).toMatchObject({ to: 'AI' })
+    expect(parseBest(['transfer 430 ribu ke ayah'], ctx)).toMatch(/rekening mana/)
+    expect(parseCommand('transfer 430 ribu ke langganan', { ...ctx, accounts: ['Utama', 'Langganan', 'Tabungan'] })).toMatchObject({ body: { to: 'Langganan' } })
+    expect(parseCommand('transfer 430 ribu ke AI', { ...ctx, accounts: ['Utama', 'Langganan', 'Tabungan'] })).toMatchObject({ body: { to: 'Langganan' } })
   })
 
   it('strips a wake phrase', () => {

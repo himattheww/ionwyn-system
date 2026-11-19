@@ -17,7 +17,7 @@ const aliases: Record<string, string[]> = {
   transportasi: ['transport', 'bensin', 'ojek', 'ojol', 'gojek', 'grab', 'goride', 'grabbike', 'parkir', 'tol', 'kereta', 'krl', 'mrt', 'lrt', 'busway', 'transjakarta', 'taksi', 'bus', 'angkot'],
   kos: ['kos', 'kost', 'kosan', 'sewa kamar'],
   'kebutuhan pribadi': ['sabun', 'sampo', 'shampo', 'odol', 'skincare', 'potong rambut', 'cukur', 'laundry', 'obat'],
-  'ai subscription': ['claude', 'chatgpt', 'langganan ai'],
+  'ai subscription': ['claude', 'chatgpt', 'langganan ai', 'artificial intelligence', 'a i', 'subscription', 'subskripsi'],
   'cicilan garmin': ['garmin']
 }
 
@@ -162,9 +162,16 @@ export function findDate(text: string, today: string) {
   return today
 }
 
+const subscriptionNames = ['ai', 'a i', 'artificial intelligence', 'langganan', 'subscription', 'subskripsi']
+const spokenNames = (name: string) => {
+  const key = name.toLowerCase()
+  return subscriptionNames.includes(key) ? [key, ...subscriptionNames] : [key]
+}
+
 function findAccount(text: string, accounts: string[], words: string[]) {
-  for (const name of [...accounts].sort((a, b) => b.length - a.length)) {
-    const pattern = new RegExp(`(^|[^a-z0-9])(${words.map(escape).join('|')})\\s+((rekening|rek|akun|saldo)\\.?\\s+)?${escape(name.toLowerCase())}($|[^a-z0-9])`)
+  const candidates = accounts.flatMap(name => spokenNames(name).map(spoken => ({ name, spoken })))
+  for (const { name, spoken } of candidates.sort((a, b) => b.spoken.length - a.spoken.length)) {
+    const pattern = new RegExp(`(^|[^a-z0-9])(${words.map(escape).join('|')})\\s+((rekening|rek|akun|saldo)\\.?\\s+)?${escape(spoken)}($|[^a-z0-9])`)
     if (pattern.test(text)) return name
   }
   return undefined
