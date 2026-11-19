@@ -1,5 +1,6 @@
 import { clock, dateTime, escapeHtml as esc, hhmm, hours, longDate, rupiah, shortWeekday, sleep, timeNow } from './format.js'
 import { countUp, stagger } from './motion.js'
+import { canListen, examples, voiceController } from './voice.js'
 
 const $ = id => document.getElementById(id)
 const statusTag = { selesai: 'tag-ok', dilewati: 'tag-warn', terencana: '' }
@@ -194,3 +195,37 @@ $('run').addEventListener('click', async event => {
 })
 
 load()
+
+const sheet = $('voice-sheet')
+const voice = voiceController({
+  input: $('voice-text'),
+  mic: $('voice-mic'),
+  status: $('voice-status'),
+  confirm: $('voice-confirm'),
+  summary: $('voice-summary'),
+  save: $('voice-save'),
+  cancel: $('voice-cancel'),
+  onSaved: () => {
+    load()
+    setTimeout(() => sheet.open && sheet.close(), 1500)
+  }
+})
+
+$('voice-hint').textContent = `Contoh: ${examples}`
+$('voice-form').addEventListener('submit', event => {
+  event.preventDefault()
+  voice.check($('voice-text').value)
+})
+$('voice-close').addEventListener('click', () => sheet.close())
+sheet.addEventListener('click', event => {
+  if (event.target === sheet) sheet.close()
+})
+sheet.addEventListener('close', () => {
+  voice.clear()
+  voice.say('')
+})
+$('voice-open').addEventListener('click', () => {
+  sheet.showModal()
+  if (canListen) voice.speak()
+  else $('voice-text').focus()
+})

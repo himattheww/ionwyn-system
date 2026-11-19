@@ -1,4 +1,5 @@
 import { sessionState } from './session.js'
+import { canListen, send, voiceController } from './voice.js'
 
 if ((await sessionState()) === 'signed-out') location.replace('/masuk/')
 
@@ -11,109 +12,20 @@ const say = (el, text, ok) => {
   el.classList.toggle('is-bad', ok === false)
 }
 
-async function send(url, type, body) {
-  const response = await fetch(url, { method: 'POST', headers: { 'content-type': type }, body: JSON.stringify(body) })
-  const reply = await response.json().catch(() => ({}))
-  if (!response.ok || reply.error) throw new Error(reply.error ?? 'Gagal menyimpan.')
-  return reply
-}
-
-const native = window.Capacitor?.PluginHeaders?.some(plugin => plugin.name === 'Voice') ?? false
-const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition
-
-function listen() {
-  if (native) return window.Capacitor.nativePromise('Voice', 'listen', {}).then(result => result.text)
-  return new Promise((resolve, reject) => {
-    const recognition = new Recognition()
-    recognition.lang = 'id-ID'
-    recognition.interimResults = false
-    recognition.maxAlternatives = 1
-    recognition.onresult = event => resolve(event.results[0][0].transcript)
-    recognition.onerror = event => reject(new Error(event.error === 'not-allowed' ? 'Izin mikrofon ditolak.' : event.error === 'no-speech' ? 'Tidak terdengar apa-apa.' : 'Pengenal suara gagal.'))
-    recognition.onend = () => reject(new Error('Tidak terdengar apa-apa.'))
-    recognition.start()
-  })
-}
-
-const command = $('command-text')
-const commandStatus = $('command-status')
-const confirmBox = $('confirm')
-const mic = $('mic')
-let pending = null
-
-function clearPending() {
-  pending = null
-  confirmBox.hidden = true
-}
-
-async function understand(text) {
-  clearPending()
-  if (!text.trim()) return say(commandStatus, 'Ucapkan atau ketik perintah dulu.', false)
-  say(commandStatus, 'Memahami…')
-  try {
-    const reply = await send('/hub/api/voice/parse', 'application/json', { text })
-    pending = reply.action
-    say(commandStatus, '')
-    $('confirm-text').textContent = pending.summary
-    confirmBox.hidden = false
-    $('confirm-save').focus()
-  } catch (failure) {
-    say(commandStatus, failure.message, false)
-  }
-}
-
-const runners = {
-  finance: body => send('/hub/api/quick/expense', 'application/json', body),
-  schedule: body => send('/hub/api/schedule', 'application/json', body),
-  timesheet: body => send('/timesheet/api', 'text/plain;charset=utf-8', body)
-}
+const voice = voiceController({
+  input: $('command-text'),
+  mic: $('mic'),
+  status: $('command-status'),
+  confirm: $('confirm'),
+  summary: $('confirm-text'),
+  save: $('confirm-save'),
+  cancel: $('confirm-cancel')
+})
 
 $('command').addEventListener('submit', event => {
   event.preventDefault()
-  understand(command.value)
+  voice.check($('command-text').value)
 })
-
-$('confirm-cancel').addEventListener('click', () => {
-  clearPending()
-  say(commandStatus, 'Dibatalkan.')
-})
-
-$('confirm-save').addEventListener('click', async event => {
-  if (!pending) return
-  const button = event.currentTarget
-  const action = pending
-  button.disabled = true
-  say(commandStatus, 'Menyimpan…')
-  try {
-    const reply = await runners[action.kind](action.body)
-    clearPending()
-    command.value = ''
-    say(commandStatus, action.kind === 'timesheet' && reply.message ? reply.message : `Tersimpan: ${action.summary}.`, true)
-  } catch (failure) {
-    say(commandStatus, failure.message, false)
-  } finally {
-    button.disabled = false
-  }
-})
-
-async function speak() {
-  if (mic.classList.contains('is-listening')) return
-  clearPending()
-  mic.classList.add('is-listening')
-  say(commandStatus, 'Mendengarkan…')
-  try {
-    const text = await listen()
-    command.value = text
-    await understand(text)
-  } catch (failure) {
-    say(commandStatus, failure.message ?? 'Pengenal suara gagal.', false)
-  } finally {
-    mic.classList.remove('is-listening')
-  }
-}
-
-mic.hidden = !(native || Recognition)
-mic.addEventListener('click', speak)
 
 const amount = $('amount')
 amount.addEventListener('input', () => {
@@ -191,6 +103,6 @@ for (const button of document.querySelectorAll('[data-entry]')) {
 const target = new URLSearchParams(location.search).get('mode')
 if (target === 'uang') amount.focus()
 if (target === 'absen') $('absen').scrollIntoView()
-if (target === 'suara') native ? speak() : command.focus()
+if (target === 'suara') canListen ? voice.speak() : $('command-text').focus()
 
 document.getElementById('dateline').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })
