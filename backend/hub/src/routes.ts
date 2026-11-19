@@ -6,6 +6,7 @@ import { financeRoutes } from './finance.ts'
 import { quickRoutes } from './quick.ts'
 import { scheduleRoutes } from './schedule.ts'
 import { forgetTimesheetDay, todaySummary, todayTimesheet } from './today.ts'
+import { voiceRoutes } from './voice.ts'
 
 async function timesheetApi(req: Request, res: Response) {
   const { url, key } = config.timesheet
@@ -43,6 +44,7 @@ export function hubRoutes() {
   router.use(quickRoutes())
   router.use(scheduleRoutes())
   router.use(financeRoutes())
+  router.use(voiceRoutes())
   router.post('/timesheet/api', express.text({ type: '*/*', limit: '100kb' }), timesheetApi)
   return router
 }
