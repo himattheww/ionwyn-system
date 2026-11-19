@@ -164,7 +164,8 @@ export function findDate(text: string, today: string) {
 
 function findAccount(text: string, accounts: string[], words: string[]) {
   for (const name of [...accounts].sort((a, b) => b.length - a.length)) {
-    if (words.some(word => has(text, `${word} ${name.toLowerCase()}`))) return name
+    const pattern = new RegExp(`(^|[^a-z0-9])(${words.map(escape).join('|')})\\s+((rekening|rek|akun|saldo)\\.?\\s+)?${escape(name.toLowerCase())}($|[^a-z0-9])`)
+    if (pattern.test(text)) return name
   }
   return undefined
 }
@@ -185,9 +186,14 @@ function finance(text: string, raw: string, amount: number, ctx: VoiceContext): 
   const from = findAccount(text, ctx.accounts, ['dari', 'pakai', 'pake', 'via', 'lewat'])
   if (/\b(transfer|tf|pindah|pindahkan|pindahin|nabung|menabung|setor)\b/.test(text)) {
     const to = findAccount(text, ctx.accounts, ['ke']) ?? (/\b(nabung|menabung|setor)\b/.test(text) ? ctx.accounts.find(a => /tabungan/i.test(a)) : undefined)
-    if (!to) return `Transfer ke rekening mana? Pilihan: ${ctx.accounts.join(', ')}.`
-    const source = from ?? ctx.accounts[0]
-    if (source === to) return 'Rekening asal dan tujuan transfer sama.'
+    if (!to) return `Transfer ke rekening mana? Pilihan: ${ctx.accounts.join(', ')}. Contoh: transfer 500 ribu ke Tabungan.`
+    const source = from ?? ctx.accounts[0]!
+    if (source === to) {
+      const other = ctx.accounts.find(a => a !== to) ?? 'Tabungan'
+      return from
+        ? `Rekening asal dan tujuan sama-sama ${to}. Contoh: transfer 500 ribu dari ${other} ke ${to}.`
+        : `Transfer ke ${to} dari rekening mana? Sebutkan asalnya, contoh: transfer 500 ribu dari ${other} ke ${to}.`
+    }
     return { kind: 'finance', summary: `Transfer ${rupiah(amount)} dari ${source} ke ${to}`, body: { type: 'transfer', amount, account: source, to, note } }
   }
   if (/\b(gaji|gajian|pemasukan|terima|dapat|dapet|freelance|proyek|project|bonus|bisnis|jualan|thr)\b/.test(text)) {

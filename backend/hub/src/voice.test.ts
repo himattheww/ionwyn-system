@@ -51,6 +51,10 @@ describe('parseCommand', () => {
     expect(body('transfer 430 ribu ke AI')).toMatchObject({ type: 'transfer', account: 'Utama', to: 'AI' })
     expect(body('nabung 500 ribu')).toMatchObject({ type: 'transfer', to: 'Tabungan' })
     expect(parseCommand('transfer 100 ribu', ctx)).toMatch(/rekening mana/)
+    expect(body('Transfer 500.000 dari rekening Tabungan ke rekening utama')).toMatchObject({ type: 'transfer', amount: 500_000, account: 'Tabungan', to: 'Utama' })
+    expect(body('pindahkan 200 ribu ke rek AI')).toMatchObject({ account: 'Utama', to: 'AI' })
+    expect(parseCommand('Transfer 500.000.000 ke rekening utama', ctx)).toMatch(/Transfer ke Utama dari rekening mana/)
+    expect(body('bensin 20 ribu pakai rekening AI')).toMatchObject({ account: 'AI' })
   })
 
   it('strips a wake phrase', () => {
