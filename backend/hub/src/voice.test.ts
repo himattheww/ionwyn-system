@@ -60,6 +60,10 @@ describe('parseCommand', () => {
     expect(parseBest(['transfer 430 ribu ke ayah'], ctx)).toMatch(/rekening mana/)
     expect(parseCommand('transfer 430 ribu ke langganan', { ...ctx, accounts: ['Utama', 'Langganan', 'Tabungan'] })).toMatchObject({ body: { to: 'Langganan' } })
     expect(parseCommand('transfer 430 ribu ke AI', { ...ctx, accounts: ['Utama', 'Langganan', 'Tabungan'] })).toMatchObject({ body: { to: 'Langganan' } })
+    const renamed = { ...ctx, accounts: ['Utama', 'Artificial Intelligence', 'Tabungan'] }
+    for (const spoken of ['Artificial Intelligence', 'artificial inteligence', 'AI', 'langganan']) {
+      expect(parseCommand(`transfer 430 ribu ke rekening ${spoken}`, renamed)).toMatchObject({ body: { to: 'Artificial Intelligence' } })
+    }
   })
 
   it('strips a wake phrase', () => {

@@ -162,7 +162,7 @@ export function findDate(text: string, today: string) {
   return today
 }
 
-const subscriptionNames = ['ai', 'a i', 'artificial intelligence', 'langganan', 'subscription', 'subskripsi']
+const subscriptionNames = ['ai', 'a i', 'artificial intelligence', 'artificial inteligence', 'artifisial intelijen', 'artifisial inteligensi', 'kecerdasan buatan', 'langganan', 'subscription', 'subskripsi']
 const spokenNames = (name: string) => {
   const key = name.toLowerCase()
   return subscriptionNames.includes(key) ? [key, ...subscriptionNames] : [key]
