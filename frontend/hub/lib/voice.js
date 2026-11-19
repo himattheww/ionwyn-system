@@ -75,7 +75,7 @@ function listenWeb(onUpdate) {
     recognition.onspeechend = () => onUpdate({ stage: 'thinking' })
     recognition.onresult = event => {
       const result = event.results[event.results.length - 1]
-      if (!result.isFinal) return onUpdate({ stage: 'partial', text: result[0].transcript })
+      if (!result.isFinal) return onUpdate({ stage: 'partial', text: Array.from(event.results, item => item[0].transcript).join('') })
       end(resolve, { text: result[0].transcript, alternatives: Array.from(result, alt => alt.transcript) })
     }
     recognition.onerror = event => end(reject, new Error(webErrors[event.error] ?? 'Pengenal suara gagal.'))
@@ -84,10 +84,19 @@ function listenWeb(onUpdate) {
   })
 }
 
-export function listen(onUpdate = () => {}) {
-  if (native) return listenNative(onUpdate)
-  if (!canListen) return Promise.reject(new Error(Recognition ? unsupported : 'Browser ini tidak punya pengenal suara. Pakai Chrome atau Edge, atau ketik perintahnya.'))
-  return listenWeb(onUpdate)
+export async function listen(onUpdate = () => {}) {
+  if (!canListen) throw new Error(Recognition ? unsupported : 'Browser ini tidak punya pengenal suara. Pakai Chrome atau Edge, atau ketik perintahnya.')
+  let heard = ''
+  const track = data => {
+    if (data.stage === 'partial' && data.text?.trim()) heard = data.text.trim()
+    onUpdate(data)
+  }
+  try {
+    return await (native ? listenNative(track) : listenWeb(track))
+  } catch (failure) {
+    if (heard) return { text: heard, alternatives: [heard] }
+    throw failure
+  }
 }
 
 export async function understand(text, alternatives = []) {
@@ -193,6 +202,7 @@ export function voiceController({ input, mic, status, confirm, summary, save, ca
       stage.textContent = 'Menyiapkan mikrofon…'
       partial.textContent = ''
       levelBar.style.width = '0%'
+      level.hidden = true
       live.dataset.stage = 'starting'
     }
   }
@@ -210,7 +220,10 @@ export function voiceController({ input, mic, status, confirm, summary, save, ca
       stage.textContent = 'Memproses suara…'
       live.dataset.stage = 'thinking'
     }
-    if (next === 'level') levelBar.style.width = `${Math.round(value * 100)}%`
+    if (next === 'level') {
+      level.hidden = false
+      levelBar.style.width = `${Math.round(value * 100)}%`
+    }
   }
 
   async function speak() {
