@@ -161,3 +161,52 @@
 .quick-status.is-bad {
   color: var(--bad);
 }
+
+.command-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.command-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.mic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  min-height: 52px;
+  border: var(--hair) solid var(--rule);
+  background: var(--sheet);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mic.is-listening {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.mic:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--hair) solid var(--ink);
+}
+
+.confirm-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.mic[hidden],
+.confirm[hidden] {
+  display: none;
+}

@@ -16,6 +16,30 @@
         <a class="home" href="/">Beranda</a>
       </header>
 
+      <section class="quick-card" id="suara" aria-labelledby="suara-title">
+        <h2 id="suara-title">Perintah</h2>
+        <form id="command" novalidate>
+          <label class="field">
+            <span>Ucapkan atau ketik</span>
+            <span class="command-row">
+              <input id="command-text" type="text" maxlength="300" autocomplete="off" placeholder="makan 25 ribu dari Utama" />
+              <button class="mic" id="mic" type="button" aria-label="Bicara" hidden>
+                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+              </button>
+            </span>
+          </label>
+          <button class="btn" type="submit">Pahami perintah</button>
+          <p class="quick-status" id="command-status" role="status" aria-live="polite"></p>
+          <div class="confirm" id="confirm" hidden>
+            <p class="confirm-text" id="confirm-text"></p>
+            <div class="quick-actions">
+              <button class="btn btn-primary" type="button" id="confirm-save">Simpan</button>
+              <button class="btn" type="button" id="confirm-cancel">Batal</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
       <section class="quick-card" id="uang" aria-labelledby="uang-title">
         <h2 id="uang-title">Pengeluaran</h2>
         <form id="expense" novalidate>
@@ -23,11 +47,9 @@
             <span>Nominal</span>
             <span class="amount-row"><b>Rp</b><input id="amount" class="amount num" type="text" inputmode="numeric" autocomplete="off" placeholder="0" required /></span>
           </label>
-          <fieldset class="choice">
-            <legend>Kategori</legend>
-            <label><input type="radio" name="category" value="utama" checked /><span>Utama</span></label>
-            <label><input type="radio" name="category" value="jajan" /><span>Jajan</span></label>
-            <label><input type="radio" name="category" value="lainnya" /><span>Lainnya</span></label>
+          <fieldset class="choice" id="pos">
+            <legend>Pos</legend>
+            <label><input type="radio" name="pos" value="lainnya" checked /><span>Lainnya</span></label>
           </fieldset>
           <label class="field">
             <span>Catatan (opsional)</span>
