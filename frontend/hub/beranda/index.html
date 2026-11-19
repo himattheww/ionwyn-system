@@ -52,6 +52,7 @@
     <button class="voice-fab" id="voice-open" type="button" aria-label="Perintah suara" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
     </button>
+    <p class="wake-pill" id="wake-pill" role="status" aria-live="polite" hidden><span class="wake-dot" aria-hidden="true"></span><span id="wake-text"></span></p>
 
     <dialog class="voice-sheet" id="voice-sheet" aria-labelledby="voice-title">
       <form class="voice-form" id="voice-form" novalidate>
@@ -78,6 +79,10 @@
         </div>
         <button class="btn" type="submit">Pahami perintah</button>
         <p class="voice-hint" id="voice-hint"></p>
+        <label class="voice-wake">
+          <input type="checkbox" id="voice-wake" />
+          <span>Dengarkan &ldquo;Halo asisten&rdquo; selama halaman ini terbuka</span>
+        </label>
         <a class="voice-manual" href="/catat/">Catat manual</a>
       </form>
     </dialog>

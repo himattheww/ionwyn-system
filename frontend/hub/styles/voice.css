@@ -266,6 +266,82 @@ main.page {
   animation: voice-pulse 1.1s ease-in-out infinite;
 }
 
+.voice-fab.is-waiting {
+  outline: 3px solid var(--accent-wash);
+  outline-offset: 4px;
+}
+
+.wake-pill {
+  position: fixed;
+  right: calc(var(--space-5) + 72px);
+  bottom: calc(var(--space-5) + 14px + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: calc(100vw - var(--space-5) * 2 - 84px);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hair) solid var(--rule);
+  background: var(--sheet);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+}
+
+.wake-pill[hidden] {
+  display: none;
+}
+
+.wake-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.wake-pill[data-state='listening'] .wake-dot {
+  background: var(--accent);
+  animation: voice-pulse 1.6s ease-in-out infinite;
+}
+
+.wake-pill[data-state='blocked'] .wake-dot,
+.wake-pill[data-state='loading'] .wake-dot {
+  background: var(--warn);
+}
+
+.wake-pill[data-state='error'] {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.wake-pill[data-state='error'] .wake-dot {
+  background: var(--bad);
+}
+
+.voice-wake {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.voice-wake input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.voice-wake:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @keyframes voice-rise {
   from { transform: translateY(24px); opacity: 0; }
   to { transform: none; opacity: 1; }
@@ -280,7 +356,8 @@ main.page {
   .voice-sheet[open],
   .voice-mic.is-listening,
   .mic.is-listening,
-  .voice-live .voice-dot {
+  .voice-live .voice-dot,
+  .wake-pill .wake-dot {
     animation: none;
   }
 }

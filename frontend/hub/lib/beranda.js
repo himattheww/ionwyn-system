@@ -1,6 +1,7 @@
 import { clock, dateTime, escapeHtml as esc, hhmm, hours, longDate, rupiah, shortWeekday, sleep, timeNow } from './format.js'
 import { countUp, stagger } from './motion.js'
 import { examples, voiceController } from './voice.js'
+import { canWake, wakeWord } from './wake.js'
 
 const $ = id => document.getElementById(id)
 const statusTag = { selesai: 'tag-ok', dilewati: 'tag-warn', terencana: '' }
@@ -220,14 +221,69 @@ $('voice-close').addEventListener('click', () => sheet.close())
 sheet.addEventListener('click', event => {
   if (event.target === sheet) sheet.close()
 })
+
+const fab = $('voice-open')
+const pill = $('wake-pill')
+const wakeToggle = $('voice-wake')
+const wakeLabels = {
+  loading: 'Memuat pendengar "Halo asisten"…',
+  listening: 'Ucapkan "Halo asisten"',
+  blocked: 'Ketuk layar untuk mulai mendengar',
+  paused: 'Pendengar dijeda'
+}
+
+function openSheet() {
+  if (sheet.open) return
+  wake.pause()
+  fab.setAttribute('aria-expanded', 'true')
+  sheet.showModal()
+  voice.speak()
+}
+
+const wake = wakeWord({
+  onWake: openSheet,
+  onState(state, message) {
+    pill.hidden = state === 'off' || state === 'paused'
+    pill.dataset.state = state
+    $('wake-text').textContent = message ?? wakeLabels[state] ?? ''
+    fab.classList.toggle('is-waiting', state === 'listening')
+    if (state !== 'error') return
+    wakeToggle.checked = false
+    remember(false)
+  }
+})
+
+function remember(on) {
+  try {
+    localStorage.setItem('wake', on ? '1' : '')
+  } catch {}
+}
+
+function savedWake() {
+  try {
+    return localStorage.getItem('wake') === '1'
+  } catch {
+    return false
+  }
+}
+
 sheet.addEventListener('close', () => {
   voice.stop()
   voice.clear()
   voice.say('')
-  $('voice-open').setAttribute('aria-expanded', 'false')
+  fab.setAttribute('aria-expanded', 'false')
+  wake.resume()
 })
-$('voice-open').addEventListener('click', () => {
-  $('voice-open').setAttribute('aria-expanded', 'true')
-  sheet.showModal()
-  voice.speak()
+fab.addEventListener('click', openSheet)
+
+wakeToggle.disabled = !canWake
+wakeToggle.addEventListener('change', () => {
+  remember(wakeToggle.checked)
+  if (!wakeToggle.checked) return wake.stop()
+  wake.start()
+  wake.pause()
 })
+if (canWake && savedWake()) {
+  wakeToggle.checked = true
+  wake.start()
+}
