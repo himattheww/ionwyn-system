@@ -1,5 +1,5 @@
 import { sessionState } from './session.js'
-import { canListen, send, voiceController } from './voice.js'
+import { send, voiceController } from './voice.js'
 
 if ((await sessionState()) === 'signed-out') location.replace('/masuk/')
 
@@ -103,6 +103,6 @@ for (const button of document.querySelectorAll('[data-entry]')) {
 const target = new URLSearchParams(location.search).get('mode')
 if (target === 'uang') amount.focus()
 if (target === 'absen') $('absen').scrollIntoView()
-if (target === 'suara') canListen ? voice.speak() : $('command-text').focus()
+if (target === 'suara') voice.speak()
 
 document.getElementById('dateline').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })

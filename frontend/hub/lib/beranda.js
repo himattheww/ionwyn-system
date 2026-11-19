@@ -1,6 +1,6 @@
 import { clock, dateTime, escapeHtml as esc, hhmm, hours, longDate, rupiah, shortWeekday, sleep, timeNow } from './format.js'
 import { countUp, stagger } from './motion.js'
-import { canListen, examples, voiceController } from './voice.js'
+import { examples, voiceController } from './voice.js'
 
 const $ = id => document.getElementById(id)
 const statusTag = { selesai: 'tag-ok', dilewati: 'tag-warn', terencana: '' }
@@ -221,11 +221,13 @@ sheet.addEventListener('click', event => {
   if (event.target === sheet) sheet.close()
 })
 sheet.addEventListener('close', () => {
+  voice.stop()
   voice.clear()
   voice.say('')
+  $('voice-open').setAttribute('aria-expanded', 'false')
 })
 $('voice-open').addEventListener('click', () => {
+  $('voice-open').setAttribute('aria-expanded', 'true')
   sheet.showModal()
-  if (canListen) voice.speak()
-  else $('voice-text').focus()
+  voice.speak()
 })
