@@ -42,14 +42,52 @@ const dayLabel = (date: string, today: string) => {
   return `${days[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`
 }
 
+const digitWords: Record<string, number> = { nol: 0, satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9 }
+const startWords: Record<string, number> = { ...digitWords, sepuluh: 10, sebelas: 11, seratus: 100, seribu: 1_000, sejuta: 1_000_000 }
+const scaleWords = new Set(['belas', 'puluh', 'ratus', 'ribu', 'juta'])
+
+export function wordsToDigits(text: string) {
+  const tokens = text.split(' ')
+  const out: string[] = []
+  for (let i = 0; i < tokens.length; i++) {
+    if (!(tokens[i]! in startWords)) {
+      out.push(tokens[i]!)
+      continue
+    }
+    let total = 0
+    let small = 0
+    let unit = 0
+    for (; i < tokens.length && (tokens[i]! in startWords || scaleWords.has(tokens[i]!)); i++) {
+      const word = tokens[i]!
+      if (word in digitWords) {
+        unit = digitWords[word]!
+        small += unit
+      } else if (word === 'belas') small += 10
+      else if (word === 'puluh') small += unit * 9
+      else if (word === 'ratus') small += unit * 99
+      else if (word === 'ribu' || word === 'seribu') {
+        total += (word === 'seribu' ? 1 : small || 1) * 1_000
+        small = 0
+      } else if (word === 'juta' || word === 'sejuta') {
+        total += (word === 'sejuta' ? 1 : small || 1) * 1_000_000
+        small = 0
+      } else small += startWords[word]!
+      if (!(word in digitWords)) unit = 0
+    }
+    i--
+    out.push(String(total + small))
+  }
+  return out.join(' ')
+}
+
 export function normalize(raw: string) {
-  return raw
+  return wordsToDigits(raw
     .toLowerCase()
     .replace(/^\s*(hey|hei|hai|halo)\s+\S+[\s,.!]+/, '')
     .replace(/'/g, '')
     .replace(/[!?;"]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
+    .trim())
 }
 
 const wordAmounts: [RegExp, number][] = [
@@ -228,23 +266,47 @@ export function parseCommand(raw: string, ctx: VoiceContext): VoiceAction | stri
   return 'Belum paham. Contoh: "makan 25 ribu", "transfer 1 juta ke Tabungan", "absen masuk jam 8", "kegiatan meeting klien", "jadwal lari besok jam 6 pagi".'
 }
 
+export function parseBest(texts: string[], ctx: VoiceContext) {
+  let first: string | undefined
+  for (const text of texts) {
+    const result = parseCommand(text, ctx)
+    if (typeof result !== 'string') return { action: result, heard: text }
+    first ??= result
+  }
+  return first ?? 'Perintahnya kosong.'
+}
+
+const keywords = ['ribu', 'juta', 'rupiah', 'transfer', 'nabung', 'gaji', 'pemasukan', 'dadakan', 'absen', 'masuk', 'pulang', 'kegiatan', 'jadwal', 'ingatkan', 'besok', 'lusa', 'jam', 'setengah', 'sakit', 'izin', 'cuti']
+
 const jakarta = () => new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Jakarta' })
 
 export function voiceRoutes() {
   const router = Router()
-  router.post('/hub/api/voice/parse', express.json(), async (req, res) => {
-    const text = req.body?.text
-    if (typeof text !== 'string' || !text.trim() || text.length > 300) return res.status(400).json({ error: 'Isi perintah, maksimal 300 karakter.' })
+  const lists = async () => {
     const owner = process.env.OWNER_USER_ID
-    if (!owner || !process.env.DATABASE_URL) return res.status(500).json({ error: 'OWNER_USER_ID atau DATABASE_URL belum diisi.' })
+    if (!owner || !process.env.DATABASE_URL) throw Object.assign(new Error('OWNER_USER_ID atau DATABASE_URL belum diisi.'), { status: 500 })
     const [accounts, items] = await Promise.all([
       db()<{ name: string }[]>`select name from public.accounts where user_id = ${owner} and not archived order by sort, created_at`,
       db()<{ name: string }[]>`select name from public.budget_items where user_id = ${owner} and not archived and kind <> 'tabungan' order by sort`
     ])
+    return { accounts: accounts.map(a => a.name), pos: items.map(i => i.name) }
+  }
+
+  router.get('/hub/api/voice/hints', async (_req, res) => {
+    const { accounts, pos } = await lists()
+    res.json({ hints: [...new Set([...pos, ...accounts, ...keywords])] })
+  })
+
+  router.post('/hub/api/voice/parse', express.json(), async (req, res) => {
+    const { text, alternatives = [] } = req.body ?? {}
+    const valid = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0 && value.length <= 300
+    if (!valid(text) || !Array.isArray(alternatives) || alternatives.length > 10 || !alternatives.every(valid)) {
+      return res.status(400).json({ error: 'Isi perintah, maksimal 300 karakter.' })
+    }
     const now = jakarta()
-    const result = parseCommand(text, { today: now.slice(0, 10), now: now.slice(11, 16), pos: items.map(i => i.name), accounts: accounts.map(a => a.name) })
+    const result = parseBest([...new Set([text, ...alternatives])], { today: now.slice(0, 10), now: now.slice(11, 16), ...(await lists()) })
     if (typeof result === 'string') return res.status(422).json({ error: result })
-    res.json({ action: result })
+    res.json(result)
   })
   return router
 }

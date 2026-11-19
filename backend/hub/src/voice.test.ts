@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findAmount, parseCommand, type VoiceContext } from './voice.ts'
+import { findAmount, parseBest, parseCommand, wordsToDigits, type VoiceContext } from './voice.ts'
 
 const ctx: VoiceContext = {
   today: '2026-11-19',
@@ -79,5 +79,35 @@ describe('parseCommand', () => {
 
   it('explains what it does not understand', () => {
     expect(parseCommand('halo apa kabar', ctx)).toMatch(/Belum paham/)
+  })
+})
+
+describe('parseBest', () => {
+  it('falls back to the first alternative that makes sense', () => {
+    const result = parseBest(['makan dua puluh lima', 'makan 25 ribu'], ctx)
+    expect(result).toMatchObject({ heard: 'makan 25 ribu', action: { body: { amount: 25_000, pos: 'Makan' } } })
+  })
+
+  it('keeps the first error when nothing parses', () => {
+    expect(parseBest(['halo', 'apa kabar'], ctx)).toMatch(/Belum paham/)
+  })
+})
+
+describe('wordsToDigits', () => {
+  it.each([
+    ['makan dua puluh lima ribu', 'makan 25000'],
+    ['kos dua juta delapan ratus ribu', 'kos 2800000'],
+    ['bensin seratus lima puluh ribu', 'bensin 150000'],
+    ['parkir lima belas ribu', 'parkir 15000'],
+    ['nabung sejuta', 'nabung 1000000'],
+    ['masuk jam setengah sembilan', 'masuk jam setengah 9'],
+    ['makan 25 ribu', 'makan 25 ribu']
+  ])('%s', (text, expected) => {
+    expect(wordsToDigits(text)).toBe(expected)
+  })
+
+  it('feeds spoken numbers into commands', () => {
+    expect(body('makan dua puluh lima ribu')).toMatchObject({ amount: 25_000, pos: 'Makan' })
+    expect(body('pulang jam lima sore')).toMatchObject({ type: 'keluar', time: 17 * 60 })
   })
 })
