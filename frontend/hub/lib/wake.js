@@ -36,14 +36,32 @@ export function wakeWord({ onWake, onState }) {
   function release() {
     if (!audio) return
     audio.media.getTracks().forEach(track => track.stop())
-    audio.context.close()
+    audio.context?.close()
     removeEventListener('pointerdown', audio.unlock)
     audio = null
+  }
+
+  async function pump(track) {
+    const reader = new MediaStreamTrackProcessor({ track }).readable.getReader()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) return
+      const samples = new Float32Array(value.numberOfFrames)
+      value.copyTo(samples, { planeIndex: 0, format: 'f32-planar' })
+      worker.postMessage({ sampleRate: value.sampleRate, samples }, [samples.buffer])
+      value.close()
+    }
   }
 
   async function capture() {
     const media = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
     if (!enabled || paused) return media.getTracks().forEach(track => track.stop())
+    worker.postMessage({ type: 'reset' })
+    if (window.MediaStreamTrackProcessor) {
+      audio = { media }
+      pump(media.getAudioTracks()[0]).catch(failure => audio?.media === media && onState('error', failure.message))
+      return onState('listening')
+    }
     const context = new AudioContext()
     const source = context.createMediaStreamSource(media)
     const processor = context.createScriptProcessor(4096, 1, 1)
@@ -55,7 +73,8 @@ export function wakeWord({ onWake, onState }) {
     processor.connect(context.destination)
     const unlock = () => context.resume().then(() => onState('listening'))
     audio = { media, context, unlock }
-    worker.postMessage({ type: 'reset' })
+    await Promise.race([context.resume(), new Promise(done => setTimeout(done, 500))])
+    if (audio?.context !== context) return
     if (context.state === 'running') return onState('listening')
     onState('blocked')
     addEventListener('pointerdown', unlock, { once: true })
