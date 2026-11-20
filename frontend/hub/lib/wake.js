@@ -3,14 +3,15 @@ export const canWake = Boolean(navigator.mediaDevices?.getUserMedia && window.Wo
 let worker = null
 let loading = null
 
-function load() {
+function load(onProgress) {
   loading ??= new Promise((resolve, reject) => {
     worker = new Worker('/lib/wake-worker.js')
     worker.addEventListener('message', ({ data }) => {
+      if (data.type === 'progress') onProgress(data.percent)
       if (data.type === 'ready') resolve(worker)
-      if (data.type === 'error') reject(new Error('Model suara gagal dimuat.'))
+      if (data.type === 'error') reject(new Error('Model suara gagal dimuat. Cek koneksi lalu coba lagi.'))
     })
-    worker.addEventListener('error', () => reject(new Error('Model suara gagal dimuat.')))
+    worker.addEventListener('error', () => reject(new Error('Model suara gagal dimuat. Cek koneksi lalu coba lagi.')))
   }).catch(failure => {
     worker?.terminate()
     worker = null
@@ -77,7 +78,7 @@ export function wakeWord({ onWake, onState }) {
       paused = false
       onState('loading')
       try {
-        await load()
+        await load(percent => enabled && onState('loading', `Mengunduh model suara (sekali saja)… ${percent}%`))
       } catch (failure) {
         enabled = false
         return onState('error', failure.message)

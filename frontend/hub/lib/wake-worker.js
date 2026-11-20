@@ -4,9 +4,18 @@ const keywords = ['▁HA LO ▁AS IST EN @halo_asisten', '▁HA LO ▁AS S IST A
 
 let spotter = null
 let stream = null
+let shown = -1
 
 self.Module = {
   locateFile: file => base + file,
+  setStatus(text) {
+    const [, loaded, total] = text.match(/\((\d+)\/(\d+)\)/) ?? []
+    if (!total) return
+    const percent = Math.min(99, Math.floor((loaded / total) * 100))
+    if (percent === shown) return
+    shown = percent
+    postMessage({ type: 'progress', percent })
+  },
   onRuntimeInitialized() {
     spotter = createKws(self.Module, {
       featConfig: { samplingRate: 16000, featureDim: 80 },
@@ -31,6 +40,8 @@ self.Module = {
   },
   onAbort: reason => postMessage({ type: 'error', message: String(reason) })
 }
+
+addEventListener('unhandledrejection', ({ reason }) => postMessage({ type: 'error', message: String(reason) }))
 
 importScripts(base + 'sherpa-onnx-kws.js', base + 'sherpa-onnx-wasm-kws-main.js')
 
