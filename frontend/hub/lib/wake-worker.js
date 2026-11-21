@@ -5,7 +5,9 @@ const keywords = [
   '▁HA LO ▁AS S IST ANT @halo_assistant',
   '▁HE LL O ▁AS S IST ANT @hello_assistant',
   '▁HA LL O ▁AS S IST ANT @hallo_assistant',
-  '▁HE LL O ▁AS IST EN @hello_asisten'
+  '▁HE LL O ▁AS IST EN @hello_asisten',
+  '▁HA LO ▁S IST EN @halo_sisten',
+  '▁HA LL O ▁S IST EN @hallo_sisten'
 ].join('\n')
 
 let spotter = null
@@ -35,10 +37,10 @@ self.Module = {
         modelingUnit: 'bpe',
         bpeVocab: ''
       },
-      maxActivePaths: 4,
+      maxActivePaths: 8,
       numTrailingBlanks: 1,
-      keywordsScore: 1.5,
-      keywordsThreshold: 0.15,
+      keywordsScore: 2.5,
+      keywordsThreshold: 0.08,
       keywords
     })
     stream = spotter.createStream()
