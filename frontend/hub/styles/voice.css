@@ -159,6 +159,10 @@ main.page {
   color: var(--ink-3);
 }
 
+.voice-popup {
+  justify-self: start;
+}
+
 .voice-manual {
   justify-self: start;
   font-weight: 600;

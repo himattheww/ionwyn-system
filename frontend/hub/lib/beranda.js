@@ -1,7 +1,7 @@
 import { clock, dateTime, escapeHtml as esc, hhmm, hours, longDate, rupiah, shortWeekday, sleep, timeNow } from './format.js'
 import { countUp, stagger } from './motion.js'
 import { examples, voiceController } from './voice.js'
-import { canWake, wakeWord } from './wake.js'
+import { allowPopup, canWake, nativeWake, popupAllowed, wakeWord } from './wake.js'
 
 const $ = id => document.getElementById(id)
 const statusTag = { selesai: 'tag-ok', dilewati: 'tag-warn', terencana: '' }
@@ -225,6 +225,7 @@ sheet.addEventListener('click', event => {
 const fab = $('voice-open')
 const pill = $('wake-pill')
 const wakeToggle = $('voice-wake')
+const popupButton = $('voice-popup')
 const wakeLabels = {
   loading: 'Memuat pendengar "Halo asisten"…',
   listening: 'Ucapkan "Halo asisten"',
@@ -248,6 +249,7 @@ const wake = wakeWord({
     $('wake-text').textContent = message ?? wakeLabels[state] ?? ''
     fab.classList.toggle('is-waiting', state === 'listening')
     if (state !== 'error') return
+    popupButton.hidden = true
     wakeToggle.checked = false
     remember(false)
   }
@@ -276,9 +278,20 @@ sheet.addEventListener('close', () => {
 })
 fab.addEventListener('click', openSheet)
 
+async function checkPopup() {
+  popupButton.hidden = !nativeWake || !wakeToggle.checked || (await popupAllowed())
+}
+
+if (nativeWake) $('voice-wake-text').textContent = 'Dengarkan “Halo asisten”, juga saat aplikasi ditutup'
+popupButton.addEventListener('click', allowPopup)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkPopup()
+})
+
 wakeToggle.disabled = !canWake
 wakeToggle.addEventListener('change', () => {
   remember(wakeToggle.checked)
+  checkPopup()
   if (!wakeToggle.checked) return wake.stop()
   wake.start()
   wake.pause()
@@ -286,4 +299,10 @@ wakeToggle.addEventListener('change', () => {
 if (canWake && savedWake()) {
   wakeToggle.checked = true
   wake.start()
+  checkPopup()
+}
+
+if (new URLSearchParams(location.search).has('suara')) {
+  history.replaceState(null, '', location.pathname)
+  openSheet()
 }
