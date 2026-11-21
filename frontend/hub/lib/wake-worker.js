@@ -1,6 +1,12 @@
 const base = '/vendor/kws/'
 const model = name => `./${name}-epoch-12-avg-2-chunk-16-left-64.onnx`
-const keywords = ['▁HA LO ▁AS IST EN @halo_asisten', '▁HA LO ▁AS S IST ANT @halo_assistant'].join('\n')
+const keywords = [
+  '▁HA LO ▁AS IST EN @halo_asisten',
+  '▁HA LO ▁AS S IST ANT @halo_assistant',
+  '▁HE LL O ▁AS S IST ANT @hello_assistant',
+  '▁HA LL O ▁AS S IST ANT @hallo_assistant',
+  '▁HE LL O ▁AS IST EN @hello_asisten'
+].join('\n')
 
 let spotter = null
 let stream = null
@@ -31,8 +37,8 @@ self.Module = {
       },
       maxActivePaths: 4,
       numTrailingBlanks: 1,
-      keywordsScore: 1.2,
-      keywordsThreshold: 0.2,
+      keywordsScore: 1.5,
+      keywordsThreshold: 0.15,
       keywords
     })
     stream = spotter.createStream()
