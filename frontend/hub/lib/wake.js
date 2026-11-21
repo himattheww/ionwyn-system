@@ -1,4 +1,55 @@
-export const canWake = Boolean(navigator.mediaDevices?.getUserMedia && window.Worker && window.WebAssembly && window.AudioContext)
+const capacitor = window.Capacitor ?? window.parent?.Capacitor
+export const nativeWake = capacitor?.PluginHeaders?.some(plugin => plugin.name === 'Wake') ?? false
+export const canWake = nativeWake || Boolean(navigator.mediaDevices?.getUserMedia && window.Worker && window.WebAssembly && window.AudioContext)
+
+const callNative = method => capacitor.nativePromise('Wake', method, {})
+
+export async function popupAllowed() {
+  return (await callNative('popup')).popup
+}
+
+export const allowPopup = () => callNative('allowPopup')
+
+function nativeWakeWord({ onState }) {
+  let enabled = false
+  let paused = false
+
+  return {
+    async start() {
+      if (enabled) return
+      enabled = true
+      paused = false
+      onState('loading')
+      try {
+        await callNative('start')
+      } catch (failure) {
+        enabled = false
+        return onState('error', failure?.message ?? 'Pendengar gagal dimulai.')
+      }
+      if (!enabled) return
+      if (paused) return callNative('pause')
+      onState('listening')
+    },
+    pause() {
+      if (!enabled || paused) return
+      paused = true
+      callNative('pause')
+      onState('paused')
+    },
+    async resume() {
+      if (!enabled || !paused) return
+      paused = false
+      await callNative('resume')
+      onState('listening')
+    },
+    stop() {
+      enabled = false
+      paused = false
+      callNative('stop')
+      onState('off')
+    }
+  }
+}
 
 let worker = null
 let loading = null
@@ -28,6 +79,7 @@ const micErrors = {
 }
 
 export function wakeWord({ onWake, onState }) {
+  if (nativeWake) return nativeWakeWord({ onState })
   let enabled = false
   let paused = false
   let ready = false
